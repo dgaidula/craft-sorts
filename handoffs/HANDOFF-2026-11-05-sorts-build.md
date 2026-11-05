@@ -15,20 +15,21 @@ Nothing.
 
 | Item | State | Basis |
 |---|---|---|
-| `SPEC.md` | Waiting on Dan (D1 and D2; neither blocks the build) | `SPEC.md` §9 |
+| `SPEC.md` | Waiting on Dan (D1, D2, D3; none blocks the engine) | `SPEC.md` §9 |
 | First build | Idle | this handoff |
 
 ## 3. The next three steps
 
 1. **Read `SPEC.md`, this repo’s `CLAUDE.md`, `craft-plugin-base/docs/PATTERNS.md` §§11–17 and `docs/DEVELOPMENT.md`; check the testbed** (`~/sw/github-private/craft5-plugin-testbed`, its `CLAUDE.md`). Acceptance: the testbed boots under ddev and `composer check` runs here under `/opt/homebrew/bin/php`.
 2. **Build the engine first** (§5.1, §3, §4, §8 corpus and fuzz): cast `dgbuilder`, mode **release**. Locales as rule-set data behind one interface, so D1 moves files, not code. Acceptance: the corpus (≥ 400 cases) and the byte-identical fuzz pass, idempotence holds, and the performance number is recorded.
-3. **Then the Craft layer** (§5.2–§5.4, §6), smoke-tested in the testbed under Lite and Pro, then a `gate` at `xhigh` with mutants. Acceptance: gate closed, and the README carries the `**Hardened:**` line.
+3. **Then the Craft layer** (§5.2–§5.5, §6), smoke-tested in the testbed under Lite and Pro, then a `gate` at `xhigh` with mutants. Acceptance: gate closed, and the README carries the `**Hardened:**` line.
 
 ## 4. Decisions still Dan’s
 
-1. **D1:** ship all locales in Pro (recommended), or English in Pro plus paid per-locale add-on plugins? Doesn’t block the build.
-2. **D2:** Pro at $39 + $19/yr (recommended)? Needed only at Store submission.
-3. Create the GitHub repo `dgaidula/craft-sorts` (public, like the sibling plugins) and push? Outward-facing; not done.
+1. **D3:** build the extension API (SPEC §5.5: register, scope and order custom rules) in the first release, in Pro? Recommended: yes. Doesn’t block the engine; build the rule interface either way.
+2. **D1:** ship all locales in Pro (recommended), or English in Pro plus paid per-locale add-on plugins? Doesn’t block the build.
+3. **D2:** Pro at $39 + $19/yr (recommended)? Needed only at Store submission.
+4. Create the GitHub repo `dgaidula/craft-sorts` (public, like the sibling plugins) and push? Outward-facing; not done.
 
 ## 5. Unverified beliefs and known gaps
 

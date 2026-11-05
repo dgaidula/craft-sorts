@@ -121,6 +121,25 @@ either way, behind one interface, so the answer moves files, not code.
 - `data-sorts="off"` on any element skips it and its subtree; `data-sorts-lang="…"` overrides the locale.
 - Settings: extra tags or class names to skip; URI patterns to skip (e.g. `/api/*`).
 
+### 5.5 Extension API (proposed 2026-11-05, D3)
+
+Sites have their own domain conversions, for example a recipe site that turns scaled decimal quantities into
+Unicode fractions (`0.875` → `⅞`, `1.5` → `1½`) except before metric units and ounces. Those belong in the
+site’s own code, but they should run through Sorts rather than beside it:
+
+- **Register a rule:** `Sorts::EVENT_REGISTER_RULES` lets a module or plugin add a class implementing
+  `RuleInterface` (`handle()`, `apply()` over a text run with its context, `priority()`, `defaultEnabled()`,
+  locale-aware). Built-in rules (§3) use the same interface, so the API is exercised from day one.
+- **Scope a rule:** a registered rule runs (a) everywhere in the page pass, (b) only inside elements marked
+  `data-sorts-rules="<handle> …"`, or (c) only when called by name — `|sorts(rules: ['<handle>'])` in Twig,
+  or `Sorts::getInstance()->engine->apply($text, ['<handle>'])` from PHP, so non-page output (CSV, XLSX, JSON)
+  gets the same result as the page.
+- **Order and protection:** rules run by priority; a rule can mark the characters it produced as settled so
+  later rules leave them alone (a range-dash rule must not touch `1-1/2` once a fraction rule has handled it).
+- **Edition:** Pro to start (one-way door: it can move to Lite later, never back).
+- **Acceptance:** a fixture rule registered from a test module passes all three scopes, and its output is
+  identical between the page pass and the PHP call.
+
 ## 6. Fixing stored content (Pro)
 
 The page pass fixes what visitors see; feeds, APIs, search and exports read stored content. Two tools:
@@ -154,6 +173,8 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
 - **D1 — locales:** all in Pro (recommended), or English in Pro and other locales as paid add-on plugins.
   Editions can’t do per-country upgrades (one edition per install, one ladder); add-ons would be separate Store
   listings that require Sorts, each with its own review, changelog, license and support.
+- **D3 — extension API (§5.5):** build it in the first release, in Pro? Recommended: yes; a site with its own
+  conversions is exactly who needs the automatic page pass, and the built-in rules use the same interface.
 - **D2 — price:** Pro **$39 + $19/yr** recommended (Store data: paid installs are flat across price bands, so
   cheap buys nothing; Craft’s guidance puts small utilities at $10–29, and Pro’s audit/fix utility is more than
   that). Not needed until Store submission.
