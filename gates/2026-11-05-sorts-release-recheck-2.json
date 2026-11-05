@@ -1,0 +1,177 @@
+{
+  "tool": "craft-sorts",
+  "run": "sorts-release-recheck-2-2026-11-05 (fix round 2, closure): engine 63d4fb7, settings 4661483, harness 3478f95, docs 7c3cddd, widows 3425468, effort 98db482 (range efa8960..98db482, HEAD 98db482); testbed craft5-plugin-testbed 80667bc (Craft 5.12.0.1, DDEV craft5-testbed); host PHP 8.5.12 (/opt/homebrew/bin/php), php:8.2-cli 8.2.35 in Docker Desktop; release mode, closure re-check scoped to R2-1…R2-12, FU2 and the widows fix",
+  "suite": "node tests/run-all.mjs: six full runs in three back-to-back pairs, every one exit 0 with audit 51, ckeditor 30, engine-service 24, extension-api 16, fix-on-save 62, graphql 21, page-pass 75, settings 81, smoke 2, twig 71 and “ok  testbed isolation (clean tree, no pending project config, queue 0 → 0)”, plus the deliberate crash run (exit 1) and the refused run after it (exit 2); composer test-engine (RESULT: 3177 passed, 0 failed; corpus 739), composer check (PHPStan [OK] No errors), gate-kit mutants (engine) and the craft-mutants runner (testbed)",
+  "verdict": "CLOSED WITH FOLLOW-UPS",
+  "findings": [],
+  "notBlocking": [
+    {
+      "id": "R3-1",
+      "summary": "Widows still puts two no-break spaces in a heading when the last gap’s whitespace sits on both sides of an inline tag boundary (`new <a> library</a>`, `one two <b> three</b>`, `one two<b> </b> three`): browsers collapse the two spaces to one, but two U+00A0 do not collapse, so the heading shows a double-width gap. Pre-existing (efa8960 does the same); 3425468 fixed only the `two<b> three` shape. Mutants W2 and W3 (the run counts as ending in a word whatever its last character) survive the engine suite, so this shape is not pinned either way.",
+      "location": "src/engine/Context.php:124-145 (spaceAfter); tests/engine/corpus/06-nbsp-widows.txt (no case with a space on both sides of the tag)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/w2.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/t-98db482 → \"<h1>Council approves the new <a href=\\\"/x\\\"> library</a></h1> => …new⍽<a href=\\\"/x\\\">⍽library</a></h1>\" and \"<h1>one two <b> three</b></h1> => <h1>one two⍽<b>⍽three</b></h1>\" (⍽ = U+00A0); same with /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/t-efa8960. gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/engine-mutants.yaml: \"warn survived … W2\", \"warn survived … W3\".",
+      "acceptance": "A heading whose last gap is whitespace on both sides of a tag gets exactly one no-break space (for example `new⍽<a> library</a>` or `new <a>⍽library</a>`, with the other space left as an ordinary space or removed), with corpus cases for `two <b> three</b>` and `two<b> </b> three` that kill W2 and W3.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "cause": "spaceAfter() lets a run that ends in whitespace act even when the next run starts with whitespace, so both runs replace their own space.",
+      "needsDesign": false
+    },
+    {
+      "id": "R3-2",
+      "summary": "The R2-5 speed guard does not cover the end-tag walk’s own bookkeeping: mutant O1 (drop `$open[$f->name]--;` in the walk, so counts only grow) keeps the engine suite green, yet it brings R2-5’s quadratic cost back for any name that was opened and closed once before the stray tags (1 MB page: 58 ms → 2,189 ms).",
+      "location": "tests/engine/unit.php (the “stray end tags under 4× the nesting” guard); src/engine/Engine.php:237-245",
+      "repro": "gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/engine-mutants.yaml --jobs 4 --brief → \"warn survived, exit 0 … O1\"; /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/lin.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/t-o1 (O1 applied to a copy) → \"1048576 B … closed-font-then-stray all-off 2189 ms\" against 58 ms for /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/t-98db482.",
+      "acceptance": "The guard page (or a second one) opens and closes the stray name once before the stray tags (`<font>x</font>` + 1,000 divs + stray `</font>`s), and re-running O1 kills it.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "The guard page never opens a font element, so $open[font] stays 0 whatever the walk does.",
+      "needsDesign": false
+    },
+    {
+      "id": "R3-3",
+      "summary": "The `clearErrors($name)` in defaultInvalidNumbers() is not load-bearing: mutant N5 (drop it) keeps settings-test at 81/0. Without it the settings page, which renders `settings.getErrors(name)`, would show a validation error under a field that now holds the default.",
+      "location": "src/models/Settings.php:165; src/templates/settings.twig:205; tests/settings-test.php:79-95",
+      "repro": "cd /Users/dgaidula/sw/github-public/craft-sorts && node /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/craft-mutants.mjs N5 → \"SURVIVED N5 settings 81/0\".",
+      "acceptance": "The R2-9 case also asserts that the settings model has no errors after a load that fell back (or that the settings page for a project config of `'2MB'` shows no error under the field); re-running N5 kills it.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "medium",
+      "cause": "The new case checks values and warnings, not the model’s error state.",
+      "needsDesign": false
+    },
+    {
+      "id": "R3-4",
+      "summary": "`run-all.mjs --reset` with an untracked file under config/project lists it under “this discards:”, then runs project-config/apply, which writes that untracked YAML into the database (“adding zz-gate.untracked … done”), and only then reports it as left in place and fails. It deletes nothing, as promised, but the message is wrong and the apply touches the database with uncommitted config.",
+      "location": "tests/run-all.mjs:40-51",
+      "repro": "cd ~/sw/github-private/craft5-plugin-testbed && mkdir -p config/project/zz-gate && echo \"x: 1\" > config/project/zz-gate/untracked.yaml; cd /Users/dgaidula/sw/github-public/craft-sorts && node tests/run-all.mjs --reset → \"Putting back the committed config/project YAML; this discards: … ?? config/project/zz-gate/untracked.yaml\", \"- adding zz-gate.untracked ... done\", \"Left in place, not committed and not this tool's to delete: …\", \"FAILED  reset\", exit 1. (Cleaned up: file removed, --reset re-run, “removing zz-gate.untracked … done”, no pending changes.)",
+      "acceptance": "With an untracked file under config/project, --reset lists it only as left in place and either refuses before running project-config/apply (exit 1, nothing applied) or says that apply will read it; tracked changes alone behave as now.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "The discard list is the whole `git status` of config/project, and the untracked check runs after the apply.",
+      "needsDesign": false
+    },
+    {
+      "id": "R3-5",
+      "summary": "PHP 8.2 dense page is bimodal around the 5 ms budget: medians 4.83, 5.27, 4.87, 5.28, 4.85 ms over five runs of perf.php (median of medians 4.87), so two runs in five are over; README says the budget “is met for both pages … (medians of 4.95 to 5.00 ms over three runs)”. On 8.5 the typical page is 3.24 → 3.40 ms against efa8960 (+5 %, not the ~2 % in the fix report) and the dense page 4.56 → 4.74 ms (+4 %).",
+      "location": "README.md:296-304 (Performance)",
+      "repro": "/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/perf82.txt and /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/perf85.txt: docker run --rm -v /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8:/g php:8.2-cli php -d opcache.enable_cli=1 -d opcache.jit=off /g/t-98db482/tests/engine/perf.php 300 (×5), the same for t-efa8960 (×3), and /opt/homebrew/bin/php -d opcache.enable_cli=1 -d opcache.jit=off …/perf.php 300 (×3 per tree).",
+      "acceptance": "README states the 8.2 dense figure as a range that includes the slow mode (about 4.8 to 5.3 ms) and says the budget is met at the median only, or the dense page gains enough margin that five runs stay under 5 ms.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "medium",
+      "cause": "Docker Desktop timing has two modes on this Mac; three runs can all land in the fast one.",
+      "needsDesign": false
+    },
+    {
+      "id": "R3-6",
+      "summary": "README line 46 says `script` and comments “are never touched”; the new Known limit (R2-6) says that on a page with a `--!>` comment Sorts can typeset text a browser reads as part of a later `<script>`. The absolute promise needs the qualifier.",
+      "location": "README.md:46 against README.md:288",
+      "repro": "README.md:46: “attributes, `script`, `style`, … and comments are never touched”; README.md:288: “Sorts can … typeset text a browser reads as part of a later `<script>`”.",
+      "acceptance": "Line 46 says “in well-formed pages” or points to Known limits.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "The Known limit was added without revisiting the overview’s promise.",
+      "needsDesign": false
+    },
+    {
+      "id": "R3-7",
+      "summary": "A suite run on its own (`ddev craft shell < tests/<suite>-test.php`, as the README and every mutant runner do) leaves a signed-in admin session in the testbed’s storage/runtime/sorts-tests-cp-cookies.json until the next run-all. Git-ignored, testbed-only, and reused correctly (a dead session logs in again), so harmless, but the README only says run-all deletes it.",
+      "location": "tests/support.php:199-232; tests/README.md (shared control panel session)",
+      "repro": "cd ~/sw/github-private/craft5-plugin-testbed && ddev craft shell < /Users/dgaidula/sw/github-public/craft-sorts/tests/settings-test.php → \"RESULT: 81 passed, 0 failed\"; ls -la storage/runtime → \"sorts-tests-cp-cookies.json\" (600). Removed by the next run-all.",
+      "acceptance": "tests/README.md says a suite run alone leaves the session file until the next run-all (or a standalone run deletes it in sortsDone()).",
+      "blocking": false,
+      "severity": "info",
+      "likelihood": "likely",
+      "confidence": "high",
+      "cause": "Only run-all.mjs deletes the file.",
+      "needsDesign": false
+    }
+  ],
+  "closure": {
+    "R2-1": {
+      "status": "closed",
+      "evidence": "fix-on-save-test has the draft case (saveElementAsDraft, edit, applyDraft; fr copy as typed; /fr/sorts-test/reach-draft shows « Draft » – one). Y1 re-run: \"killed Y1 fix-on-save 56/6 … FAIL draft, fr: the title is as typed … actual “Draft” — one\". My Y2 (every site counts as reached) also killed 46/16."
+    },
+    "R2-2": {
+      "status": "closed",
+      "evidence": "Re-ran the round-1 crash (PHP fatal in settings-test after the CP save): run exits 1 with \"If none of the project config changes are yours: node tests/run-all.mjs --reset\"; the next run refuses with exit 2 and names --reset; --reset puts project.yaml back (sha a09f35f7… as at start) and the run after is green. A dirty tree outside config/project (untracked file) is refused with \"Commit or stash these first\", exit 2; an unknown argument exits 2. --reset never deleted an untracked file. Wording and apply-order nit: R3-4."
+    },
+    "R2-3": {
+      "status": "closed",
+      "evidence": "Six back-to-back run-all runs, all exit 0 (about 25 s each, so two runs fall within Craft’s 60 s window); nginx access log shows 1 POST /admin/actions/users/login per run. The cookie file is gone after each run-all. Standalone-suite leftover: R3-7."
+    },
+    "R2-4": {
+      "status": "closed",
+      "evidence": "/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/lin.php, median of 3: 1 MB of “a -- b. ”, dashes only: 97 ms on 8.5.12, 155 ms on php:8.2-cli (efa8960: 1,390 ms and 14,752 ms); 256 KB → 1 MB is 4.0× and 4.6×. Default rules 103 / 155 ms. Fixer’s G1 killed by the dash ratio guard."
+    },
+    "R2-5": {
+      "status": "closed",
+      "evidence": "1 MB nest page (1,000 divs, stray </font>): all rules off 60 ms (8.5) / 77 ms (8.2), default rules 174 / 216 ms (efa8960: 2,098–2,210 ms); 4.0× from 256 KB. Fixer’s G2 and G3 killed. Gap in the guard: R3-2."
+    },
+    "R2-6": {
+      "status": "closed",
+      "evidence": "README.md:288 Known limit “Two malformed comment forms” names both forms. Conflict with README.md:46: R3-6."
+    },
+    "R2-7": {
+      "status": "closed",
+      "evidence": "Corpus cases h-bogus-comment-*, h-doctype-in-a-flow, h-cdata-ends-at-the-full-marker, h-raw-text-end-tag-upper-case-style/-textarea present; gate-kit: \"ok killed, exit 1 … X11\", \"… X13\", \"… X14\"."
+    },
+    "R2-8": {
+      "status": "closed",
+      "evidence": "README.md:290 Known limit “The audit lists every section”, with the permission advice and the no-test note."
+    },
+    "R2-9": {
+      "status": "closed",
+      "evidence": "Plugin::setSettings() → Settings::defaultInvalidNumbers(); Craft 5.12.0.1 CP saves go through savePluginSettings() → setAttributes() + validate() (services/Plugins.php:719-727), not setSettings(), so they still validate. Mutants N1 N2 N3 (fixer’s) and N4 (valid value reset) N6 (widows not checked) killed; N5 survived (R3-3). In-process probe (/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/setprobe.php): null, '', '1e6', true, [] fall back; ' 2500000 ' kept as 2500000; 2.9 → 2; widowsMinWords 25 and 1 fall back to 3; '20' kept. No valid value is reset."
+    },
+    "R2-10": {
+      "status": "closed",
+      "evidence": "ContentFixer class comment now says {@see otherSites()}; README.md:304 budget sentences stand in their own paragraph after the table."
+    },
+    "R2-11": {
+      "status": "closed",
+      "evidence": "README.md:289 Known limit “A vertical tab in a script tag”."
+    },
+    "R2-12": {
+      "status": "closed",
+      "evidence": "unit.php guards are ratios (4× input under 8× time; stray tags under 2×). Green under gate-kit --jobs 4, three times alone on php:8.2-cli, and six concurrent php:8.2-cli engine runs (\"RESULT: 2777 passed, 0 failed\" ×6)."
+    },
+    "FU2": {
+      "status": "closed",
+      "evidence": "php:8.2-cli (8.2.35, opcache on, JIT off), perf.php 300: typical 3.50 3.84 3.54 3.84 3.53 → median 3.54 ms (efa8960 5.08 5.05 5.04 → 5.05); dense 4.83 5.27 4.87 5.28 4.85 → median 4.87 ms (efa8960 5.54 5.56 5.54 → 5.54). Output byte-identical to efa8960 for 7c3cddd (the engine with the anyByte prefilter and open counts, before the widows change): /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/dif.php, seeds 11 and 29 × 3,000 generated pages (misnesting, implied ends, stray tags, multibyte and invalid UTF-8) × 7 option sets, on 8.5.12 and on php:8.2-cli, cmp identical. 8.5 typical +5 %, dense +4 % (R3-5)."
+    },
+    "widows-3425468": {
+      "status": "closed",
+      "evidence": "<h1>one two<b> three</b></h1> → <h1>one two<b>⍽three</b></h1> (one U+00A0; efa8960 gave one⍽two<b>⍽three). Every output that changed from 7c3cddd to 98db482 over the 42,000 generated cases (51 case×option pairs) removes an earlier, extra no-break space and keeps the last one; none adds one. Probes (/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/w.php): nested inline, whitespace-only inline, an image or comment before the gap, minWords 4, text mode — all one or zero no-break spaces as expected. W1 (revert) killed by the three new corpus cases. Sibling shape with a space on both sides of the tag: R3-1 (pre-existing)."
+    }
+  },
+  "confirmedSound": [
+    "Open-element counts (R2-5): every push increments, every implied-end pop and every frame the end-tag walk passes decrements, so a positive count always means a frame of that name is on the stack; output byte-identical to efa8960 over 42,000 generated cases with misnested and implied end tags; the engine fuzz’s 400 Dom\\HTMLDocument comparisons pass on 8.5.12.",
+    "anyByte(): a byte class without /u is the same test as strpbrk(); empty trigger sets never reach it; a preg_match error reads as “run the rules”, never as a skip. Identical output on invalid UTF-8 inputs (\\xE9, \\xC3, \\xFF\\xFE, \\xF0\\x9F). A1 (a byte dropped) and A3 (/u) killed; A2 (union prefilter skipped) survives as perf-only and equivalent.",
+    "Scope: git diff efa8960 98db482 touches only src/ (Engine, Context, DashesRule, Settings, Plugin, a ContentFixer comment), tests/, README.md, CHANGELOG.md and EFFORT.md.",
+    "Fixer’s G1–G4 and N1–N3 all killed on re-run."
+  ],
+  "mutants": {
+    "engine": "gate-kit, isolated copies, /opt/homebrew/bin/php tests/engine/run.php: killed X11 X13 X14 G1 G2 G3 G4 W1 O2 A1 A3; survived W2 W3 (R3-1), O1 (R3-2), A2 (perf-only, equivalent). Real tree: \"ok 116 files + git unchanged\".",
+    "craft": "craft-mutants.mjs (real working files, sha256 restore after each), one suite each: killed Y1 Y2 N1 N2 N3 N4 N6; survived N5 (R3-3)."
+  },
+  "sources": [
+    "Read directly: git diff efa8960 98db482 (src, tests, README, CHANGELOG), tests/README.md, CLAUDE.md, the round-2 receipt’s R2 acceptances (read for the acceptance text after my own probes), Craft 5.12.0.1 vendor/craftcms/cms/src/services/Plugins.php:719-757 and :925-945, base/Plugin.php:194-214.",
+    "Run directly: every command in a repro or closure entry; scripts and outputs in /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r3m8/.",
+    "Taken from the brief, not re-derived: the fixer’s own numbers (5.24 → 3.60 ms, 118 ms, 529 ms, ~2 %), used only for comparison."
+  ],
+  "notDone": [
+    "No Team/Pro testbed, so R2-8 stays a documented limit without a test (as accepted).",
+    "Matrix and other propagation methods were not probed for R2-1 beyond the draft case."
+  ]
+}
