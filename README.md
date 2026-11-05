@@ -261,7 +261,7 @@ $csv = Sorts::getInstance()->engine->apply($cell, ['recipe-fractions'], null, 't
 }
 ```
 
-`@sorts` sets the typography of a String field as it is returned. `mode` is `html` (the default) or `text`; `rules` runs registered rules by name. The language is the entry’s site for a field of an entry; for a value whose source is not an element, such as the `html` of a CKEditor field (its source is the field data), it is the language of the site the request is for, as for the page pass. Query the French site’s endpoint for French `html`. A CKEditor field returns an object: put the directive on its `html` or `rawHtml`. On Lite the directive is known to the schema and returns the value unchanged, so a query written for Pro does not fail after a downgrade.
+`@sorts` sets the typography of a String field as it is returned. `mode` is `html` (the default) or `text`; `rules` runs registered rules by name. The language is that of the site the value belongs to: the entry’s site for a title or Plain Text field, and the field data’s site for the `html` of a CKEditor field, so a French entry comes back French whichever endpoint you query. Only a value with no site of its own falls back to the site the request is for. A CKEditor field returns an object: put the directive on its `html` or `rawHtml`. On Lite the directive is known to the schema and returns the value unchanged, so a query written for Pro does not fail after a downgrade.
 
 ## Fixing stored content <sup>PRO</sup>
 

@@ -2,6 +2,7 @@
 
 namespace iceboxind\sorts\gql\directives;
 
+use Craft;
 use craft\base\ElementInterface;
 use craft\gql\base\Directive;
 use craft\gql\GqlEntityRegistry;
@@ -23,9 +24,10 @@ use iceboxind\sorts\Plugin;
  * ```
  *
  * `mode` is `html` (the default, for rich text) or `text`; `rules` runs rules by name. The
- * language is the one of the entry’s site when the source is an element; otherwise (the `html` of a
- * CKEditor field, whose source is its field data) it is the current site of the request
- * (`EngineService::siteLanguage()`, `Sites::getCurrentSite()`), as for the page pass. It applies to String fields (a title, a Plain Text field,
+ * language is the one of the site the value belongs to: the entry’s site when the source is an element,
+ * the field data’s site for the `html` of a CKEditor field (`FieldData::getSiteId()`), so a French entry
+ * queried through the English endpoint stays French; only a source with no site falls back to the
+ * current site of the request (`EngineService::siteLanguage()`, `Sites::getCurrentSite()`). It applies to String fields (a title, a Plain Text field,
  * the `html` of a CKEditor field); any other field is returned as it is. On Lite the directive is known to the schema and
  * returns the value as it is, so a query written for Pro does not fail after a downgrade.
  */
@@ -78,7 +80,15 @@ class Sorts extends Directive
             throw new UserError('The mode argument of @sorts must be “html” or “text”.');
         }
         $rules = $arguments['rules'] ?? [];
-        $language = $source instanceof ElementInterface ? $plugin->contentFixer->languageOf($source) : null;
+        $language = null;
+        if ($source instanceof ElementInterface) {
+            $language = $plugin->contentFixer->languageOf($source);
+        } elseif (is_object($source) && method_exists($source, 'getSiteId')) {
+            // CKEditor's FieldData (craftcms/ckeditor 5.9.0 data/FieldData.php:69) knows its owner's site.
+            $siteId = $source->getSiteId();
+            $site = is_int($siteId) ? Craft::$app->getSites()->getSiteById($siteId) : null;
+            $language = $site?->language;
+        }
         try {
             return $plugin->engine->apply((string) $value, is_array($rules) ? $rules : [], $language, $mode);
         } catch (\InvalidArgumentException $e) {

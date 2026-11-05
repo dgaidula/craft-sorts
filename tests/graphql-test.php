@@ -92,9 +92,9 @@ sortsTry('the French site uses its own language', function () use ($run, $schema
     sortsEq('fr: the entry’s site language sets the quotes', "GraphQL «\u{202F}title\u{202F}» – here", $r['data']['entries'][0]['title'] ?? json_encode($r));
 });
 
-// F5: a value whose source is not an element (the html of a CKEditor field: its source is the
-// field data) takes the language of the request's current site, as the page pass does.
-sortsTry('no element source: the current site of the request', function () use ($token) {
+// F5: the html of a CKEditor field (its source is the field data, not an element) takes the
+// language of the site the field data belongs to, as the entry's title does, whichever endpoint asked.
+sortsTry('no element source: the field data’s own site', function () use ($token) {
     $post = static fn (string $path, string $query) => json_decode((string) sortsHttp()->post($path, [
         'headers' => ['Authorization' => 'Bearer ' . $token->accessToken, 'Content-Type' => 'application/json'],
         'body' => json_encode(['query' => $query]),
@@ -104,7 +104,9 @@ sortsTry('no element source: the current site of the request', function () use (
     sortsEq('request to the French site: the html of a CKEditor field is French', "<p>«\u{202F}Body\u{202F}» – <b>bold</b></p>", $fr['data']['entries'][0]['sortsBody']['html'] ?? json_encode($fr));
     sortsEq('request to the French site: the title (an element source) is French', "GraphQL «\u{202F}title\u{202F}» – here", $fr['data']['entries'][0]['title'] ?? json_encode($fr));
     $en = $post('/actions/graphql/api', $query);
-    sortsEq('request to the English site: the html follows the request’s site, as the English page would', '<p>“Body” — <b>bold</b></p>', $en['data']['entries'][0]['sortsBody']['html'] ?? json_encode($en));
+    sortsEq('request to the English site: the html of a French entry stays French, like its title', "<p>«\u{202F}Body\u{202F}» – <b>bold</b></p>", $en['data']['entries'][0]['sortsBody']['html'] ?? json_encode($en));
+    $enOwn = $post('/actions/graphql/api', '{ entries(section: "sortsTest", slug: "gql-one") { ... on sortsTest_Entry { sortsBody { html @sorts } } } }');
+    sortsEq('request to the English site: an English entry’s html is English', '<p>“Body” — <b>bold</b></p>', $enOwn['data']['entries'][0]['sortsBody']['html'] ?? json_encode($enOwn));
     sortsEq('request to the English site: the title still follows its entry’s site', "GraphQL «\u{202F}title\u{202F}» – here", $en['data']['entries'][0]['title'] ?? json_encode($en));
 });
 
