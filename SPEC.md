@@ -185,8 +185,16 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
   named, switchable locale variant (§4). First one: `en-GB` `single-outer`.
 - **D817 — a Bringhurst preset (Pro): open, proposed 2026-11-05.** One Pro setting, “Fine typography (Bringhurst)”,
   that switches the §3 rules to the choices in Robert Bringhurst’s *The Elements of Typographic Style* (for
-  example spaced en dashes instead of close-set em dashes). Each choice must cite the book’s section number; no
-  copy is on hand yet, so nothing is built from memory.
+  example spaced en dashes instead of close-set em dashes). Each choice cites the section number of the **3rd
+  edition** (Dan’s copy; he does not own the 4th), from photos of his pages; nothing is built from memory.
+- **D818 — quote type: decided 2026-11-05 (Dan: a).** Keep the quote type the author typed: a straight `"` becomes
+  the locale’s primary pair and `'` its secondary (nested) pair, as CKEditor does while typing, so text typed in
+  the control panel and text pasted in agree. Normalising every quotation to house style by nesting depth (the
+  first build’s behaviour) becomes a Pro setting, off by default.
+- **D819 — five more locale variants: decided 2026-11-05 (Dan: a).** Per D816, each with its authority confirmed by
+  a source search before it is built: `de-CH` guillemets `«…» ‹…›`; `de` book style `»…« ›…‹` (Duden); `fr` and
+  `fr-CH` with `“…”` nested inside `«…»` (Imprimerie nationale); `es` `«…»` outside, `“…”` nested (RAE); `nl`
+  `“…” ‘…’` (Taalunie).
 - **D814 — editions and price: decided 2026-11-05 (Dan: y).** Lite free; Pro **$39 + $19/yr** at launch (paid
   installs are flat across price bands, and freemium newcomers out-install paid-only ones; both prices can rise
   later, since Craft honours only the renewal price in the 30-day reminder).
