@@ -11,7 +11,12 @@ override with `TESTBED=`), **never a client site**.
   (a path repo does not re-mirror on `composer update`).
 - Switch edition from a suite with an explicit flush (the shell skips it):
   `$pc = Craft::$app->getProjectConfig(); $pc->set('plugins.sorts.edition', 'pro'); $pc->saveModifiedConfigData();`
-- Suites that mutate state reseed first; they are not isolated from each other.
+- Suites that mutate state reseed first. Each suite also puts the testbed back as it found it when it
+  calls `sortsDone()`: the plugin's project config (edition and settings) in the database and in the
+  YAML, and the queue (jobs it pushed are deleted); the last check of every suite says whether that
+  worked. `run-all.mjs` then checks the testbed's git tree is clean, `project-config/diff` has
+  nothing pending and the queue did not grow, and fails if not. (`craft shell` writes project
+  config to the database only, never the YAML, and runs no shutdown functions.)
 - `tests/support.php` holds the shared helpers (`sortsConfigure('pro', [...])` sets edition and settings
   through project config, `sortsHttp()` and `sortsCpClient()` make requests to the site and the control
   panel from inside the container, `sortsEntry()` seeds a `sortsTest` entry). Each suite starts from

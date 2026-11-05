@@ -17,6 +17,64 @@ const SORTS_HOST = 'craft5-testbed.ddev.site';
 
 $GLOBALS['sorts'] = ['pass' => 0, 'fail' => 0];
 
+/**
+ * Each suite leaves the testbed as it found it: the plugin's project config (edition and
+ * settings, from the YAML, which is the committed state) goes back into the database, every
+ * project config YAML file gets its bytes back, and the queue jobs pushed while it ran are
+ * deleted. sortsDone() puts it back and checks. (The shell never writes YAML, ProjectConfig.php:405,419-426 in Craft 5.12.0.1, so only a web
+ * request in a suite can change the files.)
+ */
+function sortsSnapshot(): array
+{
+    $pc = sortsRefresh();
+    $files = [];
+    foreach (\craft\helpers\FileHelper::findFiles(Craft::$app->getPath()->getProjectConfigPath(), ['only' => ['*.yaml']]) as $file) {
+        $files[$file] = file_get_contents($file);
+    }
+    return [
+        'plugin' => $pc->get('plugins.sorts', true),
+        'dateModified' => $pc->get('dateModified', true),
+        'files' => $files,
+        'queue' => (int) (new \craft\db\Query())->from(\craft\db\Table::QUEUE)->max('id'),
+    ];
+}
+
+/** Put back what sortsSnapshot() saw. Returns what it could not put back, empty when all is well. */
+function sortsRestore(): array
+{
+    $snap = $GLOBALS['sortsSnapshot'] ?? null;
+    if ($snap === null) {
+        return [];
+    }
+    $GLOBALS['sortsSnapshot'] = null;
+    $problems = [];
+    foreach ($snap['files'] as $file => $bytes) {
+        if (@file_get_contents($file) !== $bytes && file_put_contents($file, $bytes) === false) {
+            $problems[] = "could not write $file back";
+        }
+    }
+    foreach (\craft\helpers\FileHelper::findFiles(Craft::$app->getPath()->getProjectConfigPath(), ['only' => ['*.yaml']]) as $file) {
+        if (!isset($snap['files'][$file])) {
+            $problems[] = "a new project config file appeared: $file";
+        }
+    }
+    $pc = sortsRefresh();
+    $pc->set('plugins.sorts', $snap['plugin'], 'Sorts tests: the plugin as the suite found it', false);
+    $pc->set('dateModified', $snap['dateModified'], null, false);
+    $pc->saveModifiedConfigData();
+    sorts()->edition = $snap['plugin']['edition'] ?? 'lite';
+    sorts()->engine->reset();
+    Craft::$app->getDb()->createCommand()->delete(\craft\db\Table::QUEUE, ['>', 'id', $snap['queue']])->execute();
+    $diff = \craft\helpers\ProjectConfig::diff();
+    if ($diff !== '') {
+        $problems[] = 'project config still differs from the YAML: ' . substr($diff, 0, 300);
+    }
+    return $problems;
+}
+
+// `craft shell` runs no shutdown functions, so the put-back is sortsDone()'s job; run-all.mjs checks afterwards.
+$GLOBALS['sortsSnapshot'] = sortsSnapshot();
+
 /** Record one check. */
 function sortsCheck(string $label, bool $ok, string $detail = ''): void
 {
@@ -43,8 +101,42 @@ function sortsTry(string $label, callable $fn): void
     }
 }
 
+/**
+ * Run $fn and return the messages Sorts logged at the given levels while it ran (through a log
+ * target of our own, removed afterwards).
+ *
+ * @param list<string> $levels
+ * @return list<string>
+ */
+function sortsLogged(callable $fn, array $levels): array
+{
+    $target = new class extends \yii\log\Target {
+        public array $seen = [];
+        public function export(): void
+        {
+            foreach ($this->messages as $message) {
+                $this->seen[] = is_string($message[0]) ? $message[0] : json_encode($message[0]);
+            }
+        }
+    };
+    $target->levels = $levels;
+    $target->logVars = [];
+    $logger = Craft::getLogger();
+    $logger->flush(true);
+    $logger->dispatcher->targets['sortsTest'] = $target;
+    try {
+        $fn();
+        $logger->flush(true);
+    } finally {
+        unset($logger->dispatcher->targets['sortsTest']);
+    }
+    return array_values(array_filter($target->seen, static fn (string $m): bool => str_starts_with($m, 'Sorts')));
+}
+
 function sortsDone(): void
 {
+    $problems = sortsRestore();
+    sortsCheck('isolation: the testbed is as the suite found it (plugin config, YAML, queue)', $problems === [], implode("\n       ", $problems));
     echo "RESULT: {$GLOBALS['sorts']['pass']} passed, {$GLOBALS['sorts']['fail']} failed\n";
 }
 
