@@ -29,7 +29,8 @@ Sorts ships two editions. Lite holds only what the market already gives away; Pr
 | Automatic whole-page pass, no template edits <sup>PRO</sup> | — | ✅ |
 | Every rule and every locale <sup>PRO</sup> | — | ✅ |
 | Rule switches, quotation styles and the widow setting <sup>PRO</sup> | — | ✅ |
-| Exclusions: `data-sorts`, skipped tags, classes and paths <sup>PRO</sup> | — | ✅ |
+| `data-sorts="off"` and `data-sorts-lang` on an element | ✅ | ✅ |
+| Exclusion settings: skipped tags, classes and paths <sup>PRO</sup> | — | ✅ |
 | Page title and meta descriptions <sup>PRO</sup> | — | ✅ |
 | Extension API: register your own rules <sup>PRO</sup> | — | ✅ |
 | GraphQL directive `@sorts` <sup>PRO</sup> | — | ✅ |
@@ -37,6 +38,8 @@ Sorts ships two editions. Lite holds only what the market already gives away; Pr
 | Audit utility: scan, preview and fix stored content <sup>PRO</sup> | — | ✅ |
 
 Pro settings show on Lite, marked and locked, so you can see what Pro does. A downgrade to Lite stops the automatic pass and queues no new fixes; it never undoes or half-finishes content. A fix that has already been queued finishes.
+
+Edition gates control features, never safety. The opt-out (`data-sorts="off"`) and the language override (`data-sorts-lang`) are safety controls, so they work in every edition; what Pro adds is the exclusion *settings*. In Lite, `data-sorts-rules` and a rule named in a call can run only Lite’s own rules: Lite tells the engine which rules it allows, and nothing in a page or a call can add another.
 
 ## What it does
 
@@ -78,7 +81,7 @@ It runs for front-end page requests that answer with HTML, previews and token re
 
 The language comes from the current site’s language setting, and from a `lang` attribute on any element (the nearest one wins). An unknown language falls back to the site’s, then to `en-US`.
 
-**It never breaks a page.** If the engine or a rule you registered throws, the error is logged and the page is sent as the template rendered it.
+**It never breaks a page.** If the engine or a rule you registered throws, the error is logged and the page is sent as the template rendered it. So is a page larger than the *Largest page to fix* setting (`maxPageBytes`, 1,000,000 bytes by default), a page the pass might not have the memory for under PHP’s `memory_limit` (it allows 100 bytes of memory per byte of page, see Performance), and a page the engine could not read because a pattern hit a PCRE limit. Each of those writes one warning to the log, naming the page.
 
 **The `<title>` and `<meta>` content are off by default.** They show in browser tabs and link previews, so one setting, *Also fix the page title and meta descriptions*, turns them on. Only the prose metas are touched (`description`, `og:title`, `og:description`, `og:site_name`, `og:image:alt`, and the `twitter:` title, description and image alt); the values are decoded, set as plain text and encoded again, and a value that needs no change keeps its bytes.
 
@@ -98,7 +101,7 @@ The language comes from the current site’s language setting, and from a `lang`
 
 In Lite the filter applies the English quotes, apostrophes, primes, dashes and ellipsis. In Pro it applies every rule that is switched on, in the current site’s language.
 
-**Escaping.** In HTML mode the filter never turns unescaped input into safe output. It trusts what Twig already treats as HTML: a rich-text field value, the body of `{% apply sorts %}`, and `|raw` directly in front of it (`{{ html|raw|sorts }}`). Any other value (a variable, a plain string, a literal in your template) is escaped first, so `{{ s|sorts }}` with `s` set to `<script>` prints `&lt;script&gt;`. Text mode returns a plain string, which Twig escapes when it prints it. Put `|raw` on the value right before `|sorts`; further up the chain it is not seen.
+**Escaping.** In HTML mode the filter never turns unescaped input into safe output. It trusts what Twig already treats as HTML: a rich-text field value, the body of `{% apply sorts %}`, and the output of a filter Twig declares safe for HTML directly in front of it: `|raw`, `|nl2br`, `|e` or `|escape` (HTML strategy), `|md` or `|markdown` (`{{ html|raw|sorts }}`, `{{ text|nl2br|sorts }}`). Any other value (a variable, a plain string, a literal in your template, the output of `|upper` or any filter not declared safe) is escaped first, so `{{ s|sorts }}` with `s` set to `<script>` prints `&lt;script&gt;`, and `{{ s|nl2br|sorts }}` escapes it once, not twice. Text mode returns a plain string, which Twig escapes when it prints it. Put the safe filter right before `|sorts`; further up the chain it is not seen.
 
 On a Lite site, a rule named in `rules:` is skipped rather than raising an error; in Pro, a handle that nothing registered is an error, so a typo shows.
 
@@ -112,6 +115,7 @@ CP → Settings → Plugins → Sorts, stored in project config, with every key 
 | Convert quotes as people type in CKEditor | `ckeditorAsYouType` | on | Lite |
 | Run the page pass | `pagePass` | on | Pro |
 | Fix the title and meta descriptions | `processHead` | off | Pro |
+| Largest page to fix, in bytes | `maxPageBytes` | 1000000 | Pro |
 | Rule switches (a map of rule handle to on or off) | `rules` | the table above | Pro |
 | Fewest words in a heading before widows are joined | `widowsMinWords` | 3 | Pro |
 | Quotation style per language | `variants` | CLDR | Pro |
@@ -139,9 +143,9 @@ return [
 
 Sorts can present under any name you like. The sidebar nav, the Plugins screen and the settings breadcrumb all follow **Settings → Plugins → Sorts → Plugin name** (blank = “Sorts”). Set it in `config/sorts.php` so it holds with `allowAdminChanges` off.
 
-## Exclusions <sup>PRO</sup>
+## Exclusions
 
-In a template, on any element:
+In a template, on any element (`data-sorts="off"` and `data-sorts-lang` work in every edition; `data-sorts-rules` turns on Pro’s rules in Pro only):
 
 ```html
 <p data-sorts="off">Left exactly as written. So is everything inside this element.</p>
@@ -149,7 +153,7 @@ In a template, on any element:
 <div data-sorts-rules="recipe-fractions">Turns on a rule that is off, for this element only.</div>
 ```
 
-In settings: extra tags, classes and request paths to skip. A path is matched against the URL path as requested (a site’s own prefix included), without the query string; `*` matches any run of characters, slashes too.
+In settings <sup>PRO</sup>: extra tags, classes and request paths to skip. A path is matched against the URL path as requested (a site’s own prefix included), without the query string; `*` matches any run of characters, slashes too.
 
 ## Locales
 
@@ -257,7 +261,7 @@ $csv = Sorts::getInstance()->engine->apply($cell, ['recipe-fractions'], null, 't
 }
 ```
 
-`@sorts` sets the typography of a String field as it is returned. `mode` is `html` (the default) or `text`; `rules` runs registered rules by name. The language is the entry’s site. A CKEditor field returns an object: put the directive on its `html` or `rawHtml`. On Lite the directive is known to the schema and returns the value unchanged, so a query written for Pro does not fail after a downgrade.
+`@sorts` sets the typography of a String field as it is returned. `mode` is `html` (the default) or `text`; `rules` runs registered rules by name. The language is the entry’s site for a field of an entry; for a value whose source is not an element, such as the `html` of a CKEditor field (its source is the field data), it is the language of the site the request is for, as for the page pass. Query the French site’s endpoint for French `html`. A CKEditor field returns an object: put the directive on its `html` or `rawHtml`. On Lite the directive is known to the schema and returns the value unchanged, so a query written for Pro does not fail after a downgrade.
 
 ## Fixing stored content <sup>PRO</sup>
 
@@ -265,15 +269,22 @@ The page pass fixes what visitors see. Feeds, APIs, search and exports read what
 
 Both change characters only: quotes, apostrophes, primes, dashes, ellipsis and symbols, plus fractions, ranges and multiplication signs when you switch those rules on. They never write spacing or markup, or run a rule you registered, into the database. They never touch slugs, URIs, handles, URLs, email addresses, or Plain Text fields set to code, and a fix that would push a value past its field’s character limit is skipped.
 
+**Across languages.** Quotes and dashes depend on the language, so a value is converted only when every site it reaches on that save is in the same language (the same locale and quotation style) as the site it is saved on. Craft copies a new entry’s title and every field to each site it is propagated to, and copies a field that is not translated per site (Craft’s default for a new field) to every site that shares it. On a site with English and French sites, then, a new entry goes in as typed, and so does an edit to a shared CKEditor field; an edit to a title or a field translated per site is converted in that site’s language. A value left as typed is logged at info, and the page pass sets it on each page in that page’s language. The audit follows the same rule.
+
 **Fix on save** (off by default) changes the title and the Plain Text and CKEditor values on the element as it is saved, so there is no second save. It skips revisions, drafts Craft autosaves while someone types, saves that propagate to other sites, and resaves and migrations (`craft up` included) unless *Also fix when resaving and while migrations run* is on.
 
-**The audit** (CP → Utilities → Sorts) scans entries a hundred at a time, lists those with something to fix with a before and after, and fixes the ones you tick through the queue. The scan only reads. The fix is saved the way Craft’s own resave command saves, so it creates no revision and leaves each entry’s Date Updated alone, unless you tick *Create a revision for each entry and update its Date Updated*. The edition is checked when the job is queued, not when it runs, so a job already queued finishes after a downgrade.
+**The audit** (CP → Utilities → Sorts) scans entries a hundred at a time, lists those with something to fix with a before and after, and fixes the ones you tick through the queue. The scan only reads. The fix is saved the way Craft’s own resave command saves, so it creates no revision and leaves each entry’s Date Updated alone, unless you tick *Create a revision for each entry and update its Date Updated*. The edition is checked when the job is queued, not when it runs, so a job already queued finishes after a downgrade; it carries the language and rules each site was to be fixed with, so a French entry is still fixed in French. The job also carries the user who queued it and skips any entry that user may not save on that site (Craft’s own `canSave()` check).
 
 ## What Sorts assumes
 
 HTML pages rendered by Craft templates. Not handled: JSON and XML responses, emails, PDFs, text that JavaScript inserts after the page loads, hyphenation, and CJK punctuation.
 
 **Hyphenation** is the browser’s job. Use CSS `hyphens: auto` with a correct `lang` attribute (Craft sets one if your layout prints `{{ currentSite.language }}`).
+
+## Known limits
+
+- **Misnested markup inside code.** Sorts reads the page as it is written and does not rebuild HTML5’s tree: an end tag closes the nearest open element of that name, and Sorts does not run the browser’s repair of misnested formatting (the adoption agency and the reopening of formatting elements). In well-formed pages this changes nothing. In misnested ones, text that a browser would still show inside `code`, `kbd`, `samp` or `var` (after, say, a stray `</figcaption>` inside a `<code>`) can be typeset. Sorts assumes well-formed markup inside code-like elements.
+- **Compiled templates after an update.** The filter’s escaping is decided when Twig compiles a template (`RawInputVisitor`). Craft runs Twig with `auto_reload` on, but Twig compares a compiled template only with the template and the extension class files, not the visitor, so a Sorts update that changes how the filter compiles may not reach templates compiled before it. Craft clears compiled templates when `php craft up` runs, after the updater runs migrations, and when Craft’s own version changes (verified against Craft 5.12.0.1: `console/controllers/UpController.php:99-100`, `services/Updates.php:264`, `web/Application.php:257-260`), but not after a Composer update of a plugin on its own. **After updating Sorts, run `php craft up` or clear compiled templates** (Utilities → Caches → Compiled templates, or `php craft clear-caches/compiled-templates`).
 
 ## Performance
 
@@ -285,7 +296,9 @@ The engine is measured on a generated, realistic page of about 100 KB (a news ar
 | 8.4.27 | `php:8.4-cli` in Docker Desktop on the same Mac | 3.7 ms | 5.1 ms |
 | 8.2.35 | `php:8.2-cli` in Docker Desktop on the same Mac | 5.5 ms | 6.2 ms |
 
-About three sentences in ten on the typical article need typesetting; every sentence on the stress page does. The budget is 5 ms for a 100 KB page. It is met for the typical page on PHP 8.4 and 8.5 and for both pages on PHP 8.5. It is **not met on PHP 8.2** (the oldest version Sorts supports): the same code takes about 1.5 times as long there as on PHP 8.4 in the same container. Speeding it up for 8.2 is open work.
+About three sentences in ten on the typical article need typesetting; every sentence on the stress page does.
+
+**Memory.** Peak memory for one pass, per megabyte of page, measured on PHP 8.5.12 (2026-11-05): about 3.5 MB for an article, 15 MB for a product table, 37 MB for a page of nothing but tiny inline elements, and up to 73 MB for one paragraph of quotes a megabyte long. The page pass allows 100 bytes of memory per byte of page and sends a page it might not have the memory for as rendered (see *It never breaks a page*), and it skips any page over `maxPageBytes` (1,000,000 bytes by default) whatever the memory. A 6 MB page at `memory_limit = 256M` is sent as rendered with a warning, not a fatal error. The budget is 5 ms for a 100 KB page. It is met for the typical page on PHP 8.4 and 8.5 and for both pages on PHP 8.5. It is **not met on PHP 8.2** (the oldest version Sorts supports): the same code takes about 1.5 times as long there as on PHP 8.4 in the same container. Speeding it up for 8.2 is open work.
 
 ## Development
 

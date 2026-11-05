@@ -67,13 +67,20 @@ Plugins screen, settings breadcrumb). Blank keeps "Sorts".
   once per request, fires `Plugin::EVENT_REGISTER_RULES` (Pro), and turns settings and
   edition into the engine’s `Options`. Lite gets a fixed option set (quotes, apostrophes,
   primes, dashes, ellipsis; `en-US` and `en-GB` only, by handing the engine a locale
-  registry that holds just those). Everything that sets typography goes through
+  registry that holds just those), with those five as the engine’s allow-list (`Options::$allowed`),
+  so no `data-sorts-rules` scope or rule named in a call can run another. Everything that sets typography goes through
   `apply()` or `applyWith()`, so the page, the filter, GraphQL, a PHP call and the stored
-  content tools agree. `storedOptions()` limits the rules to `STORED_RULES`.
+  content tools agree. `storedOptions()` limits the rules to `STORED_RULES` (and allows only those);
+  `applyStored()` runs stored-content options on an engine with every built-in locale, so a job
+  queued under Pro still fixes in the right language after a downgrade.
 - **`services/PagePass.php`** — the whole-page pass: what counts as a page to fix, the
-  skip-URI matching, the head and `<meta>` handling, and the fail-safe `catch (Throwable)`.
+  skip-URI matching, the head and `<meta>` handling, the size and memory guards
+  (`maxPageBytes`, `MEMORY_PER_BYTE` against `memory_limit`), the warning for a page the
+  engine could not read (`Engine::lastError()`), and the fail-safe `catch (Throwable)`.
 - **`services/ContentFixer.php`** — title and field values: `changes()` (what would change),
-  `apply()` (put it on the element), and the fix-on-save handler with its skips.
+  `apply()` (put it on the element), and the fix-on-save handler with its skips. A value is
+  converted only when every site it reaches on the save shares the saving site’s locale and
+  variant (`otherSites()`, `onlySameLocale()`; the Craft source lines are cited there).
 - **`services/AuditScanner.php`** — the audit’s dry run, a batch of entries at a time, and
   the before-and-after excerpts.
 - **`jobs/FixEntriesJob.php`**, **`controllers/AuditController.php`**,
@@ -94,8 +101,11 @@ attributes need. So the filter has neither option. At run time it trusts only a
 before the engine reads it, then returns `Markup`. Text mode returns a plain string, which
 Twig escapes when it prints it. `|raw` hands the filter a plain string and only tells the
 compiler it is safe, so `RawInputVisitor` (a Twig node visitor) spots a filter whose input
-is directly `|raw` and gives that call a declaration that reads its input as HTML.
-`tests/twig-test.php` pins each of these.
+is a filter Twig compiles as safe for HTML (`|raw`, `|nl2br`, `|e`/`|escape` with the HTML
+strategy, `|md`/`|markdown`: `is_safe` or `is_safe_callback` giving `html` or `all`) and gives
+that call a declaration that reads its input as HTML. Any other filter, `|upper` included, stays
+untrusted. `tests/twig-test.php` pins each of these. Twig does not notice a change to the visitor
+in a compiled template (README, Known limits): clear compiled templates after changing it.
 
 
 ## The typography engine
@@ -114,22 +124,31 @@ $engine->register(new MyRule());                        // a site’s own rule
 
 ### How a page is processed
 
-1. **Tokenize** (`Engine::TOKENS`). One pattern splits the string into text, tags,
-   comments, CDATA, doctypes and raw-text elements (`script style textarea title
-   xmp iframe noembed noframes`), following the HTML5 rules for where a tag
-   ends (an attribute value may hold `>`; a stray `</` opens a bogus comment).
-   The string is never parsed into a tree or re-serialized, so what the engine
-   does not change comes out byte for byte. If nothing changes, the input string
-   comes back. Every byte must belong to a token, or the engine returns the input.
+1. **Tokenize** (`Engine::TOKENS`). One pattern, anchored with `\G`, splits the
+   string into text, tags, doctypes and bogus comments, following the HTML5 rules for
+   where a tag ends (an attribute value may hold `>`; a stray `</` opens a bogus
+   comment). It stops at each comment, CDATA section and raw-text element (`script
+   style textarea title xmp iframe noembed noframes`), whose end the walk finds with
+   plain searches, so no lazy quantifier meets a megabyte-long body; a script follows
+   the HTML5 script-data escape states (`<!--`, then `<script`, hold `</script>` until
+   `-->`; `Engine::scriptEnd()`). The string is never parsed into a tree or
+   re-serialized: changed text is spliced back in at its byte offset, so what the
+   engine does not change comes out byte for byte, and if nothing changes the input
+   string comes back. When a pattern fails (a PCRE limit), the input comes back and
+   `Engine::lastError()` says why.
 2. **Walk.** A stack of `Frame`s tracks the open elements: the locale (nearest
    `data-sorts-lang`, then `lang`), whether the subtree is left alone
    (`data-sorts="off"`, the skip tags and classes, `pre code kbd samp var
    textarea math svg template noscript`) and the rules named by
-   `data-sorts-rules`. Implied end tags (`<p>` closed by a block, `<li>` by
+   `data-sorts-rules`; an `<option>` with no `value` is left alone, since its text
+   is what the form submits, and `lang=""` means the caller’s default locale. The
+   options’ `allowed` list, when set, caps every way of turning a rule on. The
+   `<title>` is text only: no rule that writes markup runs on it. Implied end tags (`<p>` closed by a block, `<li>` by
    `<li>`) are handled; other malformed nesting is repaired by popping to the
    matching name.
 3. **Flows.** Text between two boundaries (a block element’s start or end, `<br>`)
-   is one `Flow`, with inline tags (`Html::TRANSPARENT`) looked through. Code
+   is one `Flow` (its segments in four parallel lists, which keeps a page of many
+   short runs cheap), with inline tags (`Html::TRANSPARENT`) looked through. Code
    and images are context: their text counts for deciding a quote’s direction
    but is never edited. Quote nesting and widows are decided on a flow.
 4. **Rules.** Each editable text run gets a `Run` (the text and its settled
@@ -235,11 +254,11 @@ half-finishes content.
 |---|---|---|
 | Automatic page pass | `PagePass::shouldRun()` | The page is sent as rendered. |
 | Every rule and locale, the settings | `EngineService::options()`, `EngineService::engine()` | Fixed option set: quotes, apostrophes, primes, dashes, ellipsis; `en-US` and `en-GB` only. The settings are stored, not read. |
-| Exclusions (skip tags, classes, paths; head and meta) | `EngineService::options()` and `PagePass::shouldRun()` | Not read. (`data-sorts*` attributes are the engine’s and work wherever the engine runs.) |
+| Exclusion settings (skip tags, classes, paths; head and meta) | `EngineService::options()` and `PagePass::shouldRun()` | Not read. `data-sorts="off"` and `data-sorts-lang` are safety controls (PATTERNS §1: gates control features, never safety), so they work in every edition. `data-sorts-rules`, and a rule named in a call, can run only Lite’s own rules: Lite’s options carry `allowed: LITE_RULES`, an allow-list the engine applies after every way of turning a rule on, and the Lite engine is built with it too. |
 | Extension API | `EngineService::engine()` fires `EVENT_REGISTER_RULES` only in Pro; `applyWith()` | The event does not fire. A rule named in a call is skipped, not an error. |
 | `@sorts` GraphQL directive | `gql\directives\Sorts::apply()` | The directive is in the schema and returns the value unchanged, so queries survive a downgrade. |
 | Fix on save | `ContentFixer::onBeforeSave()` | Does nothing. |
-| Audit utility | `Plugin::registerUtility()` (not listed) and `AuditController::beforeAction()` (403), at enqueue | Not listed; a post is refused. A job already queued finishes (it runs without asking the edition) with Lite’s characters. |
+| Audit utility | `Plugin::registerUtility()` (not listed) and `AuditController::beforeAction()` (403), at enqueue | Not listed; a post is refused. A job already queued finishes (it runs without asking the edition) with the options it was queued with, per site, on an engine with every built-in locale (`EngineService::applyStored()`), so a French entry is still fixed in French. |
 | Pro settings screen | `settings.twig` (`isPro`) | Shown locked and marked Pro; stored values are carried through a Lite save in hidden inputs. |
 
 Not gated: the `|sorts` filter and CKEditor as-you-type quotes (Lite), and anything that

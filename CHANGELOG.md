@@ -28,3 +28,9 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
 - Pro: fix on save for titles, Plain Text and CKEditor fields (off by default), and the audit
   utility (CP → Utilities → Sorts) that scans entries, previews each change and fixes the ticked
   ones through the queue without a new revision or a changed Date Updated, unless asked.
+- Pro: `maxPageBytes` (1,000,000 bytes by default): the page pass sends a larger page, or one it
+  might not have the memory for under `memory_limit`, as rendered, with a warning in the log.
+- Pro: on sites in more than one language, fix-on-save and the audit leave as typed a value that
+  reaches a site in another language (a new entry, a field shared by every site); the page pass
+  sets it on each page in that page’s language.
+- After updating Sorts, run `php craft up` or clear compiled templates (README, Known limits).

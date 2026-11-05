@@ -126,6 +126,8 @@ stays the default. Every other divergence found becomes a candidate variant, lis
 
 - `data-sorts="off"` on any element skips it and its subtree; `data-sorts-lang="…"` overrides the locale.
 - Settings: extra tags or class names to skip; URI patterns to skip (e.g. `/api/*`).
+- The Pro part of this section is the settings. `data-sorts="off"` and `data-sorts-lang` are safety controls and
+  work in every edition (gates control features, never safety; orchestrator decision, fix round 1, 2026-11-05).
 
 ### 5.5 Extension API (Pro, first release; D813, Dan 2026-11-05)
 
