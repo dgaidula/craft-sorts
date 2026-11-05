@@ -168,6 +168,18 @@
 <h2>{{ 'Quotation styles'|t('sorts') }} <span class="code">Pro</span></h2>
 <p class="light">{{ 'Sorts follows Unicode CLDR for each language. Where a style authority writes it differently, you can choose that convention here.'|t('sorts') }}</p>
 
+{% set lockNormalize = ('normalizeQuotes' in overrides) or not isPro %}
+{{ forms.lightswitchField({
+    label: 'Normalize quotes to house style'|t('sorts'),
+    instructions: 'Off by default: a straight " pair becomes the language’s main pair and a straight \' pair its inner pair, however deeply it is nested, as in CKEditor while typing. On: every quotation is set by its depth instead, the main pair outermost and the inner pair inside it, whichever mark was typed. Applies to the page pass, the filter, fix on save and the audit.'|t('sorts'),
+    id: 'normalizeQuotes',
+    name: 'normalizeQuotes',
+    on: settings.normalizeQuotes,
+    disabled: lockNormalize,
+    warning: 'normalizeQuotes' in overrides ? overridden : (not isPro ? proNote),
+}) }}
+{% if lockNormalize %}{{ carry('normalizeQuotes', stored.normalizeQuotes ?? null) }}{% endif %}
+
 {% set lockVariants = ('variants' in overrides) or not isPro %}
 {% for id, names in variants %}
     {{ forms.selectField({

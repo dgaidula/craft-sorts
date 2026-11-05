@@ -104,6 +104,18 @@ sortsTry('rules follow the settings', function () use ($edited) {
     sortsClean();
 });
 
+sortsTry('quote type and normalizing by depth', function () use ($edited) {
+    sortsClean();
+    sortsConfigure('pro', ['fixOnSave' => true]);
+    $f = sortsFresh($edited(['title' => 'The \'best\' and "worst"'])->id);
+    sortsEq('quote type: a typed single is the inner pair by default', 'The ‘best’ and “worst”', $f->title);
+    sortsClean();
+    sortsConfigure('pro', ['fixOnSave' => true, 'normalizeQuotes' => true]);
+    $f = sortsFresh($edited(['title' => 'The \'best\' and "worst"'])->id);
+    sortsEq('normalizeQuotes: every quotation by depth', 'The “best” and “worst”', $f->title);
+    sortsClean();
+});
+
 sortsTry('limits', function () {
     sortsClean();
     sortsConfigure('pro', ['fixOnSave' => true]);

@@ -40,6 +40,7 @@ sortsTry('coercion', function () use ($make) {
     sortsCheck('rules: unknown handles are dropped', !array_key_exists('nonsense', $s->rules));
     $s = $make(['fixOnSave' => '1', 'pagePass' => '', 'processHead' => 'true', 'fixTitles' => 0, 'widowsMinWords' => '5', 'pluginName' => "  Typeset \n"]);
     sortsEq('booleans and integers coerce', [true, false, true, false, 5, 'Typeset'], [$s->fixOnSave, $s->pagePass, $s->processHead, $s->fixTitles, $s->widowsMinWords, $s->pluginName]);
+    sortsEq('normalizeQuotes: off by default, "1" is on, a word it cannot read keeps the default', [false, true, false], [$make([])->normalizeQuotes, $make(['normalizeQuotes' => '1'])->normalizeQuotes, $make(['normalizeQuotes' => 'maybe'])->normalizeQuotes]);
     $s = $make(['widowsMinWords' => 'lots', 'pluginName' => ['x']]);
     sortsEq('a non-number widow count fails validation instead of throwing', false, $s->validate(['widowsMinWords']));
     sortsEq('a non-string plugin name becomes blank', '', $s->pluginName);
@@ -64,6 +65,8 @@ sortsTry('validation', function () use ($make) {
     sortsCheck('variants: an unknown name is refused', !$make(['variants' => ['en-GB' => 'nope']])->validate(['variants']));
     sortsCheck('variants: a locale without variants is refused', !$make(['variants' => ['de' => 'single-outer']])->validate(['variants']));
     sortsCheck('variants: an unknown locale is refused', !$make(['variants' => ['xx' => 'single-outer']])->validate(['variants']));
+    sortsEq('variants: de-CH guillemets and es guillemets-outer are valid', true, $make(['variants' => ['de-CH' => 'guillemets', 'es' => 'guillemets-outer']])->validate());
+    sortsCheck('variants: a variant of another locale is refused', !$make(['variants' => ['es' => 'guillemets']])->validate(['variants']));
     sortsCheck('widows: 1 is refused', !$make(['widowsMinWords' => 1])->validate(['widowsMinWords']));
     sortsCheck('widows: 21 is refused', !$make(['widowsMinWords' => 21])->validate(['widowsMinWords']));
     sortsEq('widows: 2 to 20 are valid', true, $make(['widowsMinWords' => 2])->validate() && $make(['widowsMinWords' => 20])->validate());
@@ -95,7 +98,7 @@ sortsTry('numbers from project config or config/sorts.php', function () {
 });
 
 sortsTry('the settings page, Lite', function () {
-    sortsConfigure('pro', ['skipTags' => ['figcaption'], 'skipUris' => ['/api/*'], 'rules' => ['fractions' => true], 'fixOnSave' => true, 'variants' => ['en-GB' => 'single-outer'], 'widowsMinWords' => 6]);
+    sortsConfigure('pro', ['skipTags' => ['figcaption'], 'skipUris' => ['/api/*'], 'rules' => ['fractions' => true], 'fixOnSave' => true, 'variants' => ['en-GB' => 'single-outer'], 'widowsMinWords' => 6, 'normalizeQuotes' => true]);
     sortsConfigure('lite', array_merge((array) sorts()->getSettings()->getAttributes(), []));
     $cp = sortsCpClient();
     $html = (string) $cp->get('/admin/settings/plugins/sorts')->getBody();
@@ -117,6 +120,7 @@ sortsTry('the settings page, Lite', function () {
     sortsEq('lite save: fix-on-save survived', true, $stored['fixOnSave'] ?? null);
     sortsEq('lite save: variants survived', ['en-GB' => 'single-outer'], $stored['variants'] ?? null);
     sortsEq('lite save: the widow count survived', 6, $stored['widowsMinWords'] ?? null);
+    sortsEq('lite save: normalize quotes survived', true, $stored['normalizeQuotes'] ?? null);
 });
 
 sortsTry('the settings page, Pro, saving through the form', function () {
@@ -125,7 +129,8 @@ sortsTry('the settings page, Pro, saving through the form', function () {
     $html = (string) $cp->get('/admin/settings/plugins/sorts')->getBody();
     sortsCheck('pro page: nothing is marked as needing Pro', !str_contains($html, 'Needs Sorts Pro.'));
     sortsCheck('pro page: every rule has a switch', substr_count($html, 'name="settings[rules][') >= 16, (string) substr_count($html, 'name="settings[rules]['));
-    sortsCheck('pro page: the en-GB variant is offered', str_contains($html, 'single-outer'));
+    sortsCheck('pro page: the variants are offered', str_contains($html, 'single-outer') && str_contains($html, 'value="guillemets"') && str_contains($html, 'value="guillemets-outer"'));
+    sortsCheck('pro page: the normalize quotes switch is there and off', (bool) preg_match('/name="settings\[normalizeQuotes\]"/', $html) && !preg_match('/<button[^>]*id="settings-normalizeQuotes"[^>]*aria-checked="true"/', $html));
     $fields = sortsFormFields($html, 'plugins/save-plugin-settings');
     $fields['settings[skipTags]'] = "figcaption\nblockquote";
     $fields['settings[skipClasses]'] = 'no-typography';
@@ -136,6 +141,7 @@ sortsTry('the settings page, Pro, saving through the form', function () {
     $fields['settings[widowsMinWords]'] = '4';
     $fields['settings[fixOnSave]'] = '1';
     $fields['settings[processHead]'] = '1';
+    $fields['settings[normalizeQuotes]'] = '1';
     $r = $cp->post('/admin/settings/plugins/sorts', ['form_params' => $fields]);
     sortsCheck('pro save: accepted', in_array($r->getStatusCode(), [200, 302], true), (string) $r->getStatusCode());
     $stored = sortsStored();
@@ -145,7 +151,7 @@ sortsTry('the settings page, Pro, saving through the form', function () {
     sortsEq('pro save: variant', ['en-GB' => 'single-outer'], $stored['variants'] ?? null);
     sortsEq('pro save: rules', [true, false], [$stored['rules']['fractions'] ?? null, $stored['rules']['quotes'] ?? null]);
     sortsEq('pro save: widow count', 4, $stored['widowsMinWords'] ?? null);
-    sortsEq('pro save: switches', [true, true], [$stored['fixOnSave'] ?? null, $stored['processHead'] ?? null]);
+    sortsEq('pro save: switches', [true, true, true], [$stored['fixOnSave'] ?? null, $stored['processHead'] ?? null, $stored['normalizeQuotes'] ?? null]);
 
     $fields['settings[skipTags]'] = 'Bad Tag';
     $r = $cp->post('/admin/settings/plugins/sorts', ['form_params' => $fields]);

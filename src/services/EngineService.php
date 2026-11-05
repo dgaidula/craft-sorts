@@ -20,7 +20,7 @@ use Throwable;
  * the page pass, the Twig filter, the GraphQL directive and a PHP call all give
  * the same result for the same text.
  *
- * Lite gets the English quotes, apostrophes, primes, dashes and ellipsis, in
+ * Lite gets the English quotes (as typed, never normalized by depth), apostrophes, primes, dashes and ellipsis, in
  * English only, and the engine is told that those are the only rules allowed, so
  * no `data-sorts-rules` scope or rule named in a call can run another one. Pro gets
  * every rule and locale, the settings, and the rules other code registers.
@@ -90,6 +90,7 @@ class EngineService extends Component
         $rules = array_values(array_filter($rules, 'is_string'));
         if (!Plugin::getInstance()->isPro()) {
             $rules = array_values(array_intersect($rules, self::LITE_RULES));
+            $options = $options->with(quoteNesting: Options::NESTING_TYPED);
         }
         return $this->engine()->apply($input, $rules, $options);
     }
@@ -122,6 +123,7 @@ class EngineService extends Component
             skipTags: $settings->skipTags,
             skipClasses: $settings->skipClasses,
             variants: $settings->variants,
+            quoteNesting: $settings->normalizeQuotes ? Options::NESTING_DEPTH : Options::NESTING_TYPED,
         );
     }
 

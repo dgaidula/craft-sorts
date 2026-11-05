@@ -113,6 +113,19 @@ sortsTry('pro, not a page request', function () use ($body, $has, $straight, $cu
     sortsEq('cp: the dashboard is served', 200, $r->getStatusCode());
 });
 
+sortsTry('pro, quote type and normalizing by depth', function () use ($body, $has) {
+    sortsConfigure('pro');
+    sortsClean();
+    $entry = sortsEntry(['title' => 'The \'best\' and "worst"', 'sortsBody' => '<p>She said \'no\' and "yes"</p>']);
+    $html = $body(sortsHttp()->get('/sorts-test/' . $entry->slug));
+    sortsCheck('default: a typed single is the inner pair, a typed double the outer', $has($html, "<h1>The ‘best’ and\u{00A0}“worst”</h1>") && $has($html, '<p>She said ‘no’ and “yes”</p>'), $html);
+    sortsConfigure('pro', ['normalizeQuotes' => true]);
+    $html = $body(sortsHttp()->get('/sorts-test/' . $entry->slug));
+    sortsCheck('normalizeQuotes: every quotation by depth', $has($html, "<h1>The “best” and\u{00A0}“worst”</h1>") && $has($html, '<p>She said “no” and “yes”</p>'), $html);
+    sortsClean();
+    sortsConfigure('pro');
+});
+
 sortsTry('pro, preview and token requests', function () use ($body, $has) {
     sortsConfigure('pro');
     sortsClean();

@@ -204,6 +204,23 @@ sortsTry('a job queued under Pro keeps a French entry French after a downgrade',
     sortsConfigure('pro');
 });
 
+// D818: stored content follows the quote type, or the depth setting, and a queued job keeps the one it was queued with.
+sortsTry('quote type and normalizing by depth', function () use ($primary, $job, $sectionId) {
+    sortsClean();
+    sortsConfigure('pro');
+    $e = sortsEntry(['title' => 'The \'best\' and "worst"']);
+    $title = static fn (array $result): ?string => $result['items'][0]['changes'][0]['excerpts'][0]['after'] ?? null;
+    sortsEq('scan: a typed single is the inner pair by default', 'The ‘best’ and “worst”', $title(sorts()->auditScanner->scan($sectionId(), $primary(), 0)));
+    sortsConfigure('pro', ['normalizeQuotes' => true]);
+    sortsEq('scan: normalizeQuotes shows the depth result', 'The “best” and “worst”', $title(sorts()->auditScanner->scan($sectionId(), $primary(), 0)));
+    $fixJob = $job([[$e->id, $primary()]]);
+    sortsEq('the job carries the setting', 'depth', $fixJob->options[$primary()]['text']['quoteNesting'] ?? null);
+    sortsConfigure('lite');
+    $fixJob->execute(Craft::$app->getQueue());
+    sortsEq('a job queued with normalizeQuotes keeps it after a downgrade', 'The “best” and “worst”', sortsFresh($e->id)->title);
+    sortsConfigure('pro');
+});
+
 sortsClean();
 sortsDefaults();
 sortsDone();

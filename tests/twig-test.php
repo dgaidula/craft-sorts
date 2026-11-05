@@ -31,6 +31,11 @@ foreach (['lite', 'pro'] as $edition) {
         sortsEq("$edition: an empty string passes through", '', $render('{{ s|sorts }}', ['s' => '']));
         sortsEq("$edition: a number prints", '42', $render('{{ n|sorts }}', ['n' => 42]));
         sortsEq("$edition: idempotent", '“hi” — there', $render('{{ s|sorts|sorts }}', ['s' => '"hi" -- there']));
+        sortsEq("$edition: a typed single is the inner pair, a typed double the outer", 'the ‘best’ and “worst”', $render('{{ s|sorts }}', ['s' => 'the \'best\' and "worst"']));
+        sortsEq("$edition: so in text mode", 'the ‘best’ and “worst”', $render('{{ s|sorts(\'text\') }}', ['s' => 'the \'best\' and "worst"']));
+        sortsConfigure($edition, ['normalizeQuotes' => true]);
+        sortsEq("$edition: normalizeQuotes sets by depth in Pro, and is ignored in Lite", $edition === 'pro' ? 'the “best” and “worst”' : 'the ‘best’ and “worst”', $render('{{ s|sorts }}', ['s' => 'the \'best\' and "worst"']));
+        sortsConfigure($edition);
         sortsEq("$edition: a bad mode is an error", 'The sorts filter’s mode must be “html” or “text”, not “xml”.', (function () use ($render) {
             try {
                 $render('{{ s|sorts(\'xml\') }}', ['s' => 'x']);

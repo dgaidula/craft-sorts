@@ -17,6 +17,12 @@ sortsTry('lite', function () {
     sortsEq('lite: data-sorts-lang cannot reach another locale', '<p data-sorts-lang="de">“x”</p>', $e->apply('<p data-sorts-lang="de">"x"</p>'));
     sortsEq('lite: en-GB is English', '“hi” – there', $e->apply('"hi" -- there', [], 'en-GB'));
     sortsEq('lite: text mode', 'say “hi” — ok', $e->apply('say "hi" -- ok', [], null, 'text'));
+    sortsEq('lite: a typed single is the inner pair', 'the ‘best’ one', $e->apply('the \'best\' one'));
+    sortsEq('lite: the normalizeQuotes setting is stored but never read', 'the ‘best’ one', (function () {
+        sortsConfigure('lite', ['normalizeQuotes' => true]);
+        return sorts()->engine->apply('the \'best\' one');
+    })());
+    sortsEq('lite: options asked for depth are set to typed', 'the ‘best’ one', sorts()->engine->applyWith('the \'best\' one', sorts()->engine->options()->with(quoteNesting: 'depth')));
 });
 
 sortsTry('pro', function () {
@@ -39,9 +45,19 @@ sortsTry('pro', function () {
     $e = sorts()->engine;
     sortsEq('pro: rule toggles from settings', 'a "b" ½ 1–5', $e->apply('a "b" 1/2 1-5'));
 
-    sortsConfigure('pro', ['variants' => ['en-GB' => 'single-outer']]);
+    sortsConfigure('pro');
+    sortsEq('pro: a typed single is the inner pair by default', 'the ‘best’ one', sorts()->engine->apply('the \'best\' one'));
+    sortsConfigure('pro', ['normalizeQuotes' => true]);
+    sortsEq('pro: normalizeQuotes sets it by depth', 'the “best” one', sorts()->engine->apply('the \'best\' one'));
+    sortsEq('pro: normalizeQuotes reaches the stored options', 'the “best” one', sorts()->engine->applyStored('the \'best\' one', sorts()->engine->storedOptions('en-US', 'text')));
+    sortsConfigure('pro');
+    sortsEq('pro: stored options keep the typed single by default', 'the ‘best’ one', sorts()->engine->applyStored('the \'best\' one', sorts()->engine->storedOptions('en-US', 'text')));
+
+    sortsConfigure('pro', ['variants' => ['en-GB' => 'single-outer', 'de-CH' => 'guillemets', 'es' => 'guillemets-outer']]);
     $e = sorts()->engine;
     sortsEq('pro: en-GB single-outer variant', '‘She said “no”’', $e->apply('"She said \'no\'"', [], 'en-GB'));
+    sortsEq('pro: de-CH guillemets variant', '«Er sagte ‹nein›»', $e->apply('"Er sagte \'nein\'"', [], 'de-CH'));
+    sortsEq('pro: es guillemets-outer variant', '«Dijo “no”»', $e->apply('"Dijo \'no\'"', [], 'es'));
     sortsEq('pro: the variant leaves en-US alone', '“She said ‘no’”', $e->apply('"She said \'no\'"', [], 'en-US'));
 
     sortsConfigure('pro', ['widowsMinWords' => 5]);

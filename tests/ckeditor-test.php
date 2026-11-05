@@ -7,15 +7,18 @@ require_once '/var/www/html/plugins/craft-sorts/tests/support.php';
 
 $locales = new \iceboxind\sorts\engine\LocaleRegistry();
 $rules = ['symbols' => true, 'ellipsis' => true, 'dashes' => true, 'fractions' => false, 'quotes' => true];
-$t = static fn (string $id, array $r = [], ?string $variant = null) => \iceboxind\sorts\ckeditor\CkeditorSupport::transformations(
+$t = static fn (string $id, array $r = [], ?string $variant = null, bool $normalize = false) => \iceboxind\sorts\ckeditor\CkeditorSupport::transformations(
     $variant ? $locales->resolve($id)->withVariant($variant) : $locales->resolve($id),
-    array_replace($rules, $r)
+    array_replace($rules, $r),
+    $normalize
 );
 
 sortsTry('transformations by language', function () use ($t) {
     sortsEq('en-US: symbols, ellipsis, em dash, curly quotes; no arrows, fractions or `--` to en dash', ['copyright', 'registeredTrademark', 'trademark', 'horizontalEllipsis', 'emDash', 'quotesPrimary', 'quotesSecondary'], $t('en-US'));
     sortsEq('en-GB: the same, plus the spaced en dash that is its `--`', ['copyright', 'registeredTrademark', 'trademark', 'horizontalEllipsis', 'emDash', 'enDash', 'quotesPrimary', 'quotesSecondary'], $t('en-GB'));
-    sortsEq('en-GB single-outer: one quote of each kind', ['copyright', 'registeredTrademark', 'trademark', 'horizontalEllipsis', 'emDash', 'enDash', 'quotesPrimary', 'quotesSecondary'], $t('en-GB', [], 'single-outer'));
+    sortsEq('en-GB single-outer: no quotes (typed " is ‘…’ here, and CKEditor’s " is “…”), left to the page pass', ['copyright', 'registeredTrademark', 'trademark', 'horizontalEllipsis', 'emDash', 'enDash'], $t('en-GB', [], 'single-outer'));
+    sortsEq('de-CH guillemets and es guillemets-outer: no quotes either', [[], []], [array_values(array_intersect($t('de-CH', [], 'guillemets'), ['quotesPrimary', 'quotesSecondary', 'quotesPrimaryEnGb', 'quotesSecondaryEnGb', 'quotesPrimaryPl', 'quotesSecondaryPl'])), array_values(array_intersect($t('es', [], 'guillemets-outer'), ['quotesPrimary', 'quotesSecondary', 'quotesPrimaryEnGb', 'quotesSecondaryEnGb', 'quotesPrimaryPl', 'quotesSecondaryPl']))]);
+    sortsEq('normalizing by depth: only the double key, since a typed single may be outermost', ['quotesPrimary'], array_values(array_intersect($t('en-US', [], null, true), ['quotesPrimary', 'quotesSecondary'])));
     sortsEq('de: CKEditor has no „…“ transformation, so no quotes', ['copyright', 'registeredTrademark', 'trademark', 'horizontalEllipsis', 'emDash'], array_values(array_diff($t('de'), ['enDash'])));
     sortsCheck('fr: no quotes (« » is not one of CKEditor’s)', !array_intersect($t('fr'), ['quotesPrimary', 'quotesSecondary', 'quotesPrimaryPl', 'quotesSecondaryPl', 'quotesPrimaryEnGb', 'quotesSecondaryEnGb']));
     sortsCheck('fr: a spaced en dash', in_array('enDash', $t('fr'), true));

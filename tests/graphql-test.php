@@ -63,6 +63,14 @@ sortsTry('queries', function () use ($run, $schema) {
     $r = $run('{ entries(section: "sortsTest", slug: "gql-one") { sortsBody @sorts { html } } }');
     sortsEq('an object field keeps its shape', '<p>"Body" -- <b>bold</b></p>', $r['data']['entries'][0]['sortsBody']['html'] ?? json_encode($r));
 
+    sortsEntry(['title' => 'The \'best\' and "worst"', 'slug' => 'gql-quotes']);
+    $r = $run('{ entries(section: "sortsTest", slug: "gql-quotes") { title @sorts(mode: "text") } }');
+    sortsEq('@sorts: a typed single is the inner pair by default', 'The ‘best’ and “worst”', $r['data']['entries'][0]['title'] ?? json_encode($r));
+    sortsConfigure('pro', ['normalizeQuotes' => true]);
+    $r = $run('{ entries(section: "sortsTest", slug: "gql-quotes") { title @sorts(mode: "text") } }');
+    sortsEq('@sorts: normalizeQuotes sets it by depth', 'The “best” and “worst”', $r['data']['entries'][0]['title'] ?? json_encode($r));
+    sortsConfigure('pro');
+
     $r = $run('{ entries(section: "sortsTest", slug: "gql-one") { title @sorts(mode: "xml") } }');
     sortsCheck('a bad mode is a GraphQL error', isset($r['errors'][0]['message']) && str_contains($r['errors'][0]['message'], 'must be “html” or “text”'), json_encode($r));
 

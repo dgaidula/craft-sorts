@@ -46,11 +46,17 @@ return [
         // The fewest words a heading needs before its last two words are joined.
         'widowsMinWords' => 3,
 
-        // Quotation style per language. CLDR is the default; en-GB can use single
-        // quotation marks outermost (New Hart's Rules).
+        // Quotation style per language. CLDR is the default. Variants: en-GB
+        // 'single-outer' (New Hart's Rules), de-CH 'guillemets' (Schreibweisungen
+        // der Bundeskanzlei), es 'guillemets-outer' (RAE).
         'variants' => [
             // 'en-GB' => 'single-outer',
         ],
+
+        // Off: a straight " pair gets the language's main quotation marks and a straight '
+        // pair its inner marks, at any depth. On: every quotation is set by its nesting
+        // depth, whichever mark was typed.
+        'normalizeQuotes' => false,
 
         // Exclusions: tag names, class names, and request paths (`*` matches any run
         // of characters) the page pass leaves alone.

@@ -8,6 +8,7 @@ use craft\ckeditor\Field;
 use craft\ckeditor\helpers\CkeditorConfig;
 use craft\helpers\Cp;
 use iceboxind\sorts\engine\LocaleInterface;
+use iceboxind\sorts\engine\Options;
 use iceboxind\sorts\Plugin;
 use Throwable;
 use yii\base\Event;
@@ -27,9 +28,14 @@ use yii\base\Event;
  * What this can and cannot do, because the editor’s config reaches the browser as JSON and
  * JSON cannot carry a regular expression: CKEditor’s built-in transformations are the only
  * ones available by name. Of those, only the ones whose quotation marks match the site
- * language’s pairs are enabled, so typing `"` in an English field gives “…”, in an en-GB
- * single-outer field gives ‘…’, and in a German or French field is left straight, to be
- * set by the page pass or fix-on-save. Apostrophes, primes, ranges and spacing are not
+ * language’s pairs are enabled, and the key typed picks the pair as it does in Sorts
+ * (typing `"` gives the language’s primary pair, `'` its secondary pair; see
+ * `Options::$quoteNesting`), so typing `"` in an English field gives “…” and `'` gives ‘…’,
+ * and in a German or French field both are left straight, to be set by the page pass or
+ * fix-on-save, as are the keys of an en-GB single-outer field (CKEditor’s en-GB pairs put
+ * ‘…’ on `'`, Sorts’ put it on `"`). With the Pro setting that normalizes quotes by depth,
+ * `'` is left straight everywhere too: CKEditor cannot tell that a typed `'` is
+ * outermost, where depth gives it the primary pair. Apostrophes, primes, ranges and spacing are not
  * transformations CKEditor offers. It acts only on text typed, never on pasted text or on
  * content already stored. The language is the control panel’s requested site (`?site=`), which is
  * what an element’s edit page uses; an editor opened some other way gets the current site’s.
@@ -48,8 +54,6 @@ final class CkeditorSupport
         'quotesPrimaryPl' => ['"', '„', '”'],
         'quotesSecondaryPl' => ["'", '‚', '’'],
     ];
-
-    private const SINGLE_MARKS = ['‘', '‚', '‹', '›'];
 
     public static function register(): void
     {
@@ -83,7 +87,7 @@ final class CkeditorSupport
         }
 
         $event->baseConfig['typing'] = ['transformations' => [
-            'include' => self::transformations($locale, $options->rules),
+            'include' => self::transformations($locale, $options->rules, $options->quoteNesting === Options::NESTING_DEPTH),
         ]];
     }
 
@@ -91,9 +95,10 @@ final class CkeditorSupport
      * The CKEditor transformations that do what Sorts’ rules do, for a locale.
      *
      * @param array<string, bool> $rules rule handle => on or off, as the options hold them
+     * @param bool $normalizeQuotes whether quotes are set by depth, not by the mark typed
      * @return list<string>
      */
-    public static function transformations(LocaleInterface $locale, array $rules): array
+    public static function transformations(LocaleInterface $locale, array $rules, bool $normalizeQuotes = false): array
     {
         $on = static fn (string $handle, bool $default = true): bool => $rules[$handle] ?? $default;
         $include = [];
@@ -116,26 +121,27 @@ final class CkeditorSupport
             array_push($include, 'oneHalf', 'oneThird', 'twoThirds', 'oneForth', 'threeQuarters');
         }
         if ($on('quotes')) {
-            array_push($include, ...self::quoteTransformations($locale));
+            array_push($include, ...self::quoteTransformations($locale, $normalizeQuotes));
         }
         return $include;
     }
 
     /**
-     * The quote transformations whose pair is the one the locale uses for the key it is typed with.
+     * The quote transformations whose pair is the one the locale uses for the key it is typed with:
+     * the primary pair for `"`, the secondary pair for `'`.
      *
      * @return list<string>
      */
-    private static function quoteTransformations(LocaleInterface $locale): array
+    private static function quoteTransformations(LocaleInterface $locale, bool $normalizeQuotes): array
     {
-        $outer = $locale->quotes();
-        $nested = $locale->nestedQuotes();
-        $singleOuter = in_array($outer[0], self::SINGLE_MARKS, true);
-        $pairs = $singleOuter ? ["'" => $outer, '"' => $nested] : ['"' => $outer, "'" => $nested];
+        $pairs = ['"' => $locale->quotes()];
+        if (!$normalizeQuotes) {
+            $pairs["'"] = $locale->nestedQuotes();
+        }
 
         $found = [];
         foreach (self::QUOTES as $name => [$typed, $open, $close]) {
-            if (!isset($found[$typed]) && $pairs[$typed] === [$open, $close]) {
+            if (!isset($found[$typed]) && isset($pairs[$typed]) && $pairs[$typed] === [$open, $close]) {
                 $found[$typed] = $name;
             }
         }

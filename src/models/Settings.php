@@ -69,6 +69,13 @@ class Settings extends Model
     /** @var array<string, string> Pro. Locale id => the name of the variant to use for it. */
     public array $variants = [];
 
+    /**
+     * Pro. Set every quotation by how deeply it is nested (the locale’s primary pair outermost, the
+     * secondary pair inside it), whichever mark was typed. Off: a straight `"` pair gets the primary
+     * pair and a straight `'` pair the secondary pair, as CKEditor does while typing. Lite is always off.
+     */
+    public bool $normalizeQuotes = false;
+
     /** Pro. The fewest words a heading needs before the widows rule joins its last two. */
     public int $widowsMinWords = 3;
 
@@ -124,7 +131,7 @@ class Settings extends Model
                 $values[$name] = is_numeric($values[$name]) ? (int) $values[$name] : 0;
             }
         }
-        foreach (['ckeditorAsYouType', 'pagePass', 'processHead', 'fixOnSave', 'fixTitles', 'fixPlainText', 'fixCkeditor', 'fixOnSaveBulk'] as $name) {
+        foreach (['ckeditorAsYouType', 'pagePass', 'processHead', 'normalizeQuotes', 'fixOnSave', 'fixTitles', 'fixPlainText', 'fixCkeditor', 'fixOnSaveBulk'] as $name) {
             if (array_key_exists($name, $values)) {
                 $values[$name] = self::coerceBool($values[$name], $this->$name);
             }
