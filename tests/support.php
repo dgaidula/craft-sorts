@@ -184,22 +184,37 @@ function sortsEverywhere(bool $on): void
 }
 
 /** A Guzzle client for the site from inside the container. */
-function sortsHttp(): \GuzzleHttp\Client
+function sortsHttp(?\GuzzleHttp\Cookie\CookieJarInterface $cookies = null): \GuzzleHttp\Client
 {
     return new \GuzzleHttp\Client([
         'base_uri' => SORTS_BASE,
         'headers' => ['Host' => SORTS_HOST],
         'allow_redirects' => false,
         'http_errors' => false,
-        'cookies' => new \GuzzleHttp\Cookie\CookieJar(),
+        'cookies' => $cookies ?? new \GuzzleHttp\Cookie\CookieJar(),
         'timeout' => 60,
     ]);
 }
 
-/** Sign in to the control panel as the testbed admin with a client; returns the client. */
+/** Where the control panel session's cookies are kept between suites; run-all.mjs deletes the file when it starts and ends. */
+function sortsCpCookieFile(): string
+{
+    return Craft::$app->getPath()->getRuntimePath() . '/sorts-tests-cp-cookies.json';
+}
+
+/**
+ * A client signed in to the control panel as the testbed admin. Every suite in a run shares
+ * one session: Craft 5.12.0.1 answers more than defaultRateLimit (10) login posts from one IP
+ * in defaultRateLimitDuration (60 s) with a 429 (controllers/UsersController.php:200-205,
+ * config/GeneralConfig.php:894,916), and a run used to sign in nine times.
+ */
 function sortsCpClient(): \GuzzleHttp\Client
 {
-    $http = sortsHttp();
+    $jar = new \GuzzleHttp\Cookie\FileCookieJar(sortsCpCookieFile(), true);
+    $http = sortsHttp($jar);
+    if ($http->get('/admin/dashboard')->getStatusCode() === 200) {
+        return $http;
+    }
     $login = (string) $http->get('/admin/login')->getBody();
     if (!preg_match('/csrfTokenValue":\s*"([^"]+)"/', $login, $m)) {
         throw new \RuntimeException('No CSRF token on the login page.');
@@ -209,8 +224,10 @@ function sortsCpClient(): \GuzzleHttp\Client
         'form_params' => ['loginName' => 'admin', 'password' => 'Password123!', 'CRAFT_CSRF_TOKEN' => $m[1]],
     ]);
     if ($res->getStatusCode() !== 200) {
-        throw new \RuntimeException('CP login failed: ' . $res->getStatusCode() . ' ' . substr((string) $res->getBody(), 0, 200));
+        $limit = $res->getStatusCode() === 429 ? ' (Craft allows defaultRateLimit login posts per IP in defaultRateLimitDuration: 10 in 60 s by default)' : '';
+        throw new \RuntimeException('CP login failed: ' . $res->getStatusCode() . $limit . ' ' . substr((string) $res->getBody(), 0, 200));
     }
+    $jar->save(sortsCpCookieFile());
     return $http;
 }
 

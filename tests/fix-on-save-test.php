@@ -241,6 +241,34 @@ sortsTry('reach: a new entry goes in as typed on every site', function () {
     sortsClean();
 });
 
+// Craft's draft path: a new entry saved as a draft is not propagateAll, and it is on no site
+// yet, so every other site counts as reached (R2-1).
+sortsTry('reach: an unpublished draft, edited, then published', function () {
+    sortsClean();
+    sortsConfigure('pro', ['fixOnSave' => true]);
+    $frId = Craft::$app->getSites()->getSiteByHandle('testbedFr')->id;
+    $section = Craft::$app->getEntries()->getSectionByHandle('sortsTest');
+    $entry = new \craft\elements\Entry(['sectionId' => $section->id, 'typeId' => $section->getEntryTypes()[0]->id, 'siteId' => Craft::$app->getSites()->getPrimarySite()->id]);
+    $entry->title = '"Draft" -- one';
+    $entry->slug = 'reach-draft';
+    $entry->setFieldValues(['sortsPlain' => '"Draft" plain', 'sortsBodySite' => '<p>"Draft" site</p>']);
+    sortsCheck('draft: saved', Craft::$app->getDrafts()->saveElementAsDraft($entry, 1, null, null, false), json_encode($entry->getErrors()));
+    $copy = static fn (int $siteId): ?\craft\elements\Entry => \craft\elements\Entry::find()->id($entry->id)->drafts(null)->status(null)->siteId($siteId)->one();
+    sortsEq('draft, fr: the title is as typed', '"Draft" -- one', $copy($frId)?->title);
+    sortsEq('draft, fr: translatable plain text as typed', '"Draft" plain', sortsRaw($copy($frId), 'sortsPlain'));
+    sortsEq('draft, fr: per-site CKEditor as typed', '<p>"Draft" site</p>', sortsRaw($copy($frId), 'sortsBodySite'));
+    $draft = \craft\elements\Entry::find()->id($entry->id)->drafts(true)->status(null)->one();
+    $draft->title = '"Draft" -- two';
+    Craft::$app->getElements()->saveElement($draft);
+    sortsEq('draft edited on en: fixed in English', '“Draft” — two', $copy(Craft::$app->getSites()->getPrimarySite()->id)?->title);
+    sortsEq('draft edited on en: the fr title is still as typed', '"Draft" -- one', $copy($frId)?->title);
+    $published = Craft::$app->getDrafts()->applyDraft($draft);
+    sortsEq('published, fr: the title is as typed', '"Draft" -- one', sortsFresh($published->id, $frId)?->title);
+    $fr = (string) sortsHttp()->get('/fr/sorts-test/reach-draft')->getBody();
+    sortsCheck('published: the French page shows French quotes', str_contains($fr, "<h1>«\u{202F}Draft\u{202F}» –\u{00A0}one</h1>"), substr($fr, 0, 600));
+    sortsClean();
+});
+
 sortsTry('reach: a shared CKEditor field', function () {
     sortsClean();
     sortsConfigure('pro');
