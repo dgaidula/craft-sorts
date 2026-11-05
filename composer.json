@@ -15,10 +15,14 @@
     "craftcms/cms": "^5.0"
   },
   "require-dev": {
+    "craftcms/ckeditor": "^5.9",
     "craftcms/phpstan": "dev-main",
     "php-cs-fixer/shim": "^3",
     "php-parallel-lint/php-parallel-lint": "^1.4",
     "phpstan/phpstan": "^2.1"
+  },
+  "suggest": {
+    "craftcms/ckeditor": "Lets Sorts convert quotes as people type in CKEditor fields, and fix CKEditor values on save and in the audit."
   },
   "minimum-stability": "dev",
   "prefer-stable": true,

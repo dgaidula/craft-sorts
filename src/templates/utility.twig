@@ -1,0 +1,101 @@
+{% import '_includes/forms' as forms %}
+
+<p>{{ 'Look through saved entries for straight quotes, double hyphens, three dots and the other characters Sorts would set properly. The scan only reads; nothing changes until you fix the entries you tick.'|t('sorts') }}</p>
+
+<form method="get" accept-charset="UTF-8" class="utility">
+    <input type="hidden" name="scan" value="1">
+    {{ forms.selectField({
+        label: 'Section'|t('sorts'),
+        id: 'section',
+        name: 'section',
+        value: sectionId,
+        options: [{ label: 'All sections'|t('sorts'), value: '' }]|merge(sections|map(s => { label: s.name, value: s.id })),
+    }) }}
+    {% if sites|length > 1 %}
+        {{ forms.selectField({
+            label: 'Site'|t('sorts'),
+            id: 'site',
+            name: 'site',
+            value: siteId,
+            options: sites|map(s => { label: s.name ~ ' (' ~ s.language ~ ')', value: s.id }),
+        }) }}
+    {% else %}
+        <input type="hidden" name="site" value="{{ siteId }}">
+    {% endif %}
+    <div class="buttons">
+        <button type="submit" class="btn submit">{{ 'Scan the first {count} entries'|t('sorts', { count: batchSize }) }}</button>
+    </div>
+</form>
+
+{% if result is not null %}
+    <hr>
+    {% if result.items is empty %}
+        <p><strong>{{ 'Nothing to change in the {count} entries scanned.'|t('sorts', { count: result.scanned }) }}</strong></p>
+    {% else %}
+        <form method="post" accept-charset="UTF-8" class="utility" id="sorts-fix">
+            {{ csrfInput() }}
+            {{ actionInput('sorts/audit/fix') }}
+            {{ redirectInput('utilities/sorts') }}
+
+            <p>{{ '{changed, number} of the {count, number} entries scanned would change.'|t('sorts', { changed: result.items|length, count: result.scanned }) }}</p>
+
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th scope="col" style="width: 1%;"><span class="visually-hidden">{{ 'Fix'|t('sorts') }}</span></th>
+                        <th scope="col">{{ 'Entry'|t('sorts') }}</th>
+                        <th scope="col">{{ 'Before'|t('sorts') }}</th>
+                        <th scope="col">{{ 'After'|t('sorts') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in result.items %}
+                        {% set rows = 0 %}
+                        {% for change in item.changes %}{% set rows = rows + change.excerpts|length %}{% endfor %}
+                        {% set first = true %}
+                        {% for change in item.changes %}
+                            {% for excerpt in change.excerpts %}
+                                <tr>
+                                    {% if first %}
+                                        <td rowspan="{{ rows }}">
+                                            <input type="checkbox" name="entries[]" value="{{ item.id }}:{{ item.siteId }}" id="entry-{{ item.id }}-{{ item.siteId }}" class="checkbox" checked>
+                                            <label for="entry-{{ item.id }}-{{ item.siteId }}"><span class="visually-hidden">{{ 'Fix {title}'|t('sorts', { title: item.title }) }}</span></label>
+                                        </td>
+                                        <th rowspan="{{ rows }}" scope="row">
+                                            {% if item.cpEditUrl %}<a href="{{ item.cpEditUrl }}">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
+                                            <div class="light smalltext">{{ item.section }}</div>
+                                        </th>
+                                        {% set first = false %}
+                                    {% endif %}
+                                    <td><span class="light smalltext">{{ change.label }}</span><br>{{ excerpt.before }}</td>
+                                    <td><span class="light smalltext">{{ change.label }}</span><br>{{ excerpt.after }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="field">
+                {{ forms.checkboxField({
+                    label: 'Create a revision for each entry and update its Date Updated'|t('sorts'),
+                    instructions: 'Off by default: the fix is saved quietly, with no new revision and the Date Updated left as it was.'|t('sorts'),
+                    id: 'createRevisions',
+                    name: 'createRevisions',
+                    value: '1',
+                    checked: false,
+                }) }}
+            </div>
+
+            <div class="buttons">
+                <button type="submit" class="btn submit">{{ 'Fix the ticked entries'|t('sorts') }}</button>
+            </div>
+        </form>
+    {% endif %}
+
+    {% if result.more %}
+        <p>
+            <a class="btn" href="{{ url('utilities/sorts', { scan: 1, section: sectionId, site: siteId, after: result.lastId }) }}">{{ 'Scan the next {count} entries'|t('sorts', { count: batchSize }) }}</a>
+        </p>
+    {% endif %}
+{% endif %}

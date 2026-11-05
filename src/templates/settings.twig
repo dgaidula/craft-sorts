@@ -11,18 +11,27 @@
    POST. Craft saves only the posted keys and replaces the whole
    plugins.sorts.settings entry in project config, so a stored setting that
    is not posted is erased on save. Two cases carry the stored value
-   (`stored`, from project config) in a hidden input instead of the field:
+   (`stored`, from project config) in hidden inputs instead of the field:
    - set in config/sorts.php (`overrides`): show the field disabled with
-     the override note, so the file's value (a secret, say) is never posted and
-     never lands in project config;
-   - Pro-gated, on Lite: render no field, so a Pro value survives a Lite save.
-   `keep()` handles scalar settings; carry an array setting item by item. #}
+     the override note, so the file's value is never posted and never lands in
+     project config;
+   - Pro setting, on Lite: show the field disabled and marked Pro, so a Pro
+     value survives a Lite save.
+   `carry()` handles scalars and one level of array, which is every setting here. #}
 
-{% macro keep(name, stored) -%}
-    {%- if stored[name] is defined %}{{ hiddenInput(name, stored[name]) }}{% endif -%}
+{% macro carry(name, value) -%}
+    {%- if value is iterable -%}
+        {%- for key, item in value %}{{ hiddenInput(name ~ '[' ~ key ~ ']', item is same as(true) ? '1' : (item is same as(false) ? '' : item)) }}{% endfor -%}
+    {%- elseif value is not null -%}
+        {{ hiddenInput(name, value is same as(true) ? '1' : (value is same as(false) ? '' : value)) }}
+    {%- endif -%}
 {%- endmacro %}
-{% from _self import keep %}
+{% from _self import carry %}
 {% set overridden = 'This is being overridden by config/sorts.php.'|t('sorts') %}
+{% set proNote = 'Needs Sorts Pro.'|t('sorts') %}
+
+{# A Pro setting is locked on Lite, and any setting is locked when config/sorts.php overrides it.
+   (Not a macro: a macro hands back a Markup object, and an empty one is still truthy.) #}
 
 <h2>{{ 'General'|t('sorts') }}</h2>
 
@@ -36,37 +45,175 @@
     disabled: 'pluginName' in overrides,
     warning: 'pluginName' in overrides ? overridden,
 }) }}
-{% if 'pluginName' in overrides %}{{ keep('pluginName', stored) }}{% endif %}
+{% if 'pluginName' in overrides %}{{ carry('pluginName', stored.pluginName ?? null) }}{% endif %}
 
-{{ forms.autosuggestField({
-    label: 'Example API key'|t('sorts'),
-    instructions: 'Literal value or an $ENVIRONMENT_VARIABLE, resolved server-side.'|t('sorts'),
-    id: 'exampleApiKey',
-    name: 'exampleApiKey',
-    suggestEnvVars: true,
-    value: settings.exampleApiKey,
-    disabled: 'exampleApiKey' in overrides,
-    warning: 'exampleApiKey' in overrides ? overridden,
-}) }}
-{% if 'exampleApiKey' in overrides %}{{ keep('exampleApiKey', stored) }}{% endif %}
+<hr>
+<h2>{{ 'CKEditor'|t('sorts') }}</h2>
 
-{% if isPro %}
-    <hr>
-    <h2>{{ 'Pro-only example'|t('sorts') }}</h2>
-    <p class="light">{{ 'This block only renders on the Pro edition — a template of the pattern to follow for any Pro-gated setting.'|t('sorts') }}</p>
+{% if ckeditorInstalled %}
     {{ forms.lightswitchField({
-        label: 'An example Pro-only toggle'|t('sorts'),
-        id: 'exampleProToggle',
-        name: 'exampleProToggle',
-        on: settings.exampleProToggle,
-        disabled: 'exampleProToggle' in overrides,
-        warning: 'exampleProToggle' in overrides ? overridden,
+        label: 'Convert quotes as people type'|t('sorts'),
+        instructions: 'Loads CKEditor’s text transformation plugin in every CKEditor field, set to the quotation marks of the site’s language where CKEditor can do that, and to the dashes, ellipsis and symbols Sorts sets. It acts on typing only: pasted text and saved content are left to the page pass and fix-on-save. A field’s own CKEditor config can switch it off.'|t('sorts'),
+        id: 'ckeditorAsYouType',
+        name: 'ckeditorAsYouType',
+        on: settings.ckeditorAsYouType,
+        disabled: 'ckeditorAsYouType' in overrides,
+        warning: 'ckeditorAsYouType' in overrides ? overridden,
     }) }}
-    {% if 'exampleProToggle' in overrides %}{{ keep('exampleProToggle', stored) }}{% endif %}
+    {% if 'ckeditorAsYouType' in overrides %}{{ carry('ckeditorAsYouType', stored.ckeditorAsYouType ?? null) }}{% endif %}
 {% else %}
-    {{ keep('exampleProToggle', stored) }}
+    <p class="light">{{ 'CKEditor is not installed, so there is nothing to set here.'|t('sorts') }}</p>
+    {{ carry('ckeditorAsYouType', stored.ckeditorAsYouType ?? null) }}
+{% endif %}
+
+{% if not isPro %}
+    <hr>
+    <p class="warning with-icon">{{ 'The settings below need Sorts Pro. They are shown so you can see what Pro does, and cannot be changed on Lite.'|t('sorts') }}</p>
 {% endif %}
 
 <hr>
-<h2>{{ 'Advanced'|t('sorts') }}</h2>
-<p class="light">{{ 'Nothing here yet — add Advanced settings as this plugin grows.'|t('sorts') }}</p>
+<h2>{{ 'Page pass'|t('sorts') }} <span class="code">Pro</span></h2>
+
+{% set lockPagePass = ('pagePass' in overrides) or not isPro %}
+{{ forms.lightswitchField({
+    label: 'Fix the typography of every page'|t('sorts'),
+    instructions: 'Runs over each rendered page on the front end, with no template edits. Never runs for the control panel, console or action requests, or a response that is not HTML.'|t('sorts'),
+    id: 'pagePass',
+    name: 'pagePass',
+    on: settings.pagePass,
+    disabled: lockPagePass,
+    warning: 'pagePass' in overrides ? overridden : (not isPro ? proNote),
+}) }}
+{% if lockPagePass %}{{ carry('pagePass', stored.pagePass ?? null) }}{% endif %}
+
+{% set lockProcessHead = ('processHead' in overrides) or not isPro %}
+{{ forms.lightswitchField({
+    label: 'Also fix the page title and meta descriptions'|t('sorts'),
+    instructions: 'Off by default. Sets the text of <title> and the description, Open Graph and Twitter titles and descriptions in the head, which show in browser tabs and link previews.'|t('sorts'),
+    id: 'processHead',
+    name: 'processHead',
+    on: settings.processHead,
+    disabled: lockProcessHead,
+    warning: 'processHead' in overrides ? overridden : (not isPro ? proNote),
+}) }}
+{% if lockProcessHead %}{{ carry('processHead', stored.processHead ?? null) }}{% endif %}
+
+<hr>
+<h2>{{ 'Rules'|t('sorts') }} <span class="code">Pro</span></h2>
+
+{% set lockRules = ('rules' in overrides) or not isPro %}
+{% set ruleLabels = {
+    'quotes': 'Quotation marks',
+    'apostrophes': 'Apostrophes, including leading ones',
+    'primes': 'Primes for feet, inches, minutes and seconds',
+    'dashes': 'Em and en dashes',
+    'ellipsis': 'Ellipsis',
+    'symbols': 'Symbols: (c) (r) (tm)',
+    'ranges': 'Number ranges (1-5 to 1–5)',
+    'multiplication': 'Multiplication signs (3x4 to 3×4)',
+    'fractions': 'Fractions (1/2 to ½)',
+    'ordinals': 'Ordinals (1st with a superscript)',
+    'widows': 'Widows: join the last two words of headings',
+    'nbsp': 'No-break spaces: units, initials, honorifics',
+    'locale-spacing': 'Locale spacing, such as French punctuation',
+    'hook-amp': 'Wrap & in a span with class amp',
+    'hook-caps': 'Wrap runs of capitals in a span with class caps',
+    'hook-quotes': 'Wrap opening quotes in a span for hanging punctuation',
+} %}
+{% for handle, label in ruleLabels %}
+    {{ forms.lightswitchField({
+        label: label|t('sorts'),
+        id: 'rules-' ~ handle,
+        name: 'rules[' ~ handle ~ ']',
+        on: settings.rules[handle] ?? false,
+        disabled: lockRules,
+    }) }}
+{% endfor %}
+{% if lockRules %}
+    <p class="light">{{ 'rules' in overrides ? overridden : proNote }}</p>
+    {{ carry('rules', stored.rules ?? null) }}
+{% endif %}
+
+{% set lockWidows = ('widowsMinWords' in overrides) or not isPro %}
+{{ forms.textField({
+    label: 'Fewest words in a heading before widows are joined'|t('sorts'),
+    id: 'widowsMinWords',
+    name: 'widowsMinWords',
+    type: 'number',
+    size: 3,
+    min: 2,
+    max: 20,
+    value: settings.widowsMinWords,
+    disabled: lockWidows,
+    warning: 'widowsMinWords' in overrides ? overridden : (not isPro ? proNote),
+}) }}
+{% if lockWidows %}{{ carry('widowsMinWords', stored.widowsMinWords ?? null) }}{% endif %}
+
+<hr>
+<h2>{{ 'Quotation styles'|t('sorts') }} <span class="code">Pro</span></h2>
+<p class="light">{{ 'Sorts follows Unicode CLDR for each language. Where a style authority writes it differently, you can choose that convention here.'|t('sorts') }}</p>
+
+{% set lockVariants = ('variants' in overrides) or not isPro %}
+{% for id, names in variants %}
+    {{ forms.selectField({
+        label: id,
+        id: 'variants-' ~ id,
+        name: 'variants[' ~ id ~ ']',
+        value: settings.variants[id] ?? '',
+        options: [{ label: 'CLDR default'|t('sorts'), value: '' }]|merge(names|map(n => { label: n, value: n })),
+        disabled: lockVariants,
+    }) }}
+{% endfor %}
+{% if lockVariants %}
+    <p class="light">{{ 'variants' in overrides ? overridden : proNote }}</p>
+    {{ carry('variants', stored.variants ?? null) }}
+{% endif %}
+
+<hr>
+<h2>{{ 'Exclusions'|t('sorts') }} <span class="code">Pro</span></h2>
+<p class="light">{{ 'Any element can also opt out in the template with data-sorts="off", set its language with data-sorts-lang, or turn on a rule with data-sorts-rules.'|t('sorts') }}</p>
+
+{% for name, spec in {
+    skipTags: ['Tags to skip', 'HTML tag names, one per line, such as figcaption. Everything inside is left alone, as it already is for pre, code, kbd, samp, var, textarea, math, svg, template, noscript, script and style.'],
+    skipClasses: ['Classes to skip', 'Class names, one per line, such as no-typography. An element with one of them, and everything inside it, is left alone.'],
+    skipUris: ['Paths to skip', 'Request paths, one per line, such as /api/* or /sitemap.xml. An asterisk matches any run of characters. Matched against the path as requested, including a site’s own prefix.'],
+} %}
+    {% set lock = (name in overrides) or not isPro %}
+    {{ forms.textareaField({
+        label: spec[0]|t('sorts'),
+        instructions: spec[1]|t('sorts'),
+        id: name,
+        name: name,
+        rows: 4,
+        class: 'code',
+        value: attribute(settings, name)|join("\n"),
+        errors: settings.getErrors(name),
+        disabled: lock,
+        warning: name in overrides ? overridden : (not isPro ? proNote),
+    }) }}
+    {% if lock %}{{ carry(name, stored[name] ?? null) }}{% endif %}
+{% endfor %}
+
+<hr>
+<h2>{{ 'Fix on save'|t('sorts') }} <span class="code">Pro</span></h2>
+<p class="light">{{ 'Changes the characters in stored content as an element is saved, so feeds, APIs and search see them too. It sets quotes, apostrophes, primes, dashes, ellipsis, symbols and, if they are switched on, fractions, ranges and multiplication signs; never spacing or markup. Never touches slugs, URIs, handles, URLs, email addresses or code fields. Skips autosaved drafts, revisions and propagation to other sites. The audit utility (Utilities → Sorts) fixes what is already saved.'|t('sorts') }}</p>
+
+{% for name, label in {
+    fixOnSave: 'Fix content when an element is saved',
+    fixTitles: 'Element titles',
+    fixPlainText: 'Plain Text fields (not set to code)',
+    fixCkeditor: 'CKEditor fields',
+    fixOnSaveBulk: 'Also fix when resaving and while migrations run',
+} %}
+    {% set lock = (name in overrides) or not isPro %}
+    {{ forms.lightswitchField({
+        label: label|t('sorts'),
+        instructions: name == 'fixTitles' ? 'Fix-on-save and the audit both use the choices from here to the next heading.'|t('sorts') : null,
+        id: name,
+        name: name,
+        on: attribute(settings, name),
+        disabled: lock,
+        warning: name in overrides ? overridden : (not isPro ? proNote),
+    }) }}
+    {% if lock %}{{ carry(name, stored[name] ?? null) }}{% endif %}
+{% endfor %}

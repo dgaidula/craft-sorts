@@ -5,25 +5,44 @@ namespace iceboxind\sorts;
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
+use craft\events\ElementEvent;
+use craft\events\RegisterComponentTypesEvent;
+use craft\events\RegisterGqlDirectivesEvent;
 use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\events\TemplateEvent;
+use craft\helpers\ProjectConfig as ProjectConfigHelper;
+use craft\services\Elements;
+use craft\services\Gql;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
-use craft\web\twig\variables\CraftVariable;
+use craft\services\Utilities;
 use craft\web\View;
+use iceboxind\sorts\ckeditor\CkeditorSupport;
+use iceboxind\sorts\gql\directives\Sorts as SortsDirective;
 use iceboxind\sorts\models\Settings;
-use iceboxind\sorts\web\twig\PluginVariable;
+use iceboxind\sorts\services\AuditScanner;
+use iceboxind\sorts\services\ContentFixer;
+use iceboxind\sorts\services\EngineService;
+use iceboxind\sorts\services\PagePass;
+use iceboxind\sorts\utilities\AuditUtility;
+use iceboxind\sorts\web\twig\SortsExtension;
 use yii\base\Event;
 
 /**
- * Sorts plugin (self-contained, Plugin-Store-bound).
+ * Sorts: typographer-grade punctuation for Craft CMS: smart quotes, apostrophes, primes,
+ * dashes and more, fixed site-wide with no template edits.
  *
- * Typographer-grade punctuation for Craft CMS: smart quotes, apostrophes, primes, dashes and more, fixed site-wide with no template edits.
- *
- * This is a stamped starting point from craft-plugin-base — replace this
- * docblock with a description of what the plugin actually does.
+ * Lite: the `|sorts` Twig filter (English quotes, apostrophes, dashes, ellipsis) and
+ * CKEditor as-you-type quotes. Pro: the automatic whole-page pass, every rule and locale,
+ * exclusions, the register-rules extension API, the `@sorts` GraphQL directive, fix-on-save
+ * and the audit utility. The engine is plain PHP in `src/engine/`; this class wires it in.
  *
  * @property-read Settings $settings
+ * @property-read EngineService $engine
+ * @property-read PagePass $pagePass
+ * @property-read ContentFixer $contentFixer
+ * @property-read AuditScanner $auditScanner
  */
 class Plugin extends BasePlugin
 {
@@ -33,12 +52,19 @@ class Plugin extends BasePlugin
     public const PERMISSION_MANAGE = 'sorts:manageConfig';
 
     /**
-     * LITE (free) / PRO (paid). Document the dividing line here once it's
-     * decided — e.g. Downtoll's "captured and stored" vs. "delivered to you".
-     * Decide it BEFORE the first Store submission: a feature can move from
-     * Pro to Lite later, never back. Gates control authoring and convenience,
-     * never enforcement. Removing access and deleting data are never gated
-     * either (Sesame 8fdaeb4, e432e29).
+     * Fired once per request, when the engine is first built, so a module or plugin can add
+     * its own rules (Pro). See {@see \iceboxind\sorts\events\RegisterRulesEvent}.
+     */
+    public const EVENT_REGISTER_RULES = 'registerRules';
+
+    /**
+     * LITE (free) / PRO (paid). Lite is what the market already gives away: the `|sorts`
+     * filter and CKEditor as-you-type quotes. Pro is everything that works on its own:
+     * the page pass, every rule and locale, exclusions, the extension API, GraphQL,
+     * fix-on-save and the audit. Gates control features, never safety: a downgrade stops
+     * the page pass and queues no new fixes, and never undoes or half-finishes content
+     * (a queued fix job that has started finishes). Removing access and deleting data are
+     * never gated. The table of gates is in docs/DEVELOPMENT.md.
      */
     public const EDITION_LITE = 'lite';
     public const EDITION_PRO = 'pro';
@@ -46,6 +72,18 @@ class Plugin extends BasePlugin
     public static function editions(): array
     {
         return [self::EDITION_LITE, self::EDITION_PRO];
+    }
+
+    public static function config(): array
+    {
+        return [
+            'components' => [
+                'engine' => EngineService::class,
+                'pagePass' => PagePass::class,
+                'contentFixer' => ContentFixer::class,
+                'auditScanner' => AuditScanner::class,
+            ],
+        ];
     }
 
     /** Single place the Pro gates ask. */
@@ -62,40 +100,35 @@ class Plugin extends BasePlugin
         // screen, settings breadcrumb, and the sidebar when the plugin has a CP
         // section). Blank keeps "Sorts". Guarded so a partially-constructed
         // settings model can't blank it.
-        $name = $this->getSettings()->pluginName ?? '';
+        $name = $this->getSettings()->pluginName;
         if ($name !== '') {
             $this->name = $name;
         }
 
         $this->registerPermissions();
-        $this->registerTwigVariable();
         $this->registerTemplateRoots();
+        $this->registerTwigExtension();
+        $this->registerPagePass();
+        $this->registerFixOnSave();
+        $this->registerGqlDirective();
+        $this->registerUtility();
 
-        // Example of gating a site request. Uncomment and adapt to intercept
-        // element routing (e.g. a password gate, a redirect, a feature flag):
-        //
-        // Event::on(Entry::class, Element::EVENT_SET_ROUTE, function (SetElementRouteEvent $e) {
-        //     $entry = $e->sender;
-        //     // gate your requests here
-        // });
+        $request = Craft::$app->getRequest();
+        if ($this->getSettings()->ckeditorAsYouType && !$request->getIsConsoleRequest() && $request->getIsCpRequest()) {
+            CkeditorSupport::register();
+        }
+    }
 
-        // Reacting to element saves? Most saves are not the live element
-        // (needs: use craft\services\Elements; craft\events\ElementEvent;
-        // craft\helpers\ElementHelper):
-        // Event::on(Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT, function (ElementEvent $e) {
-        //     $el = $e->element;
-        //     if (ElementHelper::isDraftOrRevision($el) || $el->propagating) {
-        //         return; // provisional drafts autosave under their own uid; propagation saves once per site
-        //     }
-        // });
-        // A first publish applies a draft onto itself (draft uid === canonical uid); in a
-        // normal apply the draft is deleted before Drafts::EVENT_AFTER_APPLY_DRAFT fires
-        // (Sesame 5eff31d, 6e9c503; craft-plugin-base docs/PATTERNS.md §12).
-        //
-        // Retention / purge: register on Gc::EVENT_RUN and NEVER gate it on isPro() —
-        // only writing data may be Pro; deleting it runs on every edition (Sesame 8fdaeb4).
-        // (needs: use craft\services\Gc)
-        // Event::on(Gc::class, Gc::EVENT_RUN, fn () => $this->exampleLog->purgeExpired());
+    /**
+     * The settings, typed.
+     *
+     * @return Settings
+     */
+    public function getSettings(): Settings
+    {
+        /** @var Settings $settings */
+        $settings = parent::getSettings();
+        return $settings;
     }
 
     protected function createSettingsModel(): ?Model
@@ -108,12 +141,23 @@ class Plugin extends BasePlugin
         // The template needs the keys config/sorts.php overrides and the values
         // stored in project config (see the comment at the top of settings.twig).
         $fileConfig = Craft::$app->getConfig()->getConfigFromFile($this->handle);
+        $locales = $this->engine->engine()->locales();
+        $variants = [];
+        foreach ($locales->ids() as $id) {
+            $locale = $locales->resolve($id);
+            if ($locale !== null && $locale->variants()) {
+                $variants[$id] = $locale->variants();
+            }
+        }
         return Craft::$app->getView()->renderTemplate('sorts/settings', [
             'plugin' => $this,
             'settings' => $this->getSettings(),
             'isPro' => $this->isPro(),
             'overrides' => is_array($fileConfig) ? array_keys($fileConfig) : [],
-            'stored' => Craft::$app->getProjectConfig()->get(ProjectConfig::PATH_PLUGINS . '.' . $this->handle . '.settings') ?? [],
+            // Project config keeps a map in a packed form that remembers its key order; the template needs it as it was.
+            'stored' => ProjectConfigHelper::unpackAssociativeArrays(Craft::$app->getProjectConfig()->get(ProjectConfig::PATH_PLUGINS . '.' . $this->handle . '.settings') ?? []),
+            'variants' => $variants,
+            'ckeditorInstalled' => class_exists(\craft\ckeditor\helpers\CkeditorConfig::class),
         ]);
     }
 
@@ -135,19 +179,6 @@ class Plugin extends BasePlugin
         );
     }
 
-    private function registerTwigVariable(): void
-    {
-        Event::on(
-            CraftVariable::class,
-            CraftVariable::EVENT_INIT,
-            static function (Event $event): void {
-                /** @var CraftVariable $variable */
-                $variable = $event->sender;
-                $variable->set('sorts', PluginVariable::class);
-            }
-        );
-    }
-
     private function registerTemplateRoots(): void
     {
         Event::on(
@@ -161,5 +192,68 @@ class Plugin extends BasePlugin
         // requests makes every CP template routable on the front end (Sesame
         // d27cb13). If the front end needs plugin templates, register a narrow
         // folder only:  $event->roots['sorts'] = __DIR__ . '/templates/_site';
+    }
+
+    /** The `|sorts` filter. Lite and Pro; the engine applies the edition’s rules. */
+    private function registerTwigExtension(): void
+    {
+        Craft::$app->getView()->registerTwigExtension(new SortsExtension());
+    }
+
+    /** The whole-page pass (Pro). Site page requests only, so no handler is attached elsewhere. */
+    private function registerPagePass(): void
+    {
+        $request = Craft::$app->getRequest();
+        if ($request->getIsConsoleRequest() || $request->getIsCpRequest()) {
+            return;
+        }
+        Event::on(
+            View::class,
+            View::EVENT_AFTER_RENDER_PAGE_TEMPLATE,
+            function (TemplateEvent $event): void {
+                $this->pagePass->handle($event);
+            }
+        );
+    }
+
+    /** Fix-on-save (Pro, off by default). The handler asks the edition and the setting itself. */
+    private function registerFixOnSave(): void
+    {
+        Event::on(
+            Elements::class,
+            Elements::EVENT_BEFORE_SAVE_ELEMENT,
+            function (ElementEvent $event): void {
+                $this->contentFixer->onBeforeSave($event);
+            }
+        );
+    }
+
+    /**
+     * The `@sorts` directive. Registered on every edition, so a query written for Pro
+     * still runs after a downgrade; the directive passes values through unchanged in Lite.
+     */
+    private function registerGqlDirective(): void
+    {
+        Event::on(
+            Gql::class,
+            Gql::EVENT_REGISTER_GQL_DIRECTIVES,
+            static function (RegisterGqlDirectivesEvent $event): void {
+                $event->directives[] = SortsDirective::class;
+            }
+        );
+    }
+
+    /** CP → Utilities → Sorts (Pro). Not listed on Lite; the controller asks the edition again. */
+    private function registerUtility(): void
+    {
+        Event::on(
+            Utilities::class,
+            Utilities::EVENT_REGISTER_UTILITIES,
+            function (RegisterComponentTypesEvent $event): void {
+                if ($this->isPro()) {
+                    $event->types[] = AuditUtility::class;
+                }
+            }
+        );
     }
 }
