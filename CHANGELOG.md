@@ -8,3 +8,7 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
 
 ### Added
 - Initial release.
+- Typography engine (no Craft dependency): a lossless HTML tokenizer; smart quotes with
+  nesting, apostrophes (including leading ones), primes, dashes, ellipsis, symbols, number
+  ranges, fractions, multiplication signs, ordinals, widows, no-break spaces, French spacing
+  and styling hooks, each a rule behind one interface; sixteen locales generated from CLDR 49.0.0.

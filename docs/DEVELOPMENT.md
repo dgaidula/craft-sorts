@@ -8,6 +8,7 @@ start with the [README](../README.md).
 
 - [Overview](#overview)
 - [Architecture](#architecture)
+- [The typography engine](#the-typography-engine)
 - [The editions model](#the-editions-model)
 - [The config layer](#the-config-layer)
 - [Developing against a host site](#developing-against-a-host-site)
@@ -48,6 +49,119 @@ Plugins screen, settings breadcrumb). Blank keeps "Sorts".
   bundled or shipped to the browser.
 - **`web/twig/PluginVariable.php`** — exposes `craft.sorts.*`.
 
+
+## The typography engine
+
+`src/engine/` (namespace `iceboxind\sorts\engine`) is pure PHP with no Craft or
+Yii code. The Craft layer (page pass, Twig filter, the register-rules event,
+fix-on-save) is wiring over `Engine::apply()`.
+
+```php
+$engine = new Engine(new Options(locale: 'en-US'));
+$engine->apply($html);                                  // HTML in, HTML out
+$engine->apply($text, [], new Options(mode: 'text'));   // plain text: no tags, no markup written
+$engine->apply($csvCell, ['recipe-fractions']);         // scope (c): run a rule by name
+$engine->register(new MyRule());                        // a site’s own rule
+```
+
+### How a page is processed
+
+1. **Tokenize** (`Engine::TOKENS`). One pattern splits the string into text, tags,
+   comments, CDATA, doctypes and raw-text elements (`script style textarea title
+   xmp iframe noembed noframes`), following the HTML5 rules for where a tag
+   ends (an attribute value may hold `>`; a stray `</` opens a bogus comment).
+   The string is never parsed into a tree or re-serialized, so what the engine
+   does not change comes out byte for byte. If nothing changes, the input string
+   comes back. Every byte must belong to a token, or the engine returns the input.
+2. **Walk.** A stack of `Frame`s tracks the open elements: the locale (nearest
+   `data-sorts-lang`, then `lang`), whether the subtree is left alone
+   (`data-sorts="off"`, the skip tags and classes, `pre code kbd samp var
+   textarea math svg template noscript`) and the rules named by
+   `data-sorts-rules`. Implied end tags (`<p>` closed by a block, `<li>` by
+   `<li>`) are handled; other malformed nesting is repaired by popping to the
+   matching name.
+3. **Flows.** Text between two boundaries (a block element’s start or end, `<br>`)
+   is one `Flow`, with inline tags (`Html::TRANSPARENT`) looked through. Code
+   and images are context: their text counts for deciding a quote’s direction
+   but is never edited. Quote nesting and widows are decided on a flow.
+4. **Rules.** Each editable text run gets a `Run` (the text and its settled
+   marks) and a `Context` (locale, mode, ancestors, the text before and after).
+   The rules for that locale and scope run in priority order.
+
+### Rules
+
+Every rule, built in or a site’s own, implements `RuleInterface`: `handle()`,
+`priority()`, `defaultEnabled()`, `supportsLocale()`, `emitsMarkup()`,
+`triggers()` and `apply(Run, Context)`. Scope follows from `defaultEnabled()`
+and the options: a rule that is on runs everywhere; any rule also runs inside
+`data-sorts-rules="<handle>"` and when named in the call. Markup-writing rules
+(ordinals, the styling hooks) never run in text mode.
+
+| Priority | Handle | Default | Notes |
+|---|---|---|---|
+| 10 | `symbols` | on | (c) (r) (tm) |
+| 20 | `ellipsis` | on | |
+| 30 | `dashes` | on | `--` by locale; `---` is an em dash |
+| 40 | `fractions` | off | the Unicode set only |
+| 50 | `ranges` | off | plain number pairs only |
+| 60 | `multiplication` | off | |
+| 70, 80, 90 | `primes`, `apostrophes`, `quotes` | on | one shared scan (`QuoteScanner`) |
+| 100 | `nbsp` | on | units, initials, honorifics, § |
+| 110 | `locale-spacing` | on | only for locales whose data has `spacing` (French) |
+| 120 | `widows` | on | headings only (option `tags`, `minWords`) |
+| 130 | `ordinals` | off | writes markup; English only |
+| 140–142 | `hook-amp`, `hook-caps`, `hook-quotes` | off | write markup |
+
+The quote rules are one scan because their decisions depend on each other (a
+quote after a digit is a prime or a closing quote depending on whether a quotation
+is open). Quote depth, not the typed character, picks the pair: the outermost
+level uses the locale’s primary pair, the next its nested pair, then they
+alternate.
+
+### Settled characters
+
+`Run::replace()`, `edit()` and `replaceAll()` mark what they write as settled
+(pass `$settle = false` to opt out) and refuse any later edit that touches a settled
+character. The marks are offsets kept beside the text, so nothing is added to
+the string and nothing can leak into the output. They last for one call: a
+second call over the output sees ordinary text.
+
+### Locales
+
+One PHP file per locale in `src/engine/locales/` (quote pairs, nested pair,
+apostrophe, dash style, spacing), read by `LocaleRegistry` the first time a
+locale is asked for. Adding a locale is adding a file. The files are generated:
+
+```bash
+npm pack cldr-misc-full@49.0.0 && mkdir cldr && tar xzf cldr-misc-full-49.0.0.tgz -C cldr
+node bin/cldr-locales.mjs generate cldr/package          # dry run
+node bin/cldr-locales.mjs generate cldr/package --go
+```
+
+Quote pairs come from CLDR 49.0.0; dash style and spacing come from the style
+authority named in each file. To depart from CLDR for a locale outright, set
+`PAIR_OVERRIDES` in the generator and regenerate.
+
+**Variants.** CLDR is always the default. Where a respected style authority
+disagrees, the other convention is a named variant: the locale’s `variants`
+entry lists only the keys it changes (`quotes`, `nested`, `apostrophe`, `dash`,
+`spacing`) and cites its authority in a comment. The generator’s `LOCALES`
+table is where they are declared (`variants: { 'single-outer': … }` on `en-GB`).
+A caller picks one per locale with `new Options(variants: ['en-GB' =>
+'single-outer'])`; an unknown name, or a locale without that variant, means the
+CLDR default and never an error.
+
+### Tests and speed
+
+```bash
+composer test-engine                  # corpus, unit tests, HTML fuzz; no Craft needed
+php tests/engine/run.php corpus      # or: unit, fuzz
+php tests/engine/perf.php            # timing on a generated ~100 KB page
+```
+
+The corpus (`tests/engine/corpus/*.txt`) records each case’s input, locale, mode,
+rules and expected output, and every case is also run a second time on its own
+output. See the header of `tests/engine/corpus.php` for the format.
 
 ## The editions model
 
@@ -162,6 +276,16 @@ composer cs-fix     # apply
 src/
 ├── Plugin.php                     # Bootstrap: components, events, routes, permissions
 ├── icon.svg
+├── engine/                        # Typography engine: pure PHP, no Craft (see above)
+│   ├── Engine.php                 # Tokenize, walk, run rules; register(), apply()
+│   ├── Options.php                # Locale, mode, rule switches and settings, skips
+│   ├── RuleInterface.php          # The one interface for built-in and site rules
+│   ├── Run.php                    # Editable text plus settled marks
+│   ├── Context.php                # What a rule sees around its run
+│   ├── Flow.php, Frame.php, Pass.php, Html.php   # Walk internals and element tables
+│   ├── LocaleInterface.php, DataLocale.php, LocaleRegistry.php
+│   ├── locales/                   # One generated data file per locale (CLDR 49.0.0)
+│   └── rules/                     # The built-in rules and QuoteScanner
 ├── migrations/
 │   └── Install.php                # Install migration
 ├── models/
@@ -170,4 +294,7 @@ src/
 │   └── settings.twig              # CP: settings (headed sections, no tabs)
 └── web/
     └── twig/PluginVariable.php    # craft.sorts.*
+
+bin/cldr-locales.mjs               # Generates src/engine/locales from CLDR
+tests/engine/                      # Engine tests: run.php, corpus/, unit.php, fuzz.php, perf.php
 ```
