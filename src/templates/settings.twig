@@ -1,0 +1,72 @@
+{% import '_includes/forms' as forms %}
+
+{# Project config: read-only on prod when allowAdminChanges is off (by design).
+   Craft renders this inside settings/plugins/_settings.twig, so a `tabs`
+   variable set here never reaches the layout (cp.twig reads tabs from the outer
+   template).
+   Use headed sections, or override Plugin::getSettingsResponse() with a full
+   page template if you truly need tabs.
+
+   The rule for every setting you add: never leave a stored setting out of the
+   POST. Craft saves only the posted keys and replaces the whole
+   plugins.sorts.settings entry in project config, so a stored setting that
+   is not posted is erased on save. Two cases carry the stored value
+   (`stored`, from project config) in a hidden input instead of the field:
+   - set in config/sorts.php (`overrides`): show the field disabled with
+     the override note, so the file's value (a secret, say) is never posted and
+     never lands in project config;
+   - Pro-gated, on Lite: render no field, so a Pro value survives a Lite save.
+   `keep()` handles scalar settings; carry an array setting item by item. #}
+
+{% macro keep(name, stored) -%}
+    {%- if stored[name] is defined %}{{ hiddenInput(name, stored[name]) }}{% endif -%}
+{%- endmacro %}
+{% from _self import keep %}
+{% set overridden = 'This is being overridden by config/sorts.php.'|t('sorts') %}
+
+<h2>{{ 'General'|t('sorts') }}</h2>
+
+{{ forms.textField({
+    label: 'Plugin name'|t('sorts'),
+    instructions: 'What this plugin is called in the control panel (sidebar, Plugins screen, settings). Leave blank for “Sorts”. Best set in config/sorts.php so it holds with admin changes off.'|t('sorts'),
+    id: 'pluginName',
+    name: 'pluginName',
+    placeholder: 'Sorts',
+    value: settings.pluginName,
+    disabled: 'pluginName' in overrides,
+    warning: 'pluginName' in overrides ? overridden,
+}) }}
+{% if 'pluginName' in overrides %}{{ keep('pluginName', stored) }}{% endif %}
+
+{{ forms.autosuggestField({
+    label: 'Example API key'|t('sorts'),
+    instructions: 'Literal value or an $ENVIRONMENT_VARIABLE, resolved server-side.'|t('sorts'),
+    id: 'exampleApiKey',
+    name: 'exampleApiKey',
+    suggestEnvVars: true,
+    value: settings.exampleApiKey,
+    disabled: 'exampleApiKey' in overrides,
+    warning: 'exampleApiKey' in overrides ? overridden,
+}) }}
+{% if 'exampleApiKey' in overrides %}{{ keep('exampleApiKey', stored) }}{% endif %}
+
+{% if isPro %}
+    <hr>
+    <h2>{{ 'Pro-only example'|t('sorts') }}</h2>
+    <p class="light">{{ 'This block only renders on the Pro edition — a template of the pattern to follow for any Pro-gated setting.'|t('sorts') }}</p>
+    {{ forms.lightswitchField({
+        label: 'An example Pro-only toggle'|t('sorts'),
+        id: 'exampleProToggle',
+        name: 'exampleProToggle',
+        on: settings.exampleProToggle,
+        disabled: 'exampleProToggle' in overrides,
+        warning: 'exampleProToggle' in overrides ? overridden,
+    }) }}
+    {% if 'exampleProToggle' in overrides %}{{ keep('exampleProToggle', stored) }}{% endif %}
+{% else %}
+    {{ keep('exampleProToggle', stored) }}
+{% endif %}
+
+<hr>
+<h2>{{ 'Advanced'|t('sorts') }}</h2>
+<p class="light">{{ 'Nothing here yet — add Advanced settings as this plugin grows.'|t('sorts') }}</p>

@@ -1,0 +1,56 @@
+{
+  "name": "iceboxind/craft-sorts",
+  "description": "Typographer-grade punctuation for Craft CMS: smart quotes, apostrophes, primes, dashes and more, fixed site-wide with no template edits.",
+  "type": "craft-plugin",
+  "keywords": ["craft", "craft-cms", "craft-plugin"],
+  "license": "proprietary",
+  "support": {
+    "email": "support@iceboxind.com",
+    "issues": "https://github.com/dgaidula/craft-sorts/issues",
+    "source": "https://github.com/dgaidula/craft-sorts",
+    "docs": "https://github.com/dgaidula/craft-sorts/blob/main/README.md"
+  },
+  "require": {
+    "php": ">=8.2",
+    "craftcms/cms": "^5.0"
+  },
+  "require-dev": {
+    "craftcms/phpstan": "dev-main",
+    "php-cs-fixer/shim": "^3",
+    "php-parallel-lint/php-parallel-lint": "^1.4",
+    "phpstan/phpstan": "^2.1"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "scripts": {
+    "check": ["@composer validate --strict --no-plugins", "@lint", "@cs-check", "@phpstan"],
+    "cs-check": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
+    "cs-fix": "@php vendor/bin/php-cs-fixer fix",
+    "lint": "@php vendor/bin/parallel-lint src",
+    "phpstan": "@php vendor/bin/phpstan --memory-limit=1G"
+  },
+  "config": {
+    "allow-plugins": {
+      "craftcms/plugin-installer": true,
+      "yiisoft/yii2-composer": true
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "iceboxind\\sorts\\": "src/"
+    }
+  },
+  "extra": {
+    "handle": "sorts",
+    "name": "Sorts",
+    "editions": [
+      "lite",
+      "pro"
+    ],
+    "developer": "Danniel T. Gaidula",
+    "developerUrl": "https://iceboxind.com",
+    "documentationUrl": "https://github.com/dgaidula/craft-sorts/blob/main/README.md",
+    "changelogUrl": "https://raw.githubusercontent.com/dgaidula/craft-sorts/main/CHANGELOG.md",
+    "class": "iceboxind\\sorts\\Plugin"
+  }
+}

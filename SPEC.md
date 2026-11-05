@@ -1,0 +1,159 @@
+# Sorts — build spec
+
+Status: **draft for Dan’s approval, 2026-11-05.** Decisions marked **D** are open (§9); everything else is settled.
+
+## 1. The problem
+
+Editors type and paste straight quotes (`"`, `'`). Craft 5 does nothing about them:
+
+- CKEditor 5 converts quotes only as they are **typed**, and only when its `TextTransformation` plugin is
+  loaded, which `craftcms/ckeditor` leaves off by default. Pasted text keeps whatever it came with.
+- Titles and plain-text fields get no conversion at all.
+- Twig escapes `"` as `&quot;` and `'` as `&#039;`, so the straight characters reach the page as entities.
+
+Some typefaces make this worse than ugly. Palanquin (Google Fonts, v1.0.4, checked 2026-11-04) draws `"` with
+the **identical outline** to `”` and `'` identical to `’`. On such a font a straight quote looks right at the
+end of a quotation and **backward at the start**, and editors fix the opening ones by hand, one at a time.
+
+The free plugins (Typogrify, ~5.7k installs; Wordsmith, ~5.2k; both Craft 5) are **Twig filters**: someone
+has to add them to every template that prints text, and nothing fixes the content itself. No Craft 5 plugin
+applies typography site-wide on its own (Store API and web search, 2026-11-05).
+
+**Sorts’ pitch:** install it and every page is typeset correctly — titles, every field type, hard-coded
+template text — with no template edits; and in the control panel editors get the right characters as they type.
+
+## 2. Editions (decided, Dan 2026-11-05)
+
+Ascending ladder, one edition per install (`Plugin::editions()`); every gate goes through `Plugin::isPro()`.
+Lite holds only what the market already prices at zero.
+
+| | Lite (free) | Pro (paid) |
+|---|---|---|
+| Twig filter `\|sorts` and `{% filter sorts %}` (English quotes, apostrophes, dashes, ellipsis) | ✓ | ✓ |
+| CKEditor as-you-type quotes (load `TextTransformation`) | ✓ | ✓ |
+| **Automatic whole-page pass** (no template edits) | | ✓ |
+| Every rule in §3 and every locale in §4 | | ✓ |
+| Exclusions (§5.4) | | ✓ |
+| Fix-on-save and the audit/fix utility (§6) | | ✓ |
+| GraphQL directive `@sorts` | | ✓ |
+
+Edition gates control features, never safety: a downgrade to Lite stops the automatic pass; it never leaves
+content half-converted.
+
+## 3. Rules (Pro covers all of them; Dan: “PRO covers all advanced typography problems”)
+
+Each rule has an on/off setting; the default column is the out-of-box state.
+
+| Rule | Example | Default |
+|---|---|---|
+| Double and single quotes, nested | `"She said 'no'"` → `“She said ‘no’”` | on |
+| Apostrophes, including leading | `don't`, `'90s`, `rock 'n' roll` → `don’t`, `’90s`, `rock ’n’ roll` | on |
+| Quotes next to dashes, brackets, inline tags | `—"Yes"`, `("no")`, `<i>"x"</i>` | on |
+| Primes for feet/inches and minutes/seconds | `5'10"` → `5′10″`; `45°30'` → `45°30′` | on |
+| Em and en dashes | `--` → `—` (or spaced `–`, by locale); `---` → `—` | on |
+| Number ranges | `1-5`, `pages 10-12` → `1–5` | off (phone numbers, ISBNs, SKUs) |
+| Ellipsis | `...` → `…` | on |
+| Symbols | `(c)` `(r)` `(tm)` → `©` `®` `™` | on |
+| Multiplication | `3x4`, `1920 x 1080` → `3×4`, `1920 × 1080` | off |
+| Fractions | `1/2` → `½` (only the Unicode set; never dates or URLs) | off |
+| Ordinals | `1st` → `1<sup>st</sup>` | off |
+| Widows | non-breaking space between the last two words of headings and paragraphs (minimum word count setting) | on for headings |
+| Non-breaking spaces | number + unit (`10 kg`), initials, honorifics (`Dr. Smith`), `§ 5` | on |
+| Locale spacing | French narrow no-break space before `; : ! ?` and inside `« »` | per locale |
+| Styling hooks | wrap `&` in `<span class="amp">`, runs of caps in `<span class="caps">`, an opening quote in `<span class="dquo">`/`<span class="quo">` for hanging punctuation | off |
+
+**Not in scope:** hyphenation (use CSS `hyphens: auto` with a correct `lang`; the README says so), CJK
+punctuation, number formatting.
+
+## 4. Locales
+
+Rules are **data**: one rule set per locale (quote pairs, nested pairs, dash style, spacing). The page pass
+picks the set from the site’s language and from any `lang` attribute on an element (nearest ancestor wins).
+First release: `en-US`, `en-GB` (single quotes outermost), `de` (`„…“ ‚…‘`), `de-CH`/`fr-CH` (`«…» ‹…›`), `fr`
+(`« … »` with narrow no-break spaces), `es`, `it`, `pt`, `nl`, `sv`/`fi` (`”…”`), `da`/`no`, `pl`
+(`„…”`), `cs`. The examples above are a guide only: take each locale’s quote pairs from Unicode CLDR’s
+`delimiters` data and its spacing from CLDR or the locale’s style authority, and record the CLDR version in
+the README. Unknown languages fall back to the site’s default set, then `en-US`.
+
+**D1** decides whether locales beyond English ship in Pro or as paid add-ons. Build them as rule-set data
+either way, behind one interface, so the answer moves files, not code.
+
+## 5. Architecture
+
+### 5.1 Engine (`src/engine/`, no Craft dependency)
+
+- Pure PHP 8.2+, unit-testable without Craft. Input: a string of HTML (or plain text) plus a rule set;
+  output: the same string with only text runs changed.
+- **Write our own engine.** `mundschenk-at/php-typography` is GPL-2.0-or-later and cannot ship inside a
+  Craft-License plugin. `michelf/php-smartypants` (BSD-3, last release 2016) may be read as a reference, with
+  attribution in `NOTICE` if any logic is borrowed; it misses leading apostrophes and quotes after dashes and
+  brackets, which our corpus must cover.
+- **HTML handling:** a streaming tokenizer that splits markup from text and edits text runs only. Never
+  re-serialize through `DOMDocument` (it rewrites HTML5, entities and whitespace). A page with nothing to
+  convert must come out **byte-identical** (fuzz-tested).
+- **Entities:** treat `&quot;`, `&#34;`, `&#x22;`, `&#039;`, `&#39;`, `&#x27;`, `&apos;` in text as straight
+  quotes; leave every other entity alone. Output real characters (UTF-8), not entities.
+- **Context across tags:** inline elements (`a`, `i`, `em`, `b`, `strong`, `span`, `sup`, `sub`, `small`,
+  `mark`, `abbr`, `cite`, `q`, `u`, `s`) are transparent when deciding a quote’s direction; block elements and
+  `<br>` are boundaries.
+- **Never touched:** attributes; the contents of `script`, `style`, `pre`, `code`, `kbd`, `samp`, `var`,
+  `textarea`, `math`, `svg`, `template`, `noscript`; HTML comments; anything inside an excluded element (§5.4).
+- Performance budget: ≤ 5 ms for a 100 KB page on PHP 8.2 (measure and record in the README).
+
+### 5.2 Automatic page pass (Pro)
+
+- `craft\web\View::EVENT_AFTER_RENDER_PAGE_TEMPLATE`; site requests only (never CP, console or action
+  requests); only when the response format is HTML.
+- Runs on preview and token requests too, so a preview matches the live page.
+- Template caches (`{% cache %}`) and static-cache plugins store the converted output, because the pass runs
+  on the rendered page; say so in the README.
+- `<title>` text and `meta` `content` attributes: off by default, one setting turns them on (they show in
+  browser tabs and link previews).
+
+### 5.3 Lite pieces
+
+- Twig filter `|sorts` (HTML-aware; a plain-text mode for attribute and JSON contexts: `|sorts('text')`).
+- CKEditor: `CkeditorConfig::registerFirstPartyPackage(['TextTransformation'])` when `craftcms/ckeditor` is
+  installed; no-op otherwise. Verify against the installed `craftcms/ckeditor` version and note it.
+
+### 5.4 Exclusions (Pro)
+
+- `data-sorts="off"` on any element skips it and its subtree; `data-sorts-lang="…"` overrides the locale.
+- Settings: extra tags or class names to skip; URI patterns to skip (e.g. `/api/*`).
+
+## 6. Fixing stored content (Pro)
+
+The page pass fixes what visitors see; feeds, APIs, search and exports read stored content. Two tools:
+
+- **Fix-on-save** (off by default): on element save, run the engine over the title and over PlainText and
+  CKEditor field values (text runs only; never slugs, URIs, handles, URLs, emails or code fields). Per field
+  type toggles. Must not fire during resaves, propagation or migrations unless asked.
+- **Audit utility** (CP → Utilities → Sorts): scan entries for convertible characters, list them with a
+  before/after preview (dry run), and fix the selected ones through a queue job. The fix must not create
+  revisions or change `dateUpdated` unless the user ticks a box. Read `craft-plugin-base/docs/PATTERNS.md`
+  §§11–17 before writing this.
+
+## 7. Assumes (README)
+
+HTML pages rendered by Craft templates. Not handled: JSON/XML responses (RSS opt-in is a later release),
+emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
+
+## 8. Tests and build mode
+
+- **Engine corpus:** at least 400 cases across the §3 rules and every §4 locale, including the hard ones:
+  leading apostrophes, nested quotes, quotes beside inline tags and after em dashes, primes vs closing quotes,
+  entity forms, already-curly text left alone (idempotence: running twice equals running once).
+- **HTML fuzz:** random real-world pages through the tokenizer with all rules off → byte-identical output.
+- **Craft smoke:** Lite and Pro in your own testbed (never a client site): the page pass on, off and excluded;
+  preview requests; the CKEditor package registered; fix-on-save and the audit utility on fixture entries.
+- **Build mode: release.** Sorts will run on production sites, so `dgbuilder` builds, then a `gate` at
+  `xhigh` with mutants, fix rounds per the casting rules, and the README’s `**Hardened:**` line.
+
+## 9. Open decisions (Dan)
+
+- **D1 — locales:** all in Pro (recommended), or English in Pro and other locales as paid add-on plugins.
+  Editions can’t do per-country upgrades (one edition per install, one ladder); add-ons would be separate Store
+  listings that require Sorts, each with its own review, changelog, license and support.
+- **D2 — price:** Pro **$39 + $19/yr** recommended (Store data: paid installs are flat across price bands, so
+  cheap buys nothing; Craft’s guidance puts small utilities at $10–29, and Pro’s audit/fix utility is more than
+  that). Not needed until Store submission.
