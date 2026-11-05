@@ -78,6 +78,12 @@ the README. Unknown languages fall back to the site’s default set, then `en-US
 Every locale ships in Pro (D812, Dan 2026-11-05). Build them as rule-set data behind one interface anyway, so a
 locale is a file, not code.
 
+**Where CLDR and a style authority disagree** (D816, Dan 2026-11-05: “This is also how we should treat all
+inconsistencies”), CLDR is the default and the other convention ships as a **named variant** of that locale,
+chosen by a setting. A variant overrides only the keys it changes and cites its authority. First variant:
+`en-GB` `single-outer` (`‘…’` outside, `“…”` nested; Oxford/New Hart’s Rules book style); CLDR 49’s `“…” ‘…’`
+stays the default. Every other divergence found becomes a candidate variant, listed for Dan before it is built.
+
 ## 5. Architecture
 
 ### 5.1 Engine (`src/engine/`, no Craft dependency)
@@ -173,6 +179,12 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
 - **D812 — locales: decided 2026-11-05 (Dan: y).** Every locale ships in Pro; no per-language add-ons.
 - **D813 — extension API (§5.5): decided 2026-11-05 (Dan: y).** In the first release, in Pro.
 - **D815 — public repo: done 2026-11-05 (Dan: y).** `github.com/dgaidula/craft-sorts`.
+- **D816 — CLDR divergences: decided 2026-11-05 (Dan).** CLDR is the default; a style authority’s convention is a
+  named, switchable locale variant (§4). First one: `en-GB` `single-outer`.
+- **D817 — a Bringhurst preset (Pro): open, proposed 2026-11-05.** One Pro setting, “Fine typography (Bringhurst)”,
+  that switches the §3 rules to the choices in Robert Bringhurst’s *The Elements of Typographic Style* (for
+  example spaced en dashes instead of close-set em dashes). Each choice must cite the book’s section number; no
+  copy is on hand yet, so nothing is built from memory.
 - **D814 — editions and price: decided 2026-11-05 (Dan: y).** Lite free; Pro **$39 + $19/yr** at launch (paid
   installs are flat across price bands, and freemium newcomers out-install paid-only ones; both prices can rise
   later, since Craft honours only the renewal price in the 30-day reminder).
