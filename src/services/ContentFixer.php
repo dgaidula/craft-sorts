@@ -35,7 +35,7 @@ use yii\db\Migration;
  * locale and variant). Craft copies a new element’s title and fields to every site it
  * supports, and a field that is not translated per site to every site that shares its
  * translation key; a value that reaches a site in another language is left as typed, and
- * the page pass sets it on each page in that page’s language. See {@see reach()}.
+ * the page pass sets it on each page in that page’s language. See {@see otherSites()}.
  */
 class ContentFixer extends Component
 {

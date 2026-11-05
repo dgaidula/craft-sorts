@@ -2,6 +2,7 @@
 
 namespace iceboxind\sorts\models;
 
+use Craft;
 use craft\base\Model;
 use iceboxind\sorts\engine\LocaleRegistry;
 
@@ -145,6 +146,25 @@ class Settings extends Model
             [['skipUris'], 'validateList', 'params' => ['pattern' => '/^[^\s\x00-\x1f]+$/', 'hint' => 'a path with no spaces; use * to match any run of characters']],
             [['variants'], 'validateVariants'],
         ];
+    }
+
+    /**
+     * Put each numeric setting in $values that does not validate back to its default, with
+     * one warning naming the value: settings loaded from project config or `config/sorts.php`
+     * are never validated, and a non-number reads as 0 ({@see setAttributes()}).
+     *
+     * @param array<string, mixed> $values the settings as they arrived
+     */
+    public function defaultInvalidNumbers(array $values): void
+    {
+        $defaults = new self();
+        foreach (['widowsMinWords', 'maxPageBytes'] as $name) {
+            if (array_key_exists($name, $values) && !$this->validate([$name])) {
+                Craft::warning(sprintf('Sorts ignored the %s setting %s (%s) and uses the default, %s.', $name, json_encode($values[$name]), implode(' ', $this->getErrors($name)), $defaults->$name), __METHOD__);
+                $this->$name = $defaults->$name;
+                $this->clearErrors($name);
+            }
+        }
     }
 
     /**

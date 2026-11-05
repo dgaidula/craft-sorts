@@ -131,6 +131,18 @@ class Plugin extends BasePlugin
         return $settings;
     }
 
+    /**
+     * Craft hands the plugin its settings from project config and `config/sorts.php` here
+     * without validating them (services/Plugins.php:934-941, base/Plugin.php:206-214 in Craft
+     * 5.12.0.1); a CP save goes through validation instead. A number that would not validate
+     * falls back to its default, with a warning, so `'2MB'` cannot switch the page pass off.
+     */
+    public function setSettings(array $settings): void
+    {
+        parent::setSettings($settings);
+        $this->getSettings()->defaultInvalidNumbers($settings);
+    }
+
     protected function createSettingsModel(): ?Model
     {
         return new Settings();

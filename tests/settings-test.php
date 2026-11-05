@@ -75,6 +75,25 @@ sortsTry('validation', function () use ($make) {
     sortsConfigure('lite');
 });
 
+// Settings that arrive from project config or config/sorts.php are not validated by Craft (R2-9).
+sortsTry('numbers from project config or config/sorts.php', function () {
+    sortsConfigure('pro');
+    $logged = sortsLogged(static fn () => sorts()->setSettings(['maxPageBytes' => '2MB', 'widowsMinWords' => 'lots']), ['warning']);
+    sortsEq('loaded: a page size that does not validate falls back to the default', 1_000_000, sorts()->getSettings()->maxPageBytes);
+    sortsEq('loaded: so does a widow count', 3, sorts()->getSettings()->widowsMinWords);
+    $naming = static fn (string $value): int => count(array_filter($logged, static fn (string $m): bool => str_contains($m, $value)));
+    sortsCheck('loaded: one warning for each, naming the value', $naming('"2MB"') === 1 && $naming('"lots"') === 1, json_encode($logged, JSON_UNESCAPED_UNICODE));
+    sorts()->setSettings(['maxPageBytes' => '-5']);
+    sortsEq('loaded: a negative page size falls back too', 1_000_000, sorts()->getSettings()->maxPageBytes);
+    sorts()->setSettings(['maxPageBytes' => '2500000', 'widowsMinWords' => '4']);
+    sortsEq('loaded: valid numbers are kept', [2_500_000, 4], [sorts()->getSettings()->maxPageBytes, sorts()->getSettings()->widowsMinWords]);
+    $pc = sortsRefresh();
+    $pc->set('plugins.sorts.settings.maxPageBytes', '2MB');
+    $pc->saveModifiedConfigData();
+    sortsCheck('a page size of "2MB" in project config leaves the page pass on', str_contains((string) sortsHttp()->get('/sorts-lab')->getBody(), '“Hello” — she said'));
+    sortsConfigure('lite');
+});
+
 sortsTry('the settings page, Lite', function () {
     sortsConfigure('pro', ['skipTags' => ['figcaption'], 'skipUris' => ['/api/*'], 'rules' => ['fractions' => true], 'fixOnSave' => true, 'variants' => ['en-GB' => 'single-outer'], 'widowsMinWords' => 6]);
     sortsConfigure('lite', array_merge((array) sorts()->getSettings()->getAttributes(), []));
