@@ -4,75 +4,280 @@
 
 A Craft 5 plugin by Danniel T. Gaidula.
 
+Editors type and paste straight quotes. Craft 5 leaves them alone, and Twig prints them as `&quot;` and `&#039;`. Install Sorts and every page is typeset correctly (titles, every field type, text hard-coded in your templates) with no template edits. In the control panel, editors get the right characters as they type.
+
+```html
+<!-- before -->
+<p>"She said 'no'" -- and left... It's 5'10" tall (c) 2026</p>
+
+<!-- after -->
+<p>“She said ‘no’” — and left… It’s 5′10″ tall © 2026</p>
+```
+
 ## Requirements
 
-**Craft CMS 5.0+ · PHP 8.2+.** Sorts is a Craft 5 plugin and does not run
-on Craft 4.
-
-## What it does
-
-- Exposes `craft.sorts.*` to templates.
-- Ships CP settings (General / Advanced sections) — dev-owned, project config.
-
-Replace this section with what the plugin actually does once it's built.
+**Craft CMS 5.0+ · PHP 8.2+.** Sorts is a Craft 5 plugin and does not run on Craft 4. Verified against Craft 5.12.0.1 and `craftcms/ckeditor` 5.9.0.
 
 ## Editions
 
-Sorts ships two editions.
+Sorts ships two editions. Lite holds only what the market already gives away; Pro is everything that works on its own.
 
 | | Lite (free) | Pro |
 | --- | :---: | :---: |
-| Example Pro-only capability | — | ✅ |
+| The `\|sorts` Twig filter and `{% apply sorts %}` (English quotes, apostrophes, primes, dashes, ellipsis) | ✅ | ✅ |
+| CKEditor as-you-type quotes | ✅ | ✅ |
+| Automatic whole-page pass, no template edits <sup>PRO</sup> | — | ✅ |
+| Every rule and every locale <sup>PRO</sup> | — | ✅ |
+| Rule switches, quotation styles and the widow setting <sup>PRO</sup> | — | ✅ |
+| Exclusions: `data-sorts`, skipped tags, classes and paths <sup>PRO</sup> | — | ✅ |
+| Page title and meta descriptions <sup>PRO</sup> | — | ✅ |
+| Extension API: register your own rules <sup>PRO</sup> | — | ✅ |
+| GraphQL directive `@sorts` <sup>PRO</sup> | — | ✅ |
+| Fix on save <sup>PRO</sup> | — | ✅ |
+| Audit utility: scan, preview and fix stored content <sup>PRO</sup> | — | ✅ |
 
-Fill in the real capability split as the plugin takes shape, and settle it before
-the first Store submission: a feature can move from Pro to Lite later, never back.
-Keep Lite thin — what the market already gives away — and Pro the first thing every
-client asks for next.
+Pro settings show on Lite, marked and locked, so you can see what Pro does. A downgrade to Lite stops the automatic pass and queues no new fixes; it never undoes or half-finishes content. A fix that has already been queued finishes.
 
-### Rename it in the control panel
+## What it does
 
-Sorts can present under any name you like — the sidebar nav, the
-Plugins screen, and the settings breadcrumb all follow **Settings → General →
-Plugin name** (blank = "Sorts"). Set it in `config/sorts.php` so it
-holds with `allowAdminChanges` off:
+Sorts is a typography engine (plain PHP, no Craft code, in `src/engine/`) with a Craft layer around it. The engine reads HTML with a tokenizer and edits text and nothing else: attributes, `script`, `style`, `pre`, `code`, `kbd`, `samp`, `var`, `textarea`, `math`, `svg`, `template`, `noscript` and comments are never touched, and a page with nothing to fix comes out byte for byte the same.
+
+| Rule | Example | Default |
+| --- | --- | :---: |
+| Quotation marks, nested | `"She said 'no'"` → `“She said ‘no’”` | on |
+| Apostrophes, including leading | `don't`, `'90s`, `rock 'n' roll` → `don’t`, `’90s`, `rock ’n’ roll` | on |
+| Primes | `5'10"` → `5′10″`; `45°30'` → `45°30′` | on |
+| Dashes | `--` → `—` (or a spaced `–`, by language); `---` → `—` | on |
+| Ellipsis | `...` → `…` | on |
+| Symbols | `(c)` `(r)` `(tm)` → `©` `®` `™` | on |
+| Number ranges | `1-5` → `1–5` | off |
+| Multiplication | `3x4`, `1920 x 1080` → `3×4`, `1920 × 1080` | off |
+| Fractions | `1/2` → `½` (the Unicode set only; never dates or URLs) | off |
+| Ordinals | `1st` → `1` and a superscript `st` | off |
+| Widows | a no-break space between the last two words of a heading | on |
+| No-break spaces | number and unit (`10 kg`), initials, `Dr. Smith`, `§ 5` | on |
+| Locale spacing | French narrow no-break space before `; : ! ?` and inside `« »` | by language |
+| Styling hooks | `&` in `<span class="amp">`, runs of capitals in `<span class="caps">`, an opening quote in `<span class="dquo">` | off |
+
+Ranges, multiplication and fractions are off because they would catch phone numbers, ISBNs, SKUs and dates. Ordinals and the styling hooks write markup, so they never run in plain-text mode and are never written into stored content.
+
+## Install
+
+```bash
+composer require iceboxind/craft-sorts
+php craft plugin/install sorts
+```
+
+Lite works at once. Pro starts the page pass the moment it is licensed: open any page and the punctuation is set.
+
+## The automatic page pass <sup>PRO</sup>
+
+Sorts listens for `craft\web\View::EVENT_AFTER_RENDER_PAGE_TEMPLATE` and sets the typography of each page Craft renders for a site visitor.
+
+It runs for front-end page requests that answer with HTML, previews and token requests (share links, live preview) included, so a preview matches the live page. It never runs for the control panel, the console, action requests, or a response that is not HTML (a template that sends `Content-Type: application/json`, or whose file name ends in `.json.twig` or `.xml.twig`, is left alone).
+
+The language comes from the current site’s language setting, and from a `lang` attribute on any element (the nearest one wins). An unknown language falls back to the site’s, then to `en-US`.
+
+**It never breaks a page.** If the engine or a rule you registered throws, the error is logged and the page is sent as the template rendered it.
+
+**The `<title>` and `<meta>` content are off by default.** They show in browser tabs and link previews, so one setting, *Also fix the page title and meta descriptions*, turns them on. Only the prose metas are touched (`description`, `og:title`, `og:description`, `og:site_name`, `og:image:alt`, and the `twitter:` title, description and image alt); the values are decoded, set as plain text and encoded again, and a value that needs no change keeps its bytes.
+
+### Caches
+
+`{% cache %}` tags and static-cache plugins (Blitz and the like) store the converted output, because the pass runs on the rendered page. Clear them after you change a Sorts setting.
+
+## Template usage
+
+```twig
+{{ entry.body|sorts }}                          {# HTML in, HTML out #}
+{{ entry.title|sorts }}                         {# a plain string is escaped first, like any HTML output #}
+{{ entry.title|sorts('text') }}                 {# plain text: attributes, JSON, CSV #}
+{% apply sorts %}<p>"Any" -- markup</p>{% endapply %}
+{{ row.quantity|sorts(rules: ['my-rule']) }}    {# a rule you registered, by name #}
+```
+
+In Lite the filter applies the English quotes, apostrophes, primes, dashes and ellipsis. In Pro it applies every rule that is switched on, in the current site’s language.
+
+**Escaping.** In HTML mode the filter never turns unescaped input into safe output. It trusts what Twig already treats as HTML: a rich-text field value, the body of `{% apply sorts %}`, and `|raw` directly in front of it (`{{ html|raw|sorts }}`). Any other value (a variable, a plain string, a literal in your template) is escaped first, so `{{ s|sorts }}` with `s` set to `<script>` prints `&lt;script&gt;`. Text mode returns a plain string, which Twig escapes when it prints it. Put `|raw` on the value right before `|sorts`; further up the chain it is not seen.
+
+On a Lite site, a rule named in `rules:` is skipped rather than raising an error; in Pro, a handle that nothing registered is an error, so a typo shows.
+
+## Settings
+
+CP → Settings → Plugins → Sorts, stored in project config, with every key overridable in `config/sorts.php` (see `config.example.php`). A setting a file overrides shows locked in the control panel. All input is validated: lists accept a list or one value per line, tag names are lower-case letters, digits and hyphens, and a bad value is refused with a message.
+
+| Setting | Key | Default | Edition |
+| --- | --- | --- | --- |
+| Plugin name | `pluginName` | blank | Lite |
+| Convert quotes as people type in CKEditor | `ckeditorAsYouType` | on | Lite |
+| Run the page pass | `pagePass` | on | Pro |
+| Fix the title and meta descriptions | `processHead` | off | Pro |
+| Rule switches (a map of rule handle to on or off) | `rules` | the table above | Pro |
+| Fewest words in a heading before widows are joined | `widowsMinWords` | 3 | Pro |
+| Quotation style per language | `variants` | CLDR | Pro |
+| Extra tags to skip | `skipTags` | none | Pro |
+| Extra classes to skip | `skipClasses` | none | Pro |
+| Request paths to skip (`*` matches any run of characters) | `skipUris` | none | Pro |
+| Fix on save | `fixOnSave` | off | Pro |
+| …titles, Plain Text fields, CKEditor fields | `fixTitles`, `fixPlainText`, `fixCkeditor` | on | Pro |
+| …also for resaves and migrations | `fixOnSaveBulk` | off | Pro |
 
 ```php
 // config/sorts.php
 return [
     '*' => [
-        'pluginName' => 'Something Else',
+        'skipTags' => ['figcaption'],
+        'skipClasses' => ['no-typography'],
+        'skipUris' => ['/api/*', '/sitemap.xml'],
+        'variants' => ['en-GB' => 'single-outer'],
+        'rules' => ['fractions' => true, 'ranges' => true],
     ],
 ];
 ```
 
-## Template usage
+### Rename it in the control panel
 
-`craft.sorts` is registered but has no methods yet. Add them to
-`src/web/twig/PluginVariable.php` and document each one here:
+Sorts can present under any name you like. The sidebar nav, the Plugins screen and the settings breadcrumb all follow **Settings → Plugins → Sorts → Plugin name** (blank = “Sorts”). Set it in `config/sorts.php` so it holds with `allowAdminChanges` off.
 
-```twig
-{{ craft.sorts.yourMethod() }}
+## Exclusions <sup>PRO</sup>
+
+In a template, on any element:
+
+```html
+<p data-sorts="off">Left exactly as written. So is everything inside this element.</p>
+<blockquote data-sorts-lang="de">"Hallo" -- the quotes follow German.</blockquote>
+<div data-sorts-rules="recipe-fractions">Turns on a rule that is off, for this element only.</div>
 ```
+
+In settings: extra tags, classes and request paths to skip. A path is matched against the URL path as requested (a site’s own prefix included), without the query string; `*` matches any run of characters, slashes too.
 
 ## Locales
 
-Sorts sets quotation marks, nested quotation marks, dashes and spacing by language: `en-US`,
-`en-GB`, `de`, `de-CH`, `fr`, `fr-CH`, `es`, `it`, `pt`, `nl`, `sv`, `fi`, `da`, `nb` (also
-`no`), `pl` and `cs`. The quotation marks come from Unicode CLDR **49.0.0**; dash style and
-spacing come from each language’s style authority, named in its locale file. A
-`lang` attribute on any element switches the language for everything inside it, and an
-unknown language falls back to the site’s language, then to `en-US`.
+Sorts sets quotation marks, nested quotation marks, dashes and spacing by language: `en-US`, `en-GB`, `de`, `de-CH`, `fr`, `fr-CH`, `es`, `it`, `pt`, `nl`, `sv`, `fi`, `da`, `nb` (also `no`), `pl` and `cs`. The quotation marks come from Unicode CLDR **49.0.0**; dash style and spacing come from each language’s style authority, named in its locale file. A `lang` attribute on any element switches the language for everything inside it, and an unknown language falls back to the site’s language, then to `en-US`. Lite has `en-US` and `en-GB`.
 
-CLDR is the default for every language. Where a style authority writes it differently, that
-convention is a named variant a caller can choose per language. The one built so far is
-`single-outer` for `en-GB` (‘single’ quotation marks outermost, “double” inside, as in
-New Hart’s Rules).
+CLDR is the default for every language. Where a style authority writes it differently, that convention is a named variant you can choose per language <sup>PRO</sup>. The one built so far is `single-outer` for `en-GB` (‘single’ quotation marks outermost, “double” inside, as in New Hart’s Rules).
+
+## CKEditor
+
+When `craftcms/ckeditor` is installed, Sorts loads CKEditor’s own `TextTransformation` plugin in every CKEditor field (`CkeditorConfig::registerFirstPartyPackage(['TextTransformation'])`), so quotes convert as people type. With nothing else set, that plugin would also turn `->` into an arrow, `<=` into a symbol, and `--` into an en dash even in American English, so Sorts narrows it to what its own rules do.
+
+What CKEditor allows, and what Sorts makes of it:
+
+- The editor’s config reaches the browser as JSON, and JSON cannot carry a regular expression, so Sorts can only switch on CKEditor’s built-in transformations by name.
+
+- Quotation marks: enabled only where one of CKEditor’s matches the site language’s pair. English gets “…” and ‘…’; `en-GB` `single-outer` gets ‘…’ for the single key; Polish gets „…” for the double key. German, French and the rest are left straight as typed, and the page pass or fix on save sets them correctly later.
+
+- Dashes, ellipsis and symbols follow the rules that are on. `--` becomes an en dash only for languages where Sorts’ `--` is a spaced en dash.
+
+- Not available in CKEditor: apostrophes, primes, ranges, no-break spaces, widows. Pasted text and existing content are never changed by the editor.
+
+- The language is the control panel’s requested site (`?site=`), which an entry’s edit page uses.
+
+- A field’s own CKEditor config wins: it can set its own `typing`, or switch the plugin off with `removePlugins: ['TextTransformation']`. The setting *Convert quotes as people type* turns it off everywhere. When CKEditor is not installed, Sorts does nothing here.
+
+## Extension API <sup>PRO</sup>
+
+Your site has its own conversions: a recipe site that turns `0.875` into `⅞`, a store that sets product dimensions. Those belong in your code, but they should run through Sorts rather than beside it. Register a rule:
+
+```php
+use iceboxind\sorts\events\RegisterRulesEvent;
+use iceboxind\sorts\Plugin as Sorts;
+use yii\base\Event;
+
+Event::on(Sorts::class, Sorts::EVENT_REGISTER_RULES, function (RegisterRulesEvent $event) {
+    $event->rules[] = new RecipeFractionsRule();
+});
+```
+
+A rule implements `iceboxind\sorts\engine\RuleInterface` (extend `AbstractRule` for the defaults). The built-in rules use the same interface.
+
+```php
+use iceboxind\sorts\engine\Context;
+use iceboxind\sorts\engine\Run;
+use iceboxind\sorts\engine\rules\AbstractRule;
+
+final class RecipeFractionsRule extends AbstractRule
+{
+    private const FRACTIONS = ['0.125' => '⅛', '0.25' => '¼', '0.5' => '½', '0.75' => '¾', '0.875' => '⅞'];
+
+    public function handle(): string
+    {
+        return 'recipe-fractions';          // lower-case letters, digits, hyphens
+    }
+
+    public function priority(): int
+    {
+        return 45;                          // rules run in ascending priority
+    }
+
+    public function defaultEnabled(): bool
+    {
+        return false;                       // true runs it everywhere (scope a)
+    }
+
+    public function apply(Run $run, Context $context): void
+    {
+        // Metric units and ounces are left alone. Whatever the rule writes is settled,
+        // so no later rule (a range dash, say) touches it.
+        $run->replaceAll(
+            '/(?<![\d.])(\d*)(\.\d+)(?!\d)(?! ?(?:ml|mL|l|L|g|kg|mg|cm|mm|oz)\b)/',
+            static function (array $m): ?string {
+                $fraction = self::FRACTIONS['0' . $m[2]] ?? null;
+                return $fraction === null ? null : ($m[1] === '0' ? '' : $m[1]) . $fraction;
+            }
+        );
+    }
+}
+```
+
+A registered rule has three scopes:
+
+1. **Everywhere in the page pass**, if `defaultEnabled()` returns true.
+
+2. **Only inside elements marked** `data-sorts-rules="recipe-fractions"`. Several handles go in one attribute, separated by spaces.
+
+3. **Only when called by name**, so CSV, XLSX and JSON get the same result as the page: `{{ qty|sorts(rules: ['recipe-fractions']) }}` in Twig, or in PHP:
+
+```php
+$text = Sorts::getInstance()->engine->apply('Mix 0.875 cup', ['recipe-fractions']);
+// Mix ⅞ cup
+$csv = Sorts::getInstance()->engine->apply($cell, ['recipe-fractions'], null, 'text');
+```
+
+`apply(string $input, array $rules = [], ?string $language = null, string $mode = 'html')` uses the same settings as the page pass (the language defaults to the current site’s), so the page and the PHP call give the same bytes for the same text. A rule that cannot be registered (a duplicate handle, a bad name, something that is not a rule) is logged and skipped; the others still run.
+
+## GraphQL <sup>PRO</sup>
+
+```graphql
+{
+  entries(section: "news") {
+    title @sorts(mode: "text")
+    ... on news_Entry { body { html @sorts } }
+  }
+}
+```
+
+`@sorts` sets the typography of a String field as it is returned. `mode` is `html` (the default) or `text`; `rules` runs registered rules by name. The language is the entry’s site. A CKEditor field returns an object: put the directive on its `html` or `rawHtml`. On Lite the directive is known to the schema and returns the value unchanged, so a query written for Pro does not fail after a downgrade.
+
+## Fixing stored content <sup>PRO</sup>
+
+The page pass fixes what visitors see. Feeds, APIs, search and exports read what is stored. Two tools fix the stored text.
+
+Both change characters only: quotes, apostrophes, primes, dashes, ellipsis and symbols, plus fractions, ranges and multiplication signs when you switch those rules on. They never write spacing or markup, or run a rule you registered, into the database. They never touch slugs, URIs, handles, URLs, email addresses, or Plain Text fields set to code, and a fix that would push a value past its field’s character limit is skipped.
+
+**Fix on save** (off by default) changes the title and the Plain Text and CKEditor values on the element as it is saved, so there is no second save. It skips revisions, drafts Craft autosaves while someone types, saves that propagate to other sites, and resaves and migrations (`craft up` included) unless *Also fix when resaving and while migrations run* is on.
+
+**The audit** (CP → Utilities → Sorts) scans entries a hundred at a time, lists those with something to fix with a before and after, and fixes the ones you tick through the queue. The scan only reads. The fix is saved the way Craft’s own resave command saves, so it creates no revision and leaves each entry’s Date Updated alone, unless you tick *Create a revision for each entry and update its Date Updated*. The edition is checked when the job is queued, not when it runs, so a job already queued finishes after a downgrade.
+
+## What Sorts assumes
+
+HTML pages rendered by Craft templates. Not handled: JSON and XML responses, emails, PDFs, text that JavaScript inserts after the page loads, hyphenation, and CJK punctuation.
+
+**Hyphenation** is the browser’s job. Use CSS `hyphens: auto` with a correct `lang` attribute (Craft sets one if your layout prints `{{ currentSite.language }}`).
 
 ## Performance
 
-The engine is measured on a generated, realistic page of about 100 KB (a news article with
-navigation, a sidebar and a footer; `php tests/engine/perf.php`), with the default rules
-on, opcache on and the JIT off. Median of 300 runs after a warm-up:
+The engine is measured on a generated, realistic page of about 100 KB (a news article with navigation, a sidebar and a footer; `php tests/engine/perf.php`), with the default rules on, opcache on and the JIT off. Median of 300 runs after a warm-up:
 
 | PHP | Where | Typical article | Dense stress page |
 |---|---|---|---|
@@ -80,13 +285,12 @@ on, opcache on and the JIT off. Median of 300 runs after a warm-up:
 | 8.4.27 | `php:8.4-cli` in Docker Desktop on the same Mac | 3.7 ms | 5.1 ms |
 | 8.2.35 | `php:8.2-cli` in Docker Desktop on the same Mac | 5.5 ms | 6.2 ms |
 
-About three sentences in ten on the typical article need typesetting; every sentence on the
-stress page does. The budget is 5 ms for a 100 KB page. It is met for the typical page on PHP
-8.4 and 8.5 and for both pages on PHP 8.5. It is **not met on PHP 8.2** (the oldest version
-Sorts supports): the same code takes about 1.5 times as long there as on PHP 8.4 in the same
-container. Speeding it up for 8.2 is open work.
+About three sentences in ten on the typical article need typesetting; every sentence on the stress page does. The budget is 5 ms for a 100 KB page. It is met for the typical page on PHP 8.4 and 8.5 and for both pages on PHP 8.5. It is **not met on PHP 8.2** (the oldest version Sorts supports): the same code takes about 1.5 times as long there as on PHP 8.4 in the same container. Speeding it up for 8.2 is open work.
 
 ## Development
 
-See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for architecture and the local
-dev loop.
+See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for architecture, the table of Pro gates and the local dev loop.
+
+## License
+
+Licensed under the Craft License; see [`LICENSE.md`](LICENSE.md). Copyright © Danniel T. Gaidula.

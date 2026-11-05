@@ -10,6 +10,8 @@ start with the [README](../README.md).
 - [Architecture](#architecture)
 - [The typography engine](#the-typography-engine)
 - [The editions model](#the-editions-model)
+- [Every Pro gate](#every-pro-gate)
+- [Testing](#testing)
 - [The config layer](#the-config-layer)
 - [Developing against a host site](#developing-against-a-host-site)
 - [Coding standards and layout](#coding-standards-and-layout)
@@ -21,16 +23,29 @@ start with the [README](../README.md).
 > **Requirements:** Craft CMS 5.0+ and PHP 8.2+. Sorts is a Craft 5
 > plugin and does not run on Craft 4.
 
-Describe what the plugin does and its primary usage pattern here.
+Sorts sets the typography of a Craft site: smart quotes, apostrophes, primes, dashes and
+more. A pure-PHP engine (`src/engine/`) does the work; the Craft layer around it is the
+automatic page pass, the `|sorts` Twig filter, CKEditor as-you-type quotes, settings,
+exclusions, the register-rules extension API, the `@sorts` GraphQL directive, fix-on-save
+and the audit utility. Lite has the filter and the CKEditor quotes; the rest is Pro.
 
 ## Architecture
 
 ### The `Plugin` bootstrap
 
 `src/Plugin.php` is the whole wiring diagram.
-`Plugin::init()` registers, via Yii events:
+`Plugin::config()` declares four components, `Plugin::init()` registers, via Yii events:
 
-- **Twig variable** — `craft.sorts` → `web\twig\PluginVariable`.
+- **Components** — `engine` (`services\EngineService`), `pagePass`
+  (`services\PagePass`), `contentFixer` (`services\ContentFixer`) and `auditScanner`
+  (`services\AuditScanner`).
+- **Twig** — the `sorts` filter (`web\twig\SortsExtension`, with `RawInputVisitor`).
+- **Page pass** — `View::EVENT_AFTER_RENDER_PAGE_TEMPLATE`, on site requests only.
+- **Fix-on-save** — `Elements::EVENT_BEFORE_SAVE_ELEMENT`.
+- **GraphQL** — `Gql::EVENT_REGISTER_GQL_DIRECTIVES` → `gql\directives\Sorts`.
+- **Utility** — `Utilities::EVENT_REGISTER_UTILITIES` → `utilities\AuditUtility` (Pro only).
+- **CKEditor** — `ckeditor\CkeditorSupport::register()`, control panel requests only, when
+  `craftcms/ckeditor` is installed.
 - **Template roots** — `src/templates/` is registered as the `sorts` root
   for the **CP** only. No site template root is registered by default: it would
   make every CP template routable on the front end. If the front end needs
@@ -43,11 +58,44 @@ Plugins screen, settings breadcrumb). Blank keeps "Sorts".
 
 ### The pieces, walked
 
-- **`models/Settings.php`** — global settings, stored in **project config**.
-  Credential-shaped fields accept a literal or a `$ENV_VAR` reference, resolved
-  server-side with `craft\helpers\App::parseEnv()` — no secrets are ever
-  bundled or shipped to the browser.
-- **`web/twig/PluginVariable.php`** — exposes `craft.sorts.*`.
+- **`models/Settings.php`** — global settings, stored in **project config**. Values can
+  arrive as arrays, `''` or strings from the control panel, project config or
+  `config/sorts.php`, so `setAttributes()` coerces each to its type before the typed
+  property is set, and `rules()` validates what is left (PATTERNS §15). Lists accept a list or
+  one value per line. There are no secrets in Sorts.
+- **`services/EngineService.php`** (`Plugin::getInstance()->engine`) — builds the engine
+  once per request, fires `Plugin::EVENT_REGISTER_RULES` (Pro), and turns settings and
+  edition into the engine’s `Options`. Lite gets a fixed option set (quotes, apostrophes,
+  primes, dashes, ellipsis; `en-US` and `en-GB` only, by handing the engine a locale
+  registry that holds just those). Everything that sets typography goes through
+  `apply()` or `applyWith()`, so the page, the filter, GraphQL, a PHP call and the stored
+  content tools agree. `storedOptions()` limits the rules to `STORED_RULES`.
+- **`services/PagePass.php`** — the whole-page pass: what counts as a page to fix, the
+  skip-URI matching, the head and `<meta>` handling, and the fail-safe `catch (Throwable)`.
+- **`services/ContentFixer.php`** — title and field values: `changes()` (what would change),
+  `apply()` (put it on the element), and the fix-on-save handler with its skips.
+- **`services/AuditScanner.php`** — the audit’s dry run, a batch of entries at a time, and
+  the before-and-after excerpts.
+- **`jobs/FixEntriesJob.php`**, **`controllers/AuditController.php`**,
+  **`utilities/AuditUtility.php`** and **`templates/utility.twig`** — the audit’s fix.
+- **`web/twig/SortsExtension.php`** — the filter. See *The filter’s escaping* below.
+- **`gql/directives/Sorts.php`** — `@sorts`.
+- **`ckeditor/CkeditorSupport.php`** — registers `TextTransformation` and narrows it.
+- **`events/RegisterRulesEvent.php`** — the extension API’s event.
+
+### The filter’s escaping
+
+The brief for the filter is that HTML mode never turns unescaped input into safe output.
+`pre_escape: 'html'` with `is_safe: ['html']` does that for variables, but Twig treats
+a string literal in a template as safe, so `{{ '<script>'|sorts }}` would print raw, and
+the same declaration would also pre-escape and mark safe the plain-text mode that JSON and
+attributes need. So the filter has neither option. At run time it trusts only a
+`Twig\Markup` value (a rich-text field, an `{% apply %}` body) and escapes anything else
+before the engine reads it, then returns `Markup`. Text mode returns a plain string, which
+Twig escapes when it prints it. `|raw` hands the filter a plain string and only tells the
+compiler it is safe, so `RawInputVisitor` (a Twig node visitor) spots a filter whose input
+is directly `|raw` and gives that call a declaration that reads its input as HTML.
+`tests/twig-test.php` pins each of these.
 
 
 ## The typography engine
@@ -176,10 +224,26 @@ public function isPro(): bool
 }
 ```
 
-Every Pro gate should funnel through `Plugin::isPro()`, server-side, at the
-narrowest choke point — so there is exactly one question asked in exactly one
-way. Keep a table here (once real gates exist) mapping each Pro capability to
-its gate location and Lite fallback behavior.
+Every Pro gate funnels through `Plugin::isPro()`, server-side, at the narrowest choke
+point — exactly one question asked in exactly one way. Gates control features, never
+safety: a downgrade stops the page pass and queues no new fixes, and never undoes or
+half-finishes content.
+
+## Every Pro gate
+
+| Pro capability | Where the gate is | Lite fallback |
+|---|---|---|
+| Automatic page pass | `PagePass::shouldRun()` | The page is sent as rendered. |
+| Every rule and locale, the settings | `EngineService::options()`, `EngineService::engine()` | Fixed option set: quotes, apostrophes, primes, dashes, ellipsis; `en-US` and `en-GB` only. The settings are stored, not read. |
+| Exclusions (skip tags, classes, paths; head and meta) | `EngineService::options()` and `PagePass::shouldRun()` | Not read. (`data-sorts*` attributes are the engine’s and work wherever the engine runs.) |
+| Extension API | `EngineService::engine()` fires `EVENT_REGISTER_RULES` only in Pro; `applyWith()` | The event does not fire. A rule named in a call is skipped, not an error. |
+| `@sorts` GraphQL directive | `gql\directives\Sorts::apply()` | The directive is in the schema and returns the value unchanged, so queries survive a downgrade. |
+| Fix on save | `ContentFixer::onBeforeSave()` | Does nothing. |
+| Audit utility | `Plugin::registerUtility()` (not listed) and `AuditController::beforeAction()` (403), at enqueue | Not listed; a post is refused. A job already queued finishes (it runs without asking the edition) with Lite’s characters. |
+| Pro settings screen | `settings.twig` (`isPro`) | Shown locked and marked Pro; stored values are carried through a Lite save in hidden inputs. |
+
+Not gated: the `|sorts` filter and CKEditor as-you-type quotes (Lite), and anything that
+removes access or deletes data (Sorts has neither).
 
 ## The config layer
 
@@ -221,6 +285,12 @@ php craft project-config/set plugins.sorts.edition pro --update-timestamp
 
 ### Dev-loop gotchas
 
+- **The testbed** (`~/sw/github-private/craft5-plugin-testbed`) has the pieces the suites
+  need: this repo bind-mounted at `plugins/craft-sorts`, `craftcms/ckeditor`, a French site
+  (`testbedFr`), the `sortsTest` section and fields (`scripts/sorts-fixtures.php` rebuilds
+  them), the `sortstest` module (the fixture rule, an action that renders a template) and the
+  `sorts-*.twig` templates and routes.
+
 - **Edition:** `php craft project-config/set plugins.sorts.edition pro --update-timestamp`,
   then restart PHP-FPM (`ddev restart`) — workers keep the old edition. From
   `craft shell`, call `saveModifiedConfigData()` yourself. There is no
@@ -244,6 +314,20 @@ under `src/migrations/` (`php craft migrate/create <name> --plugin=sorts`
 scaffolds one), mirror the change in `Install.php` for fresh installs, and keep
 the migration idempotent.
 
+## Testing
+
+```bash
+composer check                 # validate, lint, cs, PHPStan (under /opt/homebrew/bin/php)
+composer test-engine           # the engine: corpus, unit tests, HTML fuzz; no Craft
+node tests/run-all.mjs         # the Craft layer, against the testbed (ddev must be running)
+```
+
+Each suite in `tests/*-test.php` exercises Lite and Pro by switching the edition itself
+(`tests/support.php`: `sortsConfigure('pro', [...])`), so one `run-all` covers both. In the
+testbed, an edition or settings change written to project config was seen by the very next web
+request (checked 2026-11-05), so the suites do not restart ddev; if a worker ever serves the old
+edition, `ddev restart`.
+
 ## Coding standards and layout
 
 - **PHP** ≥ 8.2, **Craft** ^5.0 — the only runtime requirements.
@@ -263,6 +347,7 @@ composer cs-fix     # apply
   the PHP the plugin targets (see the PHP-binary gotcha above).
 - **Integration tests** — `tests/` holds a harness that runs against your own
   Craft testbed, never a client site; see [`tests/README.md`](../tests/README.md).
+  `composer test-engine` runs the engine’s tests without Craft.
 
 - **House rules worth knowing before a PR:**
   - Pro gates go through `Plugin::isPro()`, server-side, at the narrowest
@@ -274,7 +359,7 @@ composer cs-fix     # apply
 
 ```
 src/
-├── Plugin.php                     # Bootstrap: components, events, routes, permissions
+├── Plugin.php                     # Bootstrap: components, events, permissions; the Pro gate
 ├── icon.svg
 ├── engine/                        # Typography engine: pure PHP, no Craft (see above)
 │   ├── Engine.php                 # Tokenize, walk, run rules; register(), apply()
@@ -286,15 +371,27 @@ src/
 │   ├── LocaleInterface.php, DataLocale.php, LocaleRegistry.php
 │   ├── locales/                   # One generated data file per locale (CLDR 49.0.0)
 │   └── rules/                     # The built-in rules and QuoteScanner
+├── services/
+│   ├── EngineService.php          # `Plugin::getInstance()->engine`: options, rules event, apply()
+│   ├── PagePass.php               # The whole-page pass
+│   ├── ContentFixer.php           # Title and field values: fix-on-save and the audit’s fix
+│   └── AuditScanner.php           # The audit’s dry run
+├── events/RegisterRulesEvent.php  # The extension API’s event
+├── web/twig/                      # The sorts filter and its RawInputVisitor
+├── gql/directives/Sorts.php       # @sorts
+├── ckeditor/CkeditorSupport.php   # As-you-type quotes
+├── utilities/AuditUtility.php     # CP → Utilities → Sorts
+├── controllers/AuditController.php
+├── jobs/FixEntriesJob.php
 ├── migrations/
 │   └── Install.php                # Install migration
 ├── models/
-│   └── Settings.php                # Global settings (project config)
-├── templates/
-│   └── settings.twig              # CP: settings (headed sections, no tabs)
-└── web/
-    └── twig/PluginVariable.php    # craft.sorts.*
+│   └── Settings.php               # Global settings (project config)
+└── templates/
+    ├── settings.twig              # CP: settings (headed sections, no tabs)
+    └── utility.twig               # CP: the audit
 
 bin/cldr-locales.mjs               # Generates src/engine/locales from CLDR
 tests/engine/                      # Engine tests: run.php, corpus/, unit.php, fuzz.php, perf.php
+tests/*-test.php, tests/support.php   # Craft-layer suites, run by tests/run-all.mjs
 ```
