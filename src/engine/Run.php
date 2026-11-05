@@ -65,11 +65,20 @@ final class Run
     public function edit(array $edits): int
     {
         if ($this->settled) {
+            // Edits and spans are both in order, so one walk over each checks them all
+            // (the same test as overlapsSettled(), without starting again for every edit).
             $kept = [];
+            $si = 0;
+            $spans = count($this->settled);
             foreach ($edits as $edit) {
-                if (!$this->overlapsSettled($edit[0], $edit[1])) {
-                    $kept[] = $edit;
+                [$start, $length] = $edit;
+                while ($si < $spans && $this->settled[$si][1] <= $start) {
+                    $si++;
                 }
+                if ($si < $spans && $this->settled[$si][0] < ($length === 0 ? $start : $start + $length)) {
+                    continue;
+                }
+                $kept[] = $edit;
             }
             $edits = $kept;
         }

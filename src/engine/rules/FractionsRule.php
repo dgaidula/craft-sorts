@@ -7,7 +7,7 @@ use iceboxind\sorts\engine\Run;
 
 /**
  * 1/2 to ½, for the fractions Unicode has a character for. Off by default. It
- * leaves dates (1/2/2024), URLs (/1/2) and anything glued to letters or digits.
+ * leaves dates (1/2/2024), URLs and paths (/1/2) and anything glued to letters or digits.
  * A mixed number written 1-1/2 becomes 1-½: the hyphen is the author’s.
  */
 final class FractionsRule extends AbstractRule
@@ -41,10 +41,11 @@ final class FractionsRule extends AbstractRule
     public function apply(Run $run, Context $context): void
     {
         $text = $run->text();
+        $urls = self::urlSpans($text);
         $run->replaceAll(
             '/(?<!\d)(\d{1,2})\/(\d{1,2})(?!\d)/',
-            function (array $m, int $offset) use ($text, $context): ?string {
-                if (!isset(self::MAP[$m[0]])) {
+            function (array $m, int $offset) use ($text, $context, $urls): ?string {
+                if (!isset(self::MAP[$m[0]]) || self::inSpans($urls, $offset)) {
                     return null;
                 }
                 $end = $offset + strlen($m[0]);

@@ -476,3 +476,123 @@
 < "a<title>"b"</title>"c"
 > “a<title>“b”</title>“c”
 
+
+# Script data follows the HTML5 escape states: after <!--, a <script opener holds </script> until -->.
+# Every case here must come back byte for byte, so the script body is never edited.
+
+@ h-script-double-escaped-gate
+< <p>a</p><script><!-- document.write("<script src='x.js'></script>"); var q = "it's -- x"; --></script><p>b</p>
+
+@ h-script-double-escaped-all-off only=
+< <p>a</p><script><!-- document.write("<script src='x.js'></script>"); var q = "it's -- x"; --></script><p>b</p>
+
+@ h-script-double-escaped-text-after
+< <script><!-- document.write("<script></script>"); var q = "it's"; --></script><p>"b" -- it's</p>
+> <script><!-- document.write("<script></script>"); var q = "it's"; --></script><p>“b” — it’s</p>
+
+@ h-script-escaped-close-ends-it
+< <script><!-- "a" -- it's </script><p>"b"</p>
+> <script><!-- "a" -- it's </script><p>“b”</p>
+
+@ h-script-double-escape-steps-back-to-escaped
+< <script><!--<script>"a"</script>"b" -- it's</script><p>"c"</p>
+> <script><!--<script>"a"</script>"b" -- it's</script><p>“c”</p>
+
+@ h-script-empty-comment-closes-at-once
+< <script><!--><script>"x"</script><p>"y"</p>
+> <script><!--><script>"x"</script><p>“y”</p>
+
+@ h-script-dash-run-closes-comment
+< <script><!--- "x" ---><script>"y"</script><p>"z"</p>
+> <script><!--- "x" ---><script>"y"</script><p>“z”</p>
+
+@ h-script-double-escape-upper-case
+< <SCRIPT><!-- <Script> "a" </SCRIPT> "b" --></SCRIPT><p>"c"</p>
+> <SCRIPT><!-- <Script> "a" </SCRIPT> "b" --></SCRIPT><p>“c”</p>
+
+@ h-script-double-escape-opener-with-attributes
+< <script><!-- <script type="x">"a"</script> "b" --></script><p>"c"</p>
+> <script><!-- <script type="x">"a"</script> "b" --></script><p>“c”</p>
+
+@ h-script-double-escape-opener-slash
+< <script><!-- <script/>"a"</script/> "b" --></script><p>"c"</p>
+> <script><!-- <script/>"a"</script/> "b" --></script><p>“c”</p>
+
+@ h-script-not-double-escaped-by-longer-name
+< <script><!-- <scripts> "a" </script><p>"b"</p>
+> <script><!-- <scripts> "a" </script><p>“b”</p>
+
+@ h-script-double-escaped-runs-to-the-end
+< <p>"a"</p><script><!--<script></script>"x" -- it's
+> <p>“a”</p><script><!--<script></script>"x" -- it's
+
+@ h-script-comment-outside-escape-is-text-of-the-script
+< <script>var a = "--> it's";</script><p>"b"</p>
+> <script>var a = "--> it's";</script><p>“b”</p>
+
+@ h-script-longer-close-name-does-not-close
+< <script>"</scripts>"; it's</script>"x"
+> <script>"</scripts>"; it's</script>“x”
+
+@ h-style-longer-close-name-does-not-close
+< <style>a{content:"</styles>"} it's</style>"x"
+> <style>a{content:"</styles>"} it's</style>“x”
+
+@ h-style-no-escape-states
+< <style><!-- <style> --></style><p>"x"</p>
+> <style><!-- <style> --></style><p>“x”</p>
+
+# The title is text only: quotes and dashes, never a rule that writes markup.
+
+@ h-title-text-only on=hook-quotes,hook-caps,hook-amp,ordinals
+< <title>"Lab" -- it's a test</title><p>"Lab"</p>
+> <title>“Lab” — it’s a test</title><p><span class="dquo">“</span>Lab”</p>
+
+@ h-title-text-only-gate on=hook-quotes,hook-caps,hook-amp,ordinals
+< <html><head><title>"NASA" &amp; ESA: the 1st launch</title></head><body><p>x</p></body></html>
+> <html><head><title>“NASA” &amp; ESA: the 1st launch</title></head><body><p>x</p></body></html>
+
+# An <option> without a value submits its text, so its text is never edited.
+
+@ h-option-without-value
+< <select><option>"x" -- it's</option><option selected>a--b</option></select>
+
+@ h-option-with-value
+< <select><option value="x">"x" -- it's</option></select>
+> <select><option value="x">“x” — it’s</option></select>
+
+@ h-option-with-empty-value
+< <select><option value>"x"</option><option value="">'y'</option></select>
+> <select><option value>“x”</option><option value="">“y”</option></select>
+
+@ h-option-implied-end-then-text
+< <select><option value=1>"a"<option>"b"</select><p>"c"</p>
+> <select><option value=1>“a”<option>"b"</select><p>“c”</p>
+
+# lang="" means the language is unknown: the caller's default, not the parent's.
+
+@ h-lang-empty-is-the-default
+< <div lang="de"><p lang="">"x"</p><p>"y"</p></div>
+> <div lang="de"><p lang="">“x”</p><p>„y“</p></div>
+
+@ h-lang-empty-is-the-default-fr locale=fr
+< <div lang="de"><p lang=" ">"x"</p></div>
+> <div lang="de"><p lang=" ">«\u{202F}x\u{202F}»</p></div>
+
+@ h-sorts-lang-empty-still-inherits
+< <div lang="de"><p data-sorts-lang="" lang="fr">"x"</p></div>
+> <div lang="de"><p data-sorts-lang="" lang="fr">„x“</p></div>
+
+# Comments end at -->, never ->; attributes in single quotes may hold > and ".
+
+@ h-comment-arrow-is-not-the-end
+< <!-- a -> "b" --> "c"
+> <!-- a -> "b" --> “c”
+
+@ h-single-quoted-attribute-holds-gt
+< <a title='x>y "z"'>"q"</a>
+> <a title='x>y "z"'>“q”</a>
+
+@ h-cdata-upper-lower
+< <![cdata[ "x" ]]> "y"
+> <![cdata[ "x" ]]> “y”

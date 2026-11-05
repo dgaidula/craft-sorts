@@ -190,3 +190,50 @@ for ($i = 0; $i < $total; $i++) {
     }
 }
 echo 'fuzz: seed=' . FUZZ_SEED . ' pages=' . $total . ' (' . FUZZ_LARGE_PAGES . ' of 120 KB+) bytes=' . $byteSum . ' convertible-pages-changed=' . $changedPages . "\n";
+
+// ---- Script data: escaped and double-escaped scripts are never edited -------------
+//
+// Scripts built from the pieces that move the HTML5 tokenizer between its script-data
+// states (<!--, <script, </script>, -->, near misses), with convertible text around and
+// inside them. With all rules off every page is byte-identical; with the defaults on, the
+// text of every script, as PHP's own HTML5 parser (Dom\HTMLDocument, PHP 8.4+) reads it,
+// is the same before and after, and so is the number of scripts.
+
+const SCRIPT_FUZZ_SEED = 20261106;
+const SCRIPT_FUZZ_PAGES = 400;
+const SCRIPT_PIECES = [
+    '<!--', '-->', '--->', '<!-->', '<script>', '<script type="x">', '<script/>', '<SCRIPT >', '</script>', '</SCRIPT >',
+    '</script/>', '<scripts>', '</scripts>', '</scrip>', '--!>', '-', '<', '>', '"x" -- it\'s', ' var a = "b"; ',
+    "document.write('<p>\"y\"</p>');", '<p>"z"</p>', "\n",
+];
+
+$scriptsOf = static function (string $html): ?string {
+    if (!class_exists(\Dom\HTMLDocument::class)) {
+        return null;
+    }
+    $doc = \Dom\HTMLDocument::createFromString('<!DOCTYPE html>' . $html, LIBXML_NOERROR);
+    $texts = [];
+    foreach ($doc->querySelectorAll('script') as $script) {
+        $texts[] = $script->textContent;
+    }
+    return json_encode($texts, JSON_UNESCAPED_UNICODE);
+};
+
+mt_srand(SCRIPT_FUZZ_SEED);
+$compared = 0;
+for ($i = 0; $i < SCRIPT_FUZZ_PAGES; $i++) {
+    $page = '<p>"a" -- it\'s</p><script>';
+    for ($n = mt_rand(1, 12); $n > 0; $n--) {
+        $page .= SCRIPT_PIECES[mt_rand(0, count(SCRIPT_PIECES) - 1)];
+    }
+    $page .= (mt_rand(0, 4) === 0 ? '' : '</script>') . '<p>"b" -- it\'s</p>';
+    check("script fuzz #$i rules off: byte-identical", $page, $engine->apply($page, [], $off));
+    $once = $engine->apply($page);
+    check("script fuzz #$i defaults on: running twice equals once", $once, $engine->apply($once));
+    $before = $scriptsOf($page);
+    if ($before !== null) {
+        $compared++;
+        check("script fuzz #$i defaults on: every script's text is unchanged (Dom\\HTMLDocument)", $before, $scriptsOf($once));
+    }
+}
+echo 'script fuzz: seed=' . SCRIPT_FUZZ_SEED . ' pages=' . SCRIPT_FUZZ_PAGES . ' compared-with-Dom\HTMLDocument=' . $compared . "\n";

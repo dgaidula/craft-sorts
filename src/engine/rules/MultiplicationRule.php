@@ -8,7 +8,8 @@ use iceboxind\sorts\engine\Run;
 /**
  * 3x4 and 1920 x 1080 to ×. Off by default. The x needs a number on each side
  * and the same spacing on both (all closed up, or a space each side). It leaves
- * hexadecimal (0x1F) and a number that is part of a word (a3x4, x86x64).
+ * hexadecimal (0x1F), a number that is part of a word (a3x4, x86x64) and anything
+ * inside a URL or a path.
  */
 final class MultiplicationRule extends AbstractRule
 {
@@ -35,10 +36,11 @@ final class MultiplicationRule extends AbstractRule
     public function apply(Run $run, Context $context): void
     {
         $text = $run->text();
+        $urls = self::urlSpans($text);
         $run->replaceAll(
             '/(?<=\d)( ?)[xX]( ?)(?=\d)/',
-            function (array $m, int $offset) use ($text): ?string {
-                if ($m[1] !== $m[2]) {
+            function (array $m, int $offset) use ($text, $urls): ?string {
+                if ($m[1] !== $m[2] || self::inSpans($urls, $offset)) {
                     return null;
                 }
                 $number = '';

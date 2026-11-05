@@ -18,6 +18,12 @@ final class Pass
     /** @var array<string, LocaleInterface> locales with their variant applied, by id and variant */
     public array $variantLocales = [];
 
+    /** @var list<array{int, int, string}> changed text, in input order: [offset, length, new text] */
+    public array $edits = [];
+
+    /** Why the call gave its input back unchanged, when a pattern failed; null otherwise. */
+    public ?string $error = null;
+
     /** @param array<string, true> $named */
     public function __construct(
         public readonly Options $options,

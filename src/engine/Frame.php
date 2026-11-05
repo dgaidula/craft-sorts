@@ -26,6 +26,8 @@ final class Frame
         public readonly string $scope,
         /** The nearest enclosing element that is not inline. */
         public readonly ?string $block,
+        /** Whether this element’s text is read as text only, so no rule may write markup into it (`<title>`). */
+        public readonly bool $text = false,
     ) {
         $this->depth = ($parent->depth ?? 0) + 1;
     }

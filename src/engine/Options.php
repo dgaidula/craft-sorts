@@ -10,6 +10,10 @@ namespace iceboxind\sorts\engine;
  * (for example `widows` => ['tags' => ['h1', 'h2'], 'minWords' => 4]). `variants`
  * maps a locale id to the name of a variant to use for it (`['en-GB' => 'single-outer']`);
  * a name the locale does not have means the CLDR default.
+ *
+ * `allowed`, when set, lists the only rules that may run at all: a rule outside it
+ * stays off whatever turns it on (`rules`, a `data-sorts-rules` scope or a rule
+ * named in the call). Null allows every registered rule.
  */
 final class Options
 {
@@ -22,6 +26,7 @@ final class Options
      * @param list<string> $skipTags extra tag names whose contents are left alone
      * @param list<string> $skipClasses extra class names whose elements are left alone
      * @param array<string, string> $variants locale id => variant name
+     * @param list<string>|null $allowed handles of the only rules that may run; null for every rule
      */
     public function __construct(
         public readonly string $locale = LocaleRegistry::FALLBACK,
@@ -31,6 +36,7 @@ final class Options
         public readonly array $skipTags = [],
         public readonly array $skipClasses = [],
         public readonly array $variants = [],
+        public readonly ?array $allowed = null,
     ) {
     }
 

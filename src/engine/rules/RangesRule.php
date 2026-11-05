@@ -9,7 +9,7 @@ use iceboxind\sorts\engine\Run;
  * 1-5 and pages 10-12 to an en dash. Off by default, and careful when on: it
  * converts only a pair of plain numbers that stand alone. It leaves phone
  * numbers (555-1234, 555-123-4567), ISBNs, SKUs, dates (2024-01-15, 2024-01)
- * and anything glued to letters or other punctuation. A pair whose second
+ * anything inside a URL or a path, and anything glued to letters or other punctuation. A pair whose second
  * number is shorter (1990-95) converts when it reads as a continuation.
  */
 final class RangesRule extends AbstractRule
@@ -38,9 +38,13 @@ final class RangesRule extends AbstractRule
 
     public function apply(Run $run, Context $context): void
     {
+        $urls = self::urlSpans($run->text());
         $run->replaceAll(
             '/(?<![\p{L}\p{N}_.,\-\/:@#+=&%~])(' . self::NUMBER . ')-(' . self::NUMBER . ')(?![\p{L}\p{N}_\-\/:@#+=&~]|[.,]\d)/u',
-            static function (array $m): ?string {
+            static function (array $m, int $offset) use ($urls): ?string {
+                if (self::inSpans($urls, $offset)) {
+                    return null;
+                }
                 $a = str_replace(',', '', $m[1]);
                 $b = str_replace(',', '', $m[2]);
                 if (preg_match('/^\d+$/', $a) && preg_match('/^\d+$/', $b)) {

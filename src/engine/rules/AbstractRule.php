@@ -37,6 +37,42 @@ abstract class AbstractRule implements RuleInterface
         return substr($text, $i, $offset - $i);
     }
 
+    /**
+     * The URL-shaped words in $text, as sorted [start, end) byte spans: anything from
+     * `http://`, `https://` or `www.`, and a path (a word that starts with `/`), to the
+     * next space. Number rules leave what lies inside one alone.
+     *
+     * @return list<array{int, int}>
+     */
+    protected static function urlSpans(string $text): array
+    {
+        if (strpos($text, '/') === false && stripos($text, 'www.') === false) {
+            return [];
+        }
+        if (!preg_match_all('~(?:\bhttps?://|\bwww\.|(?<![^\s(\[{"\'])/(?=[^\s/]))\S*~i', $text, $m, PREG_OFFSET_CAPTURE)) {
+            return [];
+        }
+        $spans = [];
+        foreach ($m[0] as [$url, $at]) {
+            $spans[] = [$at, $at + strlen($url)];
+        }
+        return $spans;
+    }
+
+    /** @param list<array{int, int}> $spans */
+    protected static function inSpans(array $spans, int $offset): bool
+    {
+        foreach ($spans as [$start, $end]) {
+            if ($offset < $start) {
+                return false;
+            }
+            if ($offset < $end) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** The character at $offset in $text, or the one after the run if $offset is past its end. '' at the end of the flow. */
     protected static function charAfter(string $text, int $offset, Context $context): string
     {

@@ -306,3 +306,30 @@
 # Already-curly input is left alone.
 @ q-already-curly only=quotes,apostrophes,primes
 < “She said ‘no’” and don’t
+
+# Entity names are case-sensitive: &quot; &QUOT; &apos; are quotes; &Quot; &APOS; &Apos; are not.
+# The x of a hexadecimal reference may be either case.
+
+@ q-entity-names-case-sensitive
+< <p>&APOS;x&APOS; &Quot;y&Quot; &Apos;z&Apos;</p>
+
+@ q-entity-upper-quot-is-a-quote
+< <p>&QUOT;z&QUOT; and &#X22;y&#x22; and &#X27;w&#x27;</p>
+> <p>“z” and “y” and “w”</p>
+
+@ q-entity-wrong-case-is-not-a-prime
+< <p>5&APOS;10&Quot; tall</p>
+
+# An entity before a quote is read as the character it stands for.
+
+@ q-entity-nbsp-before-quote-opens
+< <p>"He said&nbsp;"no" today"</p>
+> <p>“He said&nbsp;‘no’ today”</p>
+
+@ q-entity-mdash-before-quote-opens
+< <p>"It was&mdash;"no"&mdash;then"</p>
+> <p>“It was&mdash;‘no’&mdash;then”</p>
+
+@ q-entity-nbsp-before-single-quote-opens
+< <p>'He said&nbsp;'no' today'</p>
+> <p>“He said&nbsp;‘no’ today”</p>

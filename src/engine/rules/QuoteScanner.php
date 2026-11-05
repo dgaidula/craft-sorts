@@ -39,17 +39,19 @@ final class QuoteScanner
     private const D_DOUBLE_PRIME = 5;
 
     // Byte patterns: the curly quotes are matched as their UTF-8 bytes, which is much faster than /u.
-    private const TOKENS_HTML = '/"|\'|&(?:quot|apos|#0*(?:34|39)|#x0*(?:22|27));|(?:“|”|‘|’|„|‚|«|»|‹|›)/i';
+    // Entity names are case-sensitive, as HTML has them (&quot; &QUOT; &apos;, never &Quot; or &APOS;);
+    // the x of a hexadecimal reference is not.
+    private const TOKENS_HTML = '/"|\'|&(?:quot|QUOT|apos|#0*(?:34|39)|#[xX]0*(?:22|27));|(?:“|”|‘|’|„|‚|«|»|‹|›)/';
     private const TOKENS_TEXT = '/"|\'|(?:“|”|‘|’|„|‚|«|»|‹|›)/';
 
-    private const DOUBLE_ENTITY = '/^&(?:quot|#0*34|#x0*22);$/i';
-    private const SINGLE_ENTITY = '/^&(?:apos|#0*39|#x0*27);$/i';
-    private const ANY_DOUBLE = '/"|&(?:quot|#0*34|#x0*22);/i';
-    private const ANY_SINGLE = '/\'|&(?:apos|#0*39|#x0*27);/i';
+    private const DOUBLE_ENTITY = '/^&(?:quot|QUOT|#0*34|#[xX]0*22);$/';
+    private const SINGLE_ENTITY = '/^&(?:apos|#0*39|#[xX]0*27);$/';
+    private const ANY_DOUBLE = '/"|&(?:quot|QUOT|#0*34|#[xX]0*22);/';
+    private const ANY_SINGLE = '/\'|&(?:apos|#0*39|#[xX]0*27);/';
 
     // Byte patterns (no /u): the text before a quote may start inside a character.
-    private const SINGLE_MARK = '(?:\'|&#0*39;|&#x0*27;|&apos;|\xE2\x80\xB2)';
-    private const DOUBLE_MARK = '(?:"|&quot;|&#0*34;|&#x0*22;|\xE2\x80\xB3)';
+    private const SINGLE_MARK = '(?:\'|&#0*39;|&#[xX]0*27;|&apos;|\xE2\x80\xB2)';
+    private const DOUBLE_MARK = '(?:"|&quot;|&QUOT;|&#0*34;|&#[xX]0*22;|\xE2\x80\xB3)';
 
     private const LEADING_WORD = '/^(?:tis|twas|twere|twill|twould|em|cause|cos|bout|til|neath|t|s)(?![\p{L}\p{N}])/iu';
     private const LEADING_YEAR = '/^\d\d(?![\d\'’])/u';
@@ -82,6 +84,7 @@ final class QuoteScanner
         $lastEnd = -1;
         $lastClass = self::PUNCT;
         $apostrophes = [];
+        $suffix = [];
         $count = count($tokens);
 
         for ($k = 0; $k < $count; $k++) {
@@ -133,7 +136,7 @@ final class QuoteScanner
                 && (isset($prevChar[1]) ? preg_match('/^\p{N}$/u', $prevChar) === 1 : ctype_digit($prevChar));
 
             if ($kind === 'd') {
-                $decision = self::decideDouble($text, $offset, $prevClass, $nextClass, $digitBefore, $openD > 0, $tokens, $k, $context);
+                $decision = self::decideDouble($text, $offset, $prevClass, $nextClass, $digitBefore, $openD > 0, $tokens, $k, $context, $suffix);
             } else {
                 $decision = self::decideSingle(
                     $text,
@@ -148,7 +151,8 @@ final class QuoteScanner
                     $tokens,
                     $k,
                     $context,
-                    $html
+                    $html,
+                    $suffix
                 );
             }
 
@@ -215,15 +219,16 @@ final class QuoteScanner
         bool $openD,
         array $tokens,
         int $k,
-        Context $context
+        Context $context,
+        array &$suffix
     ): int {
         if ($digitBefore) {
             // 5'10" and 27" are inches unless this is the quotation’s end. Inside a
             // quotation, an odd number of quotes still to come means one of them closes it.
             $before = substr($text, max(0, $offset - 24), min($offset, 24));
-            if (preg_match('/\d' . self::SINGLE_MARK . '\s?\d+(?:[.,]\d+)?$/i', $before)
+            if (preg_match('/\d' . self::SINGLE_MARK . '\s?\d+(?:[.,]\d+)?$/', $before)
                 || !$openD
-                || self::remaining(self::ANY_DOUBLE, $tokens, $k, $context) % 2 === 1) {
+                || self::remaining(self::ANY_DOUBLE, $tokens, $k, $context, $suffix) % 2 === 1) {
                 return self::D_DOUBLE_PRIME;
             }
             return self::D_CLOSE;
@@ -252,7 +257,8 @@ final class QuoteScanner
         array $tokens,
         int $k,
         Context $context,
-        bool $html
+        bool $html,
+        array &$suffix
     ): int {
         if (isset($apostrophes[$offset])) {
             return self::D_APOSTROPHE;
@@ -261,7 +267,7 @@ final class QuoteScanner
             $before = substr($text, max(0, $offset - 24), min($offset, 24));
             $after = substr($text, $end, 24);
             if (preg_match('/\xC2\xB0\s?\d+(?:[.,]\d+)?$/', $before)
-                || preg_match('/^\s?\d+(?:[.,]\d+)?\s?' . self::DOUBLE_MARK . '/i', $after)) {
+                || preg_match('/^\s?\d+(?:[.,]\d+)?\s?' . self::DOUBLE_MARK . '/', $after)) {
                 return self::D_PRIME;
             }
         }
@@ -295,7 +301,7 @@ final class QuoteScanner
             $possessive = preg_match('/[sS]$/', substr($text, max(0, $offset - 1), 1))
                 && $nextClass === self::SPACE
                 && preg_match('/^\s+\p{Ll}/u', substr($text, $end, 8))
-                && self::remaining(self::ANY_SINGLE, $tokens, $k, $context) > 0;
+                && self::remaining(self::ANY_SINGLE, $tokens, $k, $context, $suffix) > 0;
             return $possessive ? self::D_APOSTROPHE : self::D_CLOSE;
         }
         if ($nextClass === self::SPACE || $nextClass === self::START) {
@@ -304,16 +310,23 @@ final class QuoteScanner
         return self::D_OPEN;
     }
 
-    /** Straight quotes of one kind still to come after token $k, in this run and the rest of the flow. */
-    private static function remaining(string $pattern, array $tokens, int $k, Context $context): int
+    /**
+     * Straight quotes of one kind still to come after token $k, in this run and the rest of the flow.
+     * The counts for the run are suffix sums, built once per scan and pattern, so each call is O(1).
+     *
+     * @param array<string, array<int, int>> $suffix
+     */
+    private static function remaining(string $pattern, array $tokens, int $k, Context $context, array &$suffix): int
     {
-        $n = 0;
-        for ($i = $k + 1, $count = count($tokens); $i < $count; $i++) {
-            if (preg_match($pattern, $tokens[$i][0])) {
-                $n++;
+        if (!isset($suffix[$pattern])) {
+            $count = count($tokens);
+            $sums = array_fill(0, $count + 1, 0);
+            for ($i = $count - 1; $i >= 0; $i--) {
+                $sums[$i] = $sums[$i + 1] + preg_match($pattern, $tokens[$i][0]);
             }
+            $suffix[$pattern] = $sums;
         }
-        return $n + $context->countAfter($pattern);
+        return $suffix[$pattern][$k + 1] + $context->countAfter($pattern);
     }
 
     /** @return array{int, string} the class and the character just before $offset */

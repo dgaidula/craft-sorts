@@ -31,24 +31,32 @@ use InvalidArgumentException;
 final class Engine
 {
     /**
-     * Markup and text, in one pass. Groups: 1 text, 2 comment, 3 CDATA, 4 bogus
-     * comment or doctype, 5–8 a raw-text element (open tag, name, body, close
-     * tag), 9–10 an ordinary tag (the slash of a closing tag, the name).
-     * Attribute values may hold “>”; a quote that never closes runs to the end,
-     * as it does in a browser.
+     * An attribute list and the end of its tag. A value may hold “>”; a quote that
+     * never closes runs to the end, as it does in a browser.
      */
-    private const TOKENS = '~
-        ([^<]++|<(?![a-zA-Z/!?]))                                 # 1 text
-      | (<!--(?:>|->|.*?(?:-->|\z)))                              # 2 comment
-      | (<!\[CDATA\[.*?(?:\]\]>|\z))                              # 3 CDATA
-      | (<[!?][^>]*+(?:>|\z)|</(?![a-zA-Z])[^>]*+(?:>|\z))        # 4 doctype, bogus comment
-      | (<(script|style|xmp|iframe|noembed|noframes|textarea|title)(?=[\s/>])
-            (?:[^>"\'=]++|=\s*+(?:"[^"]*+(?:"|\z)|\'[^\']*+(?:\'|\z))?|["\'])*+(?:>|\z))   # 5, 6
-        (.*?)                                                     # 7
-        (</\6(?=[\s/>])(?:[^>"\'=]++|=\s*+(?:"[^"]*+(?:"|\z)|\'[^\']*+(?:\'|\z))?|["\'])*+(?:>|\z)|\z)  # 8
-      | <(/)?([a-zA-Z][^\s/>]*)
-            (?:[^>"\'=]++|=\s*+(?:"[^"]*+(?:"|\z)|\'[^\']*+(?:\'|\z))?|["\'])*+(?:>|\z)   # 9, 10
-    ~xsiD';
+    private const ATTRIBUTES = '(?:[^>"\'=]++|=\s*+(?:"[^"]*+(?:"|\z)|\'[^\']*+(?:\'|\z))?|["\'])*+(?:>|\z)';
+
+    /**
+     * Text, ordinary tags, doctypes and bogus comments, each starting where the last
+     * one ended (`\G` anchors every alternative, so PCRE treats the pattern as
+     * anchored). A scan stops at the first comment, CDATA section or raw-text element
+     * (`script style xmp iframe noembed noframes textarea title`): the walk finds where
+     * those end itself, with plain searches rather than a lazy quantifier, so a long
+     * body cannot run into PCRE’s backtracking limit, and a script follows the HTML5
+     * escape states ({@see scriptEnd()}).
+     */
+    private const TOKENS = '~\G(?:
+        [^<]++|<(?![a-zA-Z/!?])                                              # text
+      | <(?!!--|!\[CDATA\[)[!?][^>]*+(?:>|\z)|</(?![a-zA-Z])[^>]*+(?:>|\z)   # doctype, bogus comment
+      | <(?!(?:script|style|xmp|iframe|noembed|noframes|textarea|title)(?=[\s/>]))/?[a-zA-Z][^\s/>]*+
+        ' . self::ATTRIBUTES . '                                             # a tag
+    )~xsiD';
+
+    /** A raw-text element’s opening or closing tag, anchored where it starts. */
+    private const RAW_TAG = '~\G</?[a-zA-Z]++' . self::ATTRIBUTES . '~siD';
+
+    /** The characters that end a tag name. */
+    private const NAME_END = " \t\n\x0B\f\r/>";
 
     /**
      * How deep elements may nest before the engine gives the page back unchanged.
@@ -64,6 +72,8 @@ final class Engine
 
     /** @var list<RuleInterface>|null by priority, then registration order */
     private ?array $sorted = null;
+
+    private ?string $lastError = null;
 
     public function __construct(private Options $options = new Options(), ?LocaleRegistry $locales = null)
     {
@@ -136,65 +146,90 @@ final class Engine
                 throw new InvalidArgumentException("No rule is registered with the handle “{$handle}”.");
             }
         }
+        $this->lastError = null;
         // A string that is not UTF-8 is not ours to fix: return it as it came.
         if ($input === '' || preg_match('//u', $input) !== 1) {
+            if ($input !== '' && preg_last_error() !== PREG_BAD_UTF8_ERROR) {
+                $this->lastError = 'checking the text is UTF-8 failed: ' . preg_last_error_msg();
+            }
             return $input;
         }
         $pass = new Pass($options, array_fill_keys($rules, true), $this->locales->resolveOrFallback($options->locale));
         $pass->locale = $this->withVariant($pass, $pass->locale);
-        return $options->mode === Options::TEXT ? $this->applyText($input, $pass) : $this->applyHtml($input, $pass);
+        $output = $options->mode === Options::TEXT ? $this->applyText($input, $pass) : $this->applyHtml($input, $pass);
+        $this->lastError = $pass->error;
+        return $output;
+    }
+
+    /**
+     * Why the last call to {@see apply()} gave its input back unchanged although it
+     * may hold text to fix: a pattern failed (PCRE’s backtracking or JIT stack limit,
+     * for example). Null when the last call ran normally.
+     */
+    public function lastError(): ?string
+    {
+        return $this->lastError;
     }
 
     private function applyText(string $input, Pass $pass): string
     {
         $root = new Frame('', '', null, $pass->locale, false, '', null);
-        $parts = preg_split('/(\R[ \t]*\R\s*)/u', $input, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split('/(\R[ \t]*\R\s*)/u', $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_OFFSET_CAPTURE);
         if ($parts === false) {
+            $pass->error = 'splitting the text into paragraphs failed: ' . preg_last_error_msg();
             return $input;
         }
-        foreach ($parts as $i => $text) {
+        foreach ($parts as $i => [$text, $offset]) {
             if ($i % 2 === 0 && $text !== '') {
                 $flow = new Flow(null);
-                $flow->segments[] = [$i, $text, true, $root, '', ''];
-                $this->processFlow($flow, $parts, $pass);
+                $flow->add($offset, $text, true, $root);
+                $this->processFlow($flow, $pass);
             }
         }
-        return $pass->changed ? implode('', $parts) : $input;
+        return $pass->changed ? self::splice($input, $pass->edits) : $input;
     }
 
     private function applyHtml(string $input, Pass $pass): string
     {
-        $count = preg_match_all(self::TOKENS, $input, $m, PREG_PATTERN_ORDER);
-        // Every byte must belong to a token, or the pass would not be lossless.
-        if (!$count || strlen(implode('', $m[0])) !== strlen($input)) {
-            return $input;
-        }
-        $parts = $m[0];
         $options = $pass->options;
         $skipTags = array_fill_keys(array_map('strtolower', $options->skipTags), true);
         $skipClasses = $options->skipClasses;
         $top = new Frame('', '', null, $pass->locale, false, '', null);
         $flow = null;
+        $length = strlen($input);
+        $at = 0;
+        // One string per tag name, shared by every frame of that name.
+        $names = [];
 
-        for ($i = 0; $i < $count; $i++) {
-            $text = $m[1][$i];
-            if ($text !== '') {
-                if ($flow === null) {
-                    if (ctype_space($text)) {
-                        continue;
-                    }
-                    $flow = new Flow($top->block);
-                }
-                $flow->segments[] = [$i, $text, !$top->skip, $top, '', ''];
-                continue;
+        while ($at < $length) {
+            if (preg_match_all(self::TOKENS, $input, $m, 0, $at) === false) {
+                $pass->error = 'tokenizing the page failed: ' . preg_last_error_msg();
+                return $input;
             }
+            foreach ($m[0] as $token) {
+                $offset = $at;
+                $at += strlen($token);
+                if ($token[0] !== '<' || !isset($token[1])) {
+                    if ($flow === null) {
+                        if (ctype_space($token)) {
+                            continue;
+                        }
+                        $flow = new Flow($top->block);
+                    }
+                    $flow->add($offset, $token, !$top->skip, $top);
+                    continue;
+                }
+                $closing = $token[1] === '/';
+                if ($token[1] === '!' || $token[1] === '?' || ($closing && !ctype_alpha($token[2] ?? ''))) {
+                    continue;   // a doctype or a bogus comment: markup, nothing to do
+                }
 
-            $name = $m[10][$i];
-            if ($name !== '') {
-                $name = strtolower($name);
-                if ($m[9][$i] === '/') {
+                $start = $closing ? 2 : 1;
+                $name = strtolower(substr($token, $start, strcspn($token, self::NAME_END, $start)));
+                $name = $names[$name] ??= $name;
+                if ($closing) {
                     if (!isset(Html::INLINE[$name])) {
-                        $flow = $this->flush($flow, $parts, $pass);
+                        $flow = $this->flush($flow, $pass);
                     }
                     for ($f = $top; $f->parent !== null; $f = $f->parent) {
                         if ($f->name === $name) {
@@ -206,10 +241,10 @@ final class Engine
                 }
                 if (isset(Html::VOID[$name])) {
                     if ($name === 'br' || $name === 'hr') {
-                        $flow = $this->flush($flow, $parts, $pass);
+                        $flow = $this->flush($flow, $pass);
                     } elseif (isset(Html::OBJECTS[$name])) {
                         $flow ??= new Flow($top->block);
-                        $flow->segments[] = [$i, Html::OBJECT_CHAR, false, $top, '', ''];
+                        $flow->add(-1, Html::OBJECT_CHAR, false, $top);
                     }
                     continue;
                 }
@@ -218,22 +253,32 @@ final class Engine
                 }
                 $inline = isset(Html::INLINE[$name]);
                 if (!$inline) {
-                    $flow = $this->flush($flow, $parts, $pass);
+                    $flow = $this->flush($flow, $pass);
                 } elseif (isset(Html::OBJECTS[$name])) {
                     $flow ??= new Flow($top->block);
-                    $flow->segments[] = [$i, Html::OBJECT_CHAR, false, $top, '', ''];
+                    $flow->add(-1, Html::OBJECT_CHAR, false, $top);
                 }
 
-                $raw = $m[0][$i];
                 $locale = $top->locale;
                 $scope = $top->scope;
                 $skip = $top->skip || isset(Html::SKIP[$name]) || isset($skipTags[$name]);
                 if (!$skip) {
-                    $attributes = $this->attributes($raw, strlen($name) + 1, $skipClasses);
+                    $option = $name === 'option';
+                    $attributes = $this->attributes($token, strlen($name) + 1, $skipClasses, $option);
+                    // An option with no value submits its text: changing the text would change what the form sends.
+                    if ($option && !isset($attributes['value'])) {
+                        $skip = true;
+                    }
                     if ($attributes !== null) {
-                        $lang = $attributes['data-sorts-lang'] ?? $attributes['lang'] ?? '';
-                        if (trim($lang) !== '') {
-                            $locale = $this->withVariant($pass, $this->locales->resolveOrFallback(trim($lang), $options->locale));
+                        if (isset($attributes['data-sorts-lang'])) {
+                            if (trim($attributes['data-sorts-lang']) !== '') {
+                                $locale = $this->withVariant($pass, $this->locales->resolveOrFallback(trim($attributes['data-sorts-lang']), $options->locale));
+                            }
+                        } elseif (isset($attributes['lang'])) {
+                            // lang="" means the language is unknown: the caller’s default, not the parent’s.
+                            $locale = trim($attributes['lang']) === ''
+                                ? $pass->locale
+                                : $this->withVariant($pass, $this->locales->resolveOrFallback(trim($attributes['lang']), $options->locale));
                         }
                         if (isset($attributes['data-sorts']) && strtolower(trim($attributes['data-sorts'])) === 'off') {
                             $skip = true;
@@ -253,30 +298,134 @@ final class Engine
                         }
                     }
                 }
+                // Only a class lookup reads a frame’s tag, so a tag without one is not kept.
+                $raw = stripos($token, 'class') === false ? '' : $token;
                 $top = new Frame($name, $raw, $top, $locale, $skip, $scope, $inline ? $top->block : $name);
                 if ($top->depth > self::MAX_DEPTH) {
                     return $input;
                 }
-                continue;
             }
-
-            if ($m[5][$i] !== '') {
-                // A raw-text element is one token. Only <title> has text worth editing.
-                $name = strtolower($m[6][$i]);
-                if ($name === 'title' && !$top->skip && !isset($skipTags['title']) && $m[7][$i] !== '') {
-                    $flow = $this->flush($flow, $parts, $pass);
-                    $flow = new Flow('title');
-                    $flow->segments[] = [$i, $m[7][$i], true, $top, $m[5][$i], $m[8][$i]];
-                    $flow = $this->flush($flow, $parts, $pass);
+            unset($m);
+            if ($at < $length) {
+                // The scan stopped at a comment, a CDATA section or a raw-text element.
+                $at = $this->special($input, $at, $top, $flow, $skipTags, $pass);
+                if ($at === null) {
+                    return $input;
                 }
             }
-            // Comments, CDATA, doctypes and the rest are markup: nothing to do.
         }
-        $flow = $this->flush($flow, $parts, $pass);
-        return $pass->changed ? implode('', $parts) : $input;
+        $flow = $this->flush($flow, $pass);
+        return $pass->changed ? self::splice($input, $pass->edits) : $input;
     }
 
-    /** Process the flow, if there is one. Returns null: the caller’s next flow starts empty. */
+    /**
+     * Step over the comment, CDATA section or raw-text element at $at, and fix the
+     * text of a `<title>` (as text only: no rule that writes markup runs on it).
+     * Returns where the next token starts, or null when a pattern failed.
+     *
+     * @param array<string, true> $skipTags
+     */
+    private function special(string $input, int $at, Frame $top, ?Flow &$flow, array $skipTags, Pass $pass): ?int
+    {
+        $length = strlen($input);
+        if (substr_compare($input, '<!--', $at, 4) === 0) {
+            if (($input[$at + 4] ?? '') === '>') {
+                return $at + 5;
+            }
+            if (substr($input, $at + 4, 2) === '->') {
+                return $at + 6;
+            }
+            $end = strpos($input, '-->', $at + 4);
+            return $end === false ? $length : $end + 3;
+        }
+        if (substr_compare($input, '<![CDATA[', $at, 9, true) === 0) {
+            $end = strpos($input, ']]>', $at + 9);
+            return $end === false ? $length : $end + 3;
+        }
+
+        // A raw-text element: its body is not markup, and only <title> has text worth editing.
+        if (!preg_match(self::RAW_TAG, $input, $open, 0, $at)) {
+            $pass->error = 'reading a raw-text element failed: ' . (preg_last_error() ? preg_last_error_msg() : 'no tag at ' . $at);
+            return null;
+        }
+        $name = strtolower(substr($open[0], 1, strcspn($open[0], self::NAME_END, 1)));
+        $body = $at + strlen($open[0]);
+        $close = $name === 'script' ? self::scriptEnd($input, $body) : self::rawEnd($input, $body, $name);
+        if ($close === null) {
+            $pass->error = "finding the end of a <{$name}> failed: " . preg_last_error_msg();
+            return null;
+        }
+        $end = $close;
+        if ($close < $length) {
+            if (!preg_match(self::RAW_TAG, $input, $closer, 0, $close)) {
+                $pass->error = "reading the end tag of a <{$name}> failed: " . preg_last_error_msg();
+                return null;
+            }
+            $end += strlen($closer[0]);
+        }
+        if ($name === 'title' && !$top->skip && !isset($skipTags['title']) && $close > $body) {
+            $flow = $this->flush($flow, $pass);
+            $title = new Flow('title');
+            $title->add($body, substr($input, $body, $close - $body), true, new Frame('title', '', $top, $top->locale, false, $top->scope, 'title', true));
+            $this->flush($title, $pass);
+        }
+        return $end;
+    }
+
+    /** Where the end tag of a raw-text element other than script starts, or the end of the input. Null if the search failed. */
+    private static function rawEnd(string $input, int $from, string $name): ?int
+    {
+        $found = preg_match('~</' . $name . '(?=[\s/>])~i', $input, $m, PREG_OFFSET_CAPTURE, $from);
+        if ($found === false) {
+            return null;
+        }
+        return $found ? $m[0][1] : strlen($input);
+    }
+
+    /**
+     * Where the `</script>` that ends a script starts, or the end of the input, by the
+     * HTML5 script-data states. After `<!--` the script is “escaped”; a `<script` there
+     * makes it “double escaped”, where `</script>` only steps back to escaped; `-->`
+     * returns to plain script data from either. So
+     * `<script><!-- document.write("<script></script>"); --></script>` is one script.
+     * Null if the search failed.
+     */
+    private static function scriptEnd(string $input, int $from): ?int
+    {
+        $patterns = [
+            '~</script[\s/>]|<!--~i',                   // script data
+            '~</script[\s/>]|<script[\s/>]|-->~i',      // escaped
+            '~</script[\s/>]|-->~i',                    // double escaped
+        ];
+        $state = 0;
+        while (true) {
+            $found = preg_match($patterns[$state], $input, $m, PREG_OFFSET_CAPTURE, $from);
+            if ($found === false) {
+                return null;
+            }
+            if (!$found) {
+                return strlen($input);
+            }
+            [$match, $at] = $m[0];
+            if ($match === '-->') {
+                $state = 0;
+                $from = $at + 3;
+            } elseif ($match === '<!--') {
+                // The two dashes may also begin the -->: <!--> is opened and closed at once.
+                $state = 1;
+                $from = $at + 2;
+            } elseif ($match[1] !== '/') {
+                $state = 2;
+                $from = $at + strlen($match);
+            } elseif ($state === 2) {
+                $state = 1;
+                $from = $at + strlen($match);
+            } else {
+                return $at;
+            }
+        }
+    }
+
     /** The locale with the variant the options ask for, if it has one by that name. */
     private function withVariant(Pass $pass, LocaleInterface $locale): LocaleInterface
     {
@@ -287,27 +436,41 @@ final class Engine
         return $pass->variantLocales[$locale->id() . '|' . $name] ??= $locale->withVariant($name);
     }
 
-    private function flush(?Flow $flow, array &$parts, Pass $pass): null
+    /** Process the flow, if there is one. Returns null: the caller’s next flow starts empty. */
+    private function flush(?Flow $flow, Pass $pass): null
     {
         if ($flow !== null) {
-            $this->processFlow($flow, $parts, $pass);
+            $this->processFlow($flow, $pass);
         }
         return null;
     }
 
+    /** The input with the pass’s edits put in. */
+    private static function splice(string $input, array $edits): string
+    {
+        $out = '';
+        $pos = 0;
+        foreach ($edits as [$at, $length, $text]) {
+            $out .= substr($input, $pos, $at - $pos) . $text;
+            $pos = $at + $length;
+        }
+        return $out . substr($input, $pos);
+    }
+
     /**
      * The attributes of an opening tag that the engine reads, lower-cased name
-     * to raw value. Null when the tag has none of them (the common case).
+     * to raw value. Null when the tag has none of them (the common case). With
+     * $all, every attribute the tag has.
      *
      * @param list<string> $skipClasses
      * @return array<string, string>|null
      */
-    private function attributes(string $raw, int $offset, array $skipClasses): ?array
+    private function attributes(string $raw, int $offset, array $skipClasses, bool $all = false): ?array
     {
-        if (strpos($raw, '=') === false) {
+        if (!$all && strpos($raw, '=') === false) {
             return null;
         }
-        if (stripos($raw, 'lang') === false && stripos($raw, 'data-sorts') === false
+        if (!$all && stripos($raw, 'lang') === false && stripos($raw, 'data-sorts') === false
             && (!$skipClasses || stripos($raw, 'class') === false)) {
             return null;
         }
@@ -323,11 +486,12 @@ final class Engine
         return $found ?: null;
     }
 
-    private function processFlow(Flow $flow, array &$parts, Pass $pass): void
+    private function processFlow(Flow $flow, Pass $pass): void
     {
-        foreach ($flow->segments as $i => [$token, $text, $editable, $frame, $prefix, $suffix]) {
+        foreach ($flow->texts as $i => $text) {
             $result = $text;
-            if ($editable && $text !== '') {
+            $frame = $flow->frames[$i];
+            if ($flow->editable[$i] && $text !== '') {
                 $set = $this->ruleSet($pass, $frame);
                 if ($set['rules'] && ($set['union'] === null || strpbrk($text, $set['union']) !== false)) {
                     $run = new Run($text);
@@ -346,7 +510,7 @@ final class Engine
             }
             $flow->done[$i] = $result;
             if ($result !== $text) {
-                $parts[$token] = $prefix . $result . $suffix;
+                $pass->edits[] = [$flow->offsets[$i], strlen($text), $result];
                 $pass->changed = true;
             }
         }
@@ -363,19 +527,22 @@ final class Engine
         if ($frame->ruleSet !== null) {
             return $frame->ruleSet;
         }
-        $key = $frame->locale->id() . '|' . $frame->scope;
+        $key = $frame->locale->id() . '|' . $frame->scope . ($frame->text ? '|text' : '');
         if (isset($pass->ruleSets[$key])) {
             return $frame->ruleSet = $pass->ruleSets[$key];
         }
         $scoped = $frame->scope === '' ? [] : array_fill_keys(explode(' ', $frame->scope), true);
+        $allowed = $pass->options->allowed === null ? null : array_fill_keys($pass->options->allowed, true);
+        $textOnly = $pass->options->mode === Options::TEXT || $frame->text;
         $rules = [];
         $active = [];
         $union = '';
         foreach ($this->rules() as $rule) {
             $handle = $rule->handle();
             $on = ($pass->options->rules[$handle] ?? $rule->defaultEnabled()) || isset($pass->named[$handle]) || isset($scoped[$handle]);
-            if (!$on || !$rule->supportsLocale($frame->locale)
-                || ($pass->options->mode === Options::TEXT && $rule->emitsMarkup())) {
+            // Nothing turns on a rule the options do not allow: not the settings, a scope or the call.
+            if (!$on || ($allowed !== null && !isset($allowed[$handle])) || !$rule->supportsLocale($frame->locale)
+                || ($textOnly && $rule->emitsMarkup())) {
                 continue;
             }
             $triggers = $rule->triggers();

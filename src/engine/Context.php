@@ -82,7 +82,7 @@ final class Context
     {
         $text = '';
         for ($i = $this->index - 1; $i >= 0 && mb_strlen($text) < $length; $i--) {
-            $text = ($this->flow->done[$i] ?? $this->flow->segments[$i][1]) . $text;
+            $text = ($this->flow->done[$i] ?? $this->flow->texts[$i]) . $text;
         }
         return mb_substr($text, -$length);
     }
@@ -91,9 +91,9 @@ final class Context
     public function after(int $length = 1): string
     {
         $text = '';
-        $count = count($this->flow->segments);
+        $count = count($this->flow->texts);
         for ($i = $this->index + 1; $i < $count && mb_strlen($text) < $length; $i++) {
-            $text .= $this->flow->segments[$i][1];
+            $text .= $this->flow->texts[$i];
         }
         return mb_substr($text, 0, $length);
     }
@@ -102,8 +102,8 @@ final class Context
     public function textAfter(): string
     {
         $text = '';
-        for ($i = $this->index + 1, $n = count($this->flow->segments); $i < $n; $i++) {
-            $text .= $this->flow->segments[$i][1];
+        for ($i = $this->index + 1, $n = count($this->flow->texts); $i < $n; $i++) {
+            $text .= $this->flow->texts[$i];
         }
         return $text;
     }
@@ -111,7 +111,7 @@ final class Context
     /** The whole flow as the page had it, before any rule ran. */
     public function flowText(): string
     {
-        return $this->flow->state['flowText'] ??= implode('', array_column($this->flow->segments, 1));
+        return $this->flow->state['flowText'] ??= implode('', $this->flow->texts);
     }
 
     /**
@@ -123,8 +123,8 @@ final class Context
     {
         $seenText = false;
         $seenGap = false;
-        for ($i = $this->index + 1, $n = count($this->flow->segments); $i < $n; $i++) {
-            $text = $this->flow->segments[$i][1];
+        for ($i = $this->index + 1, $n = count($this->flow->texts); $i < $n; $i++) {
+            $text = $this->flow->texts[$i];
             if (trim($text) === '') {
                 $seenGap = $seenGap || ($seenText && $text !== '');
                 continue;
@@ -168,10 +168,10 @@ final class Context
         // Suffix sums over the segments, built once per flow and pattern.
         $key = 'count:' . $pattern;
         if (!isset($this->flow->state[$key])) {
-            $segments = $this->flow->segments;
-            $sums = array_fill(0, count($segments) + 1, 0);
-            for ($i = count($segments) - 1; $i >= 0; $i--) {
-                $sums[$i] = $sums[$i + 1] + (int) preg_match_all($pattern, $segments[$i][1]);
+            $texts = $this->flow->texts;
+            $sums = array_fill(0, count($texts) + 1, 0);
+            for ($i = count($texts) - 1; $i >= 0; $i--) {
+                $sums[$i] = $sums[$i + 1] + (int) preg_match_all($pattern, $texts[$i]);
             }
             $this->flow->state[$key] = $sums;
         }

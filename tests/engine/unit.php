@@ -362,3 +362,66 @@ $deep = str_repeat('<div>', 1000) . '"x"' . str_repeat('</div>', 1000);
 check('tokenizer: nesting to the limit is still typeset', str_replace('"x"', '“x”', $deep), $engine->apply($deep));
 $tooDeep = str_repeat('<b>', 300000) . '"x"';
 check('tokenizer: absurd nesting comes back unchanged, without crashing', $tooDeep, $engine->apply($tooDeep));
+
+// ---- The allow-list: nothing turns on a rule the options do not allow ---------
+
+$lite = new Options(allowed: ['quotes', 'apostrophes', 'primes', 'dashes', 'ellipsis']);
+$scoped = '<p data-sorts-rules="fractions ranges multiplication ordinals hook-amp hook-caps symbols nbsp widows">1/2 cup, pages 1-5, 3x4, 1st place, A&amp;B NASA (c) 10 kg "x"</p>';
+check('allowed: a data-sorts-rules scope cannot turn on a rule outside it', '<p data-sorts-rules="fractions ranges multiplication ordinals hook-amp hook-caps symbols nbsp widows">1/2 cup, pages 1-5, 3x4, 1st place, A&amp;B NASA (c) 10 kg “x”</p>', $engine->apply($scoped, [], $lite));
+check('allowed: nor can naming it in the call', '1/2 (c) “x”', $engine->apply('1/2 (c) "x"', ['fractions', 'symbols'], $lite));
+check('allowed: nor can the rules option', '1/2 “x”', $engine->apply('1/2 "x"', [], $lite->with(rules: ['fractions' => true])));
+check('allowed: a rule switched off may still run by scope when it is allowed', '<p data-sorts-rules="dashes">a — b “x”</p>', $engine->apply('<p data-sorts-rules="dashes">a -- b "x"</p>', [], $lite->with(rules: ['dashes' => false])));
+check('allowed: null allows every rule (the scope converts)', '<p data-sorts-rules="fractions">½</p>', $engine->apply('<p data-sorts-rules="fractions">1/2</p>'));
+check('allowed: with() keeps it', $lite->allowed, $lite->with(locale: 'de')->allowed);
+
+// ---- Long raw-text bodies and comments: no lazy quantifier, no silent skip -----
+
+$longScript = '<p>"a" -- it\'s</p><script>var d = "' . str_repeat('x', 1_200_000) . '";</script><p>"b"</p>';
+check('long script: the text around a 1.2 MB script is still converted', '<p>“a” — it’s</p><script>var d = "' . str_repeat('x', 1_200_000) . '";</script><p>“b”</p>', $engine->apply($longScript));
+check('long script: no error is reported', null, $engine->lastError());
+$longComment = '<p>"a"</p><!-- ' . str_repeat('"x" ', 300_000) . ' --><p>"b"</p>';
+check('long comment: the text around a 1.2 MB comment is still converted', '<p>“a”</p><!-- ' . str_repeat('"x" ', 300_000) . ' --><p>“b”</p>', $engine->apply($longComment));
+$limit = ini_get('pcre.backtrack_limit');
+foreach (['2' => 'tokenizing', '1' => 'UTF-8'] as $tight => $step) {
+    // 2 lets the UTF-8 check through and stops the tokenizer (with or without JIT); 1 stops the UTF-8 check itself.
+    ini_set('pcre.backtrack_limit', (string) $tight);
+    $unchanged = $engine->apply('<p>"a" <b>"b"</b></p>');
+    $why = $engine->lastError();
+    ini_set('pcre.backtrack_limit', $limit);
+    check("pattern failure ($step): the input comes back unchanged", '<p>"a" <b>"b"</b></p>', $unchanged);
+    check("pattern failure ($step): lastError() says which step and why", true, is_string($why) && str_contains($why, $step) && str_contains($why, 'limit'));
+}
+check('invalid UTF-8 is not an error', null, ($engine->apply("caf\xE9") === "caf\xE9") ? $engine->lastError() : 'changed');
+$engine->apply('<p>"ok"</p>');
+check('pattern failure: the next call clears it', null, $engine->lastError());
+
+// ---- The quote scan is linear on a long text node ------------------------------
+
+$possessive = "<p>'" . str_repeat("the dogs' bowls ", 12_800) . "'</p>";
+$best = INF;
+for ($try = 0; $try < 3; $try++) {
+    $t = hrtime(true);
+    $engine->apply($possessive);
+    $best = min($best, (hrtime(true) - $t) / 1e6);
+}
+check(sprintf('perf guard: a 200 KB possessive paragraph takes under 50 ms (best of 3: %.1f ms)', $best), true, $best < 50);
+
+// ---- Settled marks move with an earlier, shrinking edit in the same call -------
+
+$run = new Run('abcdef ghij klmn');
+$run->replace(7, 4, 'GHIJ');
+check('run: two edits in one call around a settled span', 2, $run->edit([[0, 6, 'x'], [12, 4, 'y']]));
+check('run: text after the shrinking edit', 'x GHIJ y', $run->text());
+check('run: the settled span moved with the shrink', [true, false, true, true, true, true, false], array_map([$run, 'isSettled'], [0, 1, 2, 3, 4, 5, 6]));
+check('run: a later edit of the moved span is refused', false, $run->replace(2, 1, 'Q'));
+check('run: and the text is as it was', 'x GHIJ y', $run->text());
+
+// overlapsSettled(), which rules may call, and the walk in edit() agree on where a settled span ends.
+$run = new Run('abcdef');
+$run->replace(2, 2, 'XY');
+check('run: overlapsSettled() inside a span', true, $run->overlapsSettled(3, 1));
+check('run: overlapsSettled() just after a span is free', false, $run->overlapsSettled(4, 1));
+check('run: overlapsSettled() just before a span is free', false, $run->overlapsSettled(1, 1));
+check('run: overlapsSettled() a point at the end of a span is free', false, $run->overlapsSettled(4, 0));
+check('run: overlapsSettled() a point inside a span is not', true, $run->overlapsSettled(3, 0));
+check('run: edit() right after a settled span is allowed', 1, $run->edit([[4, 1, 'Z']]));

@@ -319,3 +319,26 @@
 
 @ o-off-by-default
 < the 1st of May
+
+# Nothing inside a URL or a path printed as text: no multiplication, fraction, range or ordinal.
+
+@ n-url-guard-gate only=multiplication,fractions,ranges,ordinals
+< <p>See https://example.com/a-b/1-2?x=3x4&amp;y=1/2&amp;p=1st now</p>
+
+@ n-url-guard-www only=multiplication,fractions,ranges,ordinals
+< <p>Go to www.example.com/3x4/1-5/21st today</p>
+
+@ n-url-guard-path only=multiplication,fractions,ranges,ordinals
+< <p>The file is /images/1920x1080/1-2/1st.png here</p>
+
+@ n-url-guard-text-mode only=multiplication,fractions,ranges,ordinals mode=text
+< See http://example.com/?size=3x4&n=1-5 and 1/2.
+> See http://example.com/?size=3x4&n=1-5 and ½.
+
+@ n-url-guard-numbers-around-a-url only=multiplication,fractions,ranges,ordinals
+< <p>3x4, 1/2 and 1-5 before https://x.example/3x4 and 1st after</p>
+> <p>3×4, ½ and 1–5 before https://x.example/3x4 and 1<sup>st</sup> after</p>
+
+@ n-url-guard-slash-between-words-is-not-a-path only=multiplication,fractions
+< <p>3x4 / 1/2 cup</p>
+> <p>3×4 / ½ cup</p>
