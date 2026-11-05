@@ -1,0 +1,343 @@
+{
+  "tool": "craft-sorts",
+  "run": "sorts-release-recheck-2026-11-05 (fix round 1): engine eb1232b, tests 80bedd2, Craft layer 64dce48, docs c536059, F5 19a0759, effort ce68339 (range 0f62402..ce68339, HEAD ce68339); testbed craft5-plugin-testbed 27a78ad, 80667bc (Craft 5.12.0.1, Craft Solo); host PHP 8.5.12 (/opt/homebrew/bin/php); release mode, closure re-check scoped to F1–F6 and the fixed FUs",
+  "suite": {
+    "pass": 10,
+    "fail": 0,
+    "firstRunGreen": true,
+    "detail": "node tests/run-all.mjs at ce68339: audit 51, ckeditor 30, engine-service 24, extension-api 16, fix-on-save 54, graphql 21, page-pass 75, settings 75, smoke 2, twig 71, then \"ok testbed isolation (clean tree, no pending project config, queue 0 → 0)\" — first run and final run after every mutant and probe. composer test-engine: \"RESULT: 3165 passed, 0 failed\". composer check: clean (PHPStan [OK] No errors).",
+    "mutants": "Engine, gate-kit isolated copies, `php tests/engine/run.php`: my 15 (X1–X15) killed 11, survived X9 (equivalent), X11, X13, X14 (R2-7); the fixer’s 19 (engine-mutants-r1.json) all killed; each run ended \"ok 115 files + git unchanged real tree\". Craft layer, real working files one suite each (the fixer’s craft-mutants.mjs runner, sha256 restore after each, compiled templates cleared): the fixer’s C2 C6 C18 R-F1 R-F2s R-F2m R-F4 R-F4a R-FU6 R-FU7 R-FU9 all killed (11 of 13; R-FU4 covered by my Y5, C23 declined); my Y1–Y9 killed 7, survived Y1 (real gap, R2-1) and Y8 (equivalent).",
+    "mutantIds": {
+      "killed": [
+        "X1",
+        "X2",
+        "X3",
+        "X4",
+        "X5",
+        "X6",
+        "X7",
+        "X8",
+        "X10",
+        "X12",
+        "X15",
+        "M2",
+        "M3",
+        "M3s",
+        "M4",
+        "M5",
+        "M8",
+        "M15",
+        "R-F1",
+        "R-F3",
+        "R-F3b",
+        "R-F6",
+        "R-FU4",
+        "R-FU10",
+        "R-FU12",
+        "R-FU13",
+        "R-FU5",
+        "R-FU3",
+        "M14",
+        "M14w",
+        "C2",
+        "C6",
+        "C18",
+        "R-F1(craft)",
+        "R-F2s",
+        "R-F2m",
+        "R-F4",
+        "R-F4a",
+        "R-FU6",
+        "R-FU7",
+        "R-FU9",
+        "Y2",
+        "Y3",
+        "Y4",
+        "Y5",
+        "Y6",
+        "Y7",
+        "Y9"
+      ],
+      "survived": [
+        "X9 (equivalent)",
+        "X11",
+        "X13",
+        "X14",
+        "Y1",
+        "Y8 (equivalent)"
+      ]
+    }
+  },
+  "findings": [],
+  "notBlocking": [
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-1",
+      "summary": "F4 test gap: the hunk that treats a site the element is not yet on as fully reached is not load-bearing. Mutant Y1 (drop `|| !in_array($siteId, $existing, true)`) keeps every suite green, yet it brings F4 back on Craft’s draft path: an unpublished draft saved on en with fix-on-save on puts English quotes into the French copy and the French page.",
+      "location": "src/services/ContentFixer.php:179 (otherSites); tests/fix-on-save-test.php (no draft case)",
+      "repro": "Real code: cd ~/sw/github-private/craft5-plugin-testbed && ddev craft shell < /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/draftprobe.php → \"after first draft save fr: title=\\\"\\\\\\\"Draft\\\\\\\" -- one\\\"\", \"fr page h1: « Draft » – one\" (correct). With Y1 applied: \"after first draft save fr: title=“Draft” — one\", \"fr page h1: “Draft” — one\", while node tests/run-all.mjs under Y1 gives fix-on-save 54/0 (/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/craft-mutants.out: \"SURVIVED Y1 fix-on-save 54/0\").",
+      "acceptance": "fix-on-save-test gains the draft case (Drafts::saveElementAsDraft() of a new sortsTest entry on en with fix-on-save on, then an edit, then applyDraft): the fr copy keeps its values as typed and /fr/sorts-test/<slug> shows « … » – …; re-running Y1 kills it.",
+      "severity": "medium",
+      "confidence": "high",
+      "likelihood": "possible",
+      "cause": "The F4 tests create entries with saveElement() on a new Entry, where propagateAll is already true, so the existing-sites branch never decides anything."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-2",
+      "summary": "FU1 restore cannot recover from a suite that dies with a PHP fatal after a web request wrote the YAML: the next run’s snapshot takes the dirty YAML as the state it found, so the testbed stays in Pro with test settings, every later run-all fails isolation, and run-all names no way back.",
+      "location": "tests/support.php:27-38 (sortsSnapshot reads plugins.sorts from the YAML on disk); tests/run-all.mjs (the failure message gives no recovery step)",
+      "repro": "Inject `ini_set(\"memory_limit\",\"64M\"); $boom = str_repeat(\"x\", 200000000);` before \"sortsCheck('pro save: accepted',\" in tests/settings-test.php (/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/crash.mjs), run node tests/run-all.mjs → \"NO RESULT settings-test.php\", \"FAILED testbed isolation … M config/project/project.yaml\" (edition lite→pro, fixOnSave, processHead, skipTags …). Restore the test file and run run-all again → all suites ok, still \"FAILED testbed isolation … M config/project/project.yaml\". Recovered by hand: git checkout -- config/project/project.yaml && ddev craft project-config/apply.",
+      "acceptance": "Either run-all refuses to start on a testbed whose config/project tree is dirty, printing the recovery command, or the snapshot reads the committed YAML (git HEAD) rather than the working file; a second run after a fatal comes back clean or says exactly what to run.",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "`craft shell` runs no shutdown functions, and sortsTry catches throwables but not fatals; the baseline is taken from a file a crashed run may have changed."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-3",
+      "summary": "run-all fails spuriously when run twice within a minute: Craft 5.12’s defaultRateLimit (10 per 60 s on this testbed) answers the suites’ CP logins with 429, so settings-test fails three checks with \"CP login failed: 429 … Rate limit exceeded\".",
+      "location": "tests/support.php:200-212 (sortsCpClient logs in afresh each call)",
+      "repro": "node tests/run-all.mjs twice back to back (here: a crash-probe run straight after another) → \"3 FAILED settings-test.php … RuntimeException: CP login failed: 429 {\"name\":\"Too Many Requests\",\"message\":\"Rate limit exceeded.\" … (support.php:212)\". `Craft::$app->getConfig()->getGeneral()` on the testbed: defaultRateLimit 10, defaultRateLimitDuration 60.",
+      "acceptance": "Back-to-back runs (as a mutant runner does) stay green: one CP session per suite, or the testbed sets defaultRateLimit for tests, or sortsCpClient waits and retries on 429 with a message that names the limit.",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "likely",
+      "cause": "A Craft 5.12 rate limit the harness does not know about."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-4",
+      "summary": "Quadratic time in the dashes rule on one long text node (pre-existing, not a regression of this round): every match copies the rest of the run with substr(). It dominates the remaining superlinear cost of a long paragraph. The page pass is capped at 1 MB (about 1.5 s worst case there), but fix-on-save, the audit, the filter and @sorts have no cap.",
+      "location": "src/engine/rules/DashesRule.php:47 (`str_starts_with(substr($text, $offset + $length), '&gt;')`)",
+      "repro": "SORTS_ROOT=/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/head /opt/homebrew/bin/php -d memory_limit=-1 /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/para.php <MB> dashes 'a -- b. ' → 0.5 MB 365 ms, 1 MB 1498 ms, 2 MB 6425 ms; the same at 0f62402 (old: 1 MB 231 ms vs new 238 ms on the mixed paragraph). Whole default rule set, /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/k4r.php onepara: 0.96 MB 317 ms, 1.92 MB 1120 ms, 5.76 MB 26247 ms.",
+      "acceptance": "Compare in place (substr_compare($text, '&gt;', $offset + $length, 4) === 0, or substr with a length of 4); 1 MB of `a -- b. ` in under 300 ms and onepara linear (2 MB ≈ 2 × 1 MB).",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "FU3 fixed the quote scanner’s rescans; this one is in another rule."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-5",
+      "summary": "Stray end tags under deep nesting cost O(tags × depth): a 1 MB page of 1,000 nested divs and stray </font> tags takes 2.07 s (pre-existing; same as 0f62402). Inside the 1 MB cap, but the slowest shape measured.",
+      "location": "src/engine/Engine.php:234 (each end tag walks the frame stack to the root when no frame matches)",
+      "repro": "/opt/homebrew/bin/php -d memory_limit=-1 /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r7m3/k4.php nest 0.95 → \"nest 0.96 MB … 2070.2 ms\"; old tree: 0.51 MB 1100.9 ms vs new 1099.0 ms.",
+      "acceptance": "Keep a per-name count of open frames so an end tag with no open element of its name is skipped in O(1); nest at 1 MB under 300 ms.",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "Pre-existing walk; not touched by the fix round."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-6",
+      "summary": "Two HTML5 tokenizer rules are still not followed (pre-existing; the rewrite is no worse): a comment also ends at `--!>`, and `<![CDATA[` outside svg/math is a bogus comment that ends at the first `>`. On such (malformed) pages the engine can edit text that browsers put inside a script, or skip text they show.",
+      "location": "src/engine/Engine.php:331-344 (special(): comment end only at -->, CDATA end at ]]>)",
+      "repro": "Differential fuzz against Dom\\HTMLDocument, every non-markup rule on: for s in 1..8: /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/fuzz-ids.php $s 1000 → 32 of 8,000 pages diverge, every one holding --!> or <![CDATA[; the old engine (SORTS_ROOT=/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/old) diverges on all 32 and on 516 more. Example (seed 5, page 995): `<!--&amp; >--!> <SCRIPT> --><p>3x4 </p>` comes back with `<p>3×4 </p>`, which browsers hold inside a <script>. All rules off: 0 of 8,000 changed.",
+      "acceptance": "Comments end at the first `-->` or `--!>`; a `<![CDATA[` outside foreign content ends at the first `>`; the fuzz above shows 0 diverging pages. Or README Known limits names both.",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "Carried over from the old pattern."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-7",
+      "summary": "Engine test gaps (my mutants that survive the engine suite): X11 a doctype or bogus comment is read as an opening tag; X13 a CDATA section ends at `]]` rather than `]]>`; X14 the end tag of style, textarea, title, xmp, iframe, noembed and noframes is matched case-sensitively (so `<STYLE>…</STYLE>` would leave the rest of the page untouched). X9 survives too but is equivalent (the entity classifiers stay case-sensitive).",
+      "location": "src/engine/Engine.php:223, :341-344, :378; tests/engine/corpus/09-html-structure.txt",
+      "repro": "cd /Users/dgaidula/sw/github-public/craft-sorts && TMPDIR=/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/gk-tmp gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/my-engine-mutants.yaml --jobs 3 --brief -- /opt/homebrew/bin/php tests/engine/run.php → \"warn survived … X9\", \"… X11\", \"… X13\", \"… X14\"; summary ok=13 warn=4.",
+      "acceptance": "Corpus cases: `<p>\"a<?x>b\"</p>` (one flow across a bogus comment), `<![CDATA[ a ]] \"b\" ]]><p>\"c\"</p>`, `<STYLE>p{}</STYLE><p>\"x\"</p>` and `<TEXTAREA>\"a\"</TEXTAREA><p>\"x\"</p>`; re-running the spec shows only X9.",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "The rewrite moved these ends out of the regex; the corpus had no case for them."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-8",
+      "summary": "FU7’s second half is still open: the audit scan lists titles and before/after excerpts from every section to anyone with utility:sorts, whatever they may view. The fix round scoped FU7 to the job’s canSave(), which is closed; mutant C23 (controller drops the utility permission check) was declined for Craft Solo and still has no test.",
+      "location": "src/services/AuditScanner.php:35-48 (unchanged in 0f62402..ce68339); src/controllers/AuditController.php",
+      "repro": "Static: git diff 0f62402 ce68339 -- src/services/AuditScanner.php is empty; the scan query has no permission filter. Not runnable on a Solo testbed.",
+      "acceptance": "The scan lists only entries the current user can view (and save, for the fix boxes), or README says the utility shows every section to users who hold it; a test with a stubbed EVENT_AUTHORIZE_VIEW drops an entry from the listing.",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "Scoped out by the orchestrator (FU7 = per-entry canSave in the job)."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-9",
+      "summary": "A non-numeric maxPageBytes from config/sorts.php (say '2MB') is coerced to 0, so every page goes out unconverted with one warning per request; the `min: 1` rule runs only on a CP save. A wrong value silently switches the page pass off, as far as visitors and the settings page show.",
+      "location": "src/models/Settings.php:121-125 (setAttributes: is_numeric ? (int) : 0), :142 (integer, min 1)",
+      "repro": "Static: Settings::setAttributes() maps '2MB' to 0; PagePass::fix() then returns every page with \"it is N bytes, more than the 0 the maxPageBytes setting allows\". Not run.",
+      "acceptance": "A value that does not validate falls back to the default (1,000,000) with one warning naming the bad value, or the settings page shows the error for an override; a settings-test case.",
+      "severity": "low",
+      "confidence": "medium",
+      "likelihood": "unlikely",
+      "cause": "Same coercion pattern as widowsMinWords, where 0 is harmless; here it disables the feature."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-10",
+      "summary": "Doc nits from the round: ContentFixer’s class comment says `See {@see reach()}`, a method that does not exist (it is otherSites() and onlySameLocale()); README Performance moved the 5 ms budget and PHP 8.2 sentences into the new “Memory.” paragraph, so the speed budget now reads as part of the memory note.",
+      "location": "src/services/ContentFixer.php:38; README.md “Performance”",
+      "repro": "grep -n \"reach()\" src/services/ContentFixer.php → line 38 only; grep -n \"function reach\" src → none.",
+      "acceptance": "The comment names otherSites(); the budget sentences stand in their own paragraph after the timing table.",
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "likely",
+      "cause": "Rename during the fix; paragraph edit."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-11",
+      "summary": "scriptEnd() treats a vertical tab after `<script` or `</script` as a tag-name end (PCRE \\s includes \\x0B; HTML5’s list is tab, LF, FF, space, / and >). In an escaped script this can enter the double-escaped state where browsers do not, so text after the script is left unconverted. Under-editing only, never a script edit.",
+      "location": "src/engine/Engine.php:396-398 (the three script-state patterns use [\\s/>])",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/script-states.php → \"vt-after-script ok …\\\"b\\\"</script>…\" (the \"b\" browsers show as text stays straight).",
+      "acceptance": "Use [\\t\\n\\f\\r /> ] in the script-state patterns; a corpus case with \\x0B.",
+      "severity": "low",
+      "confidence": "medium",
+      "likelihood": "unlikely",
+      "cause": "PCRE \\s is wider than HTML whitespace."
+    },
+    {
+      "blocking": false,
+      "needsDesign": false,
+      "id": "R2-12",
+      "summary": "The FU3 perf guard is wall-clock (200 KB possessive paragraph under 50 ms, best of 3) inside the correctness suite, so it can fail on a slow or loaded box (PHP 8.2 in Docker, CI) without a regression. Green here, including under gate-kit --jobs 3.",
+      "location": "tests/engine/unit.php (“perf guard: a 200 KB possessive paragraph takes under 50 ms”)",
+      "repro": "Not reproduced as a failure; observed timings 77 ms for 0.95 MB on PHP 8.5.12 here.",
+      "acceptance": "Either an operation-count guard (scaling ratio of 2× input under 3× time) or the timing check moves to perf.php with a margin; the suite stays green on php:8.2-cli.",
+      "severity": "low",
+      "confidence": "low",
+      "likelihood": "possible",
+      "cause": "A time budget used as an assertion."
+    }
+  ],
+  "closure": {
+    "F1": {
+      "status": "closed",
+      "evidence": "k1.php in Lite: every scope/raw/service probe unchanged (K1a–K1d); twig-test Lite/Pro cases; mutants R-F1, X1, Y7 killed (Y8 equivalent: applyStored() re-intersects allowed with STORED_RULES)."
+    },
+    "F2": {
+      "status": "closed",
+      "evidence": "k4craft.php: \"page 6 MB … fix returned, changed=n, peak 21.1 MB\" at 256M; page-pass 6 MB cases; 1 MB peaks ≤ 73 MB (≤ 100× estimate), 6 MB table 79.5 MB vs 537 MB at 10 MB before; README numbers match my run (3.3/14.4/36.2/72.6 MB per MB). Mutants R-F2s, R-F2m, Y6 killed."
+    },
+    "F3": {
+      "status": "closed",
+      "evidence": "F3 input byte-identical with every non-markup rule on (script-states.php); 28 targeted script/raw-text probes agree with Dom\\HTMLDocument; 8,000-page fuzz shows no page new code gets wrong that the old got right, all-rules-off byte-identical. Mutants R-F3, R-F3b, X2, X3 killed."
+    },
+    "F4": {
+      "status": "closed",
+      "evidence": "probes1.php: fr title/plain/body as typed, fr page « Bonjour » – toi, shared edit as typed; draft path (draftprobe.php) correct; reach tests killed R-F4, R-F4a, Y2. Test gap on one hunk: R2-1."
+    },
+    "F5": {
+      "status": "closed",
+      "evidence": "probes3.php: G fr html \"<p>« Body » – x</p>\"; graphql-test cases on both endpoints; Y3 killed."
+    },
+    "F6": {
+      "status": "closed",
+      "evidence": "probes4.php: \"<title>“Lab” — it’s a test</title>\"; title.php engine: no markup in <title>; mutants R-F6, X4, Y4 killed."
+    },
+    "FU1": {
+      "status": "closed",
+      "evidence": "run-all at ce68339: \"ok testbed isolation (clean tree, no pending project config, queue 0 → 0)\", twice; a failing check or exit inside a suite is restored. Recovery after a true fatal is R2-2."
+    },
+    "FU2": {
+      "status": "not closed",
+      "evidence": "Deferred by the orchestrator (5.10 ms typical on 8.2); README still states the 8.2 miss. Not measured here."
+    },
+    "FU3": {
+      "status": "closed",
+      "evidence": "possess 0.95 MB 77 ms (was 3.6 s at 0.2 MB); unit perf guard; R-FU3 and X7 killed. Remaining superlinear cost is the dashes rule (R2-4)."
+    },
+    "FU4": {
+      "status": "closed",
+      "evidence": "pcre.php: 1 MB comment and 1–2 MB scripts convert (changed=y); unit lastError cases; page-pass logs once; R-FU4, X10, Y5 killed."
+    },
+    "FU5": {
+      "status": "closed",
+      "evidence": "spot.php: \"&APOS;w&APOS; &Quot;v&Quot;\" unchanged, &QUOT; and &#X22; convert; R-FU5 killed (X9 equivalent)."
+    },
+    "FU6": {
+      "status": "closed",
+      "evidence": "probes3.php: nl2br/md/e convert once; fu6probe.php: e(\"js\"), e(\"html_attr\"), e(var), upper, title, replace, default, striptags stay untrusted; widont and purify are trusted exactly as Twig prints them alone (checked). R-FU6 and Y9 killed. No path wider than Twig’s own trust found."
+    },
+    "FU7": {
+      "status": "closed",
+      "evidence": "As scoped by the orchestrator (per-entry canSave in the job): audit-test EVENT_AUTHORIZE_SAVE case; R-FU7 killed. The scan-listing half of the original acceptance is R2-8."
+    },
+    "FU8": {
+      "status": "closed",
+      "evidence": "k1.php Lite: data-sorts=\"off\" stays straight, data-sorts-lang honoured; SPEC §5.4, README and DEVELOPMENT.md state the ruling; twig-test pins both editions."
+    },
+    "FU9": {
+      "status": "closed",
+      "evidence": "audit-test French-after-downgrade case; R-FU9 killed."
+    },
+    "FU10": {
+      "status": "closed",
+      "evidence": "title.php: `<option>NASA &amp; 1st</option>` unchanged; R-FU10, X6 killed."
+    },
+    "FU11": {
+      "status": "closed",
+      "evidence": "Documented: README Known limits, “Misnested markup inside code”."
+    },
+    "FU12": {
+      "status": "closed",
+      "evidence": "spot.php: `<div lang=\"de\"><p lang=\"\">\"x\"</p></div>` → “x”; R-FU12, X5 killed."
+    },
+    "FU13": {
+      "status": "closed",
+      "evidence": "hooks.php: `?x=3x4` and `y=1/2` inside the URL unchanged; R-FU13, X8 killed."
+    },
+    "FU14": {
+      "status": "closed",
+      "evidence": "Documented: README Known limits and CHANGELOG (“run php craft up or clear compiled templates”); twig-test clears compiled templates first."
+    },
+    "FU15": {
+      "status": "closed",
+      "evidence": "Fixer spec engine-mutants-r1.json re-run: M2 M3 M3s M4 M5 M8 M15 M14 M14w all killed."
+    },
+    "FU16": {
+      "status": "closed",
+      "evidence": "C2, C6, C18 killed on my run; C23 declined (Craft Solo), carried in R2-8."
+    },
+    "FU17": {
+      "status": "not closed",
+      "evidence": "No Hardened line yet; by its own acceptance it goes in after this re-check passes."
+    }
+  },
+  "confirmedSound": [
+    "Tokenizer rewrite: all rules off, 0 of 8,000 random raw-text/script/comment pages changed; every non-markup rule on, no page where 0f62402 agreed with Dom\\HTMLDocument and ce68339 does not (new 32 diverging, old 548; the 32 are R2-6). Output is idempotent on every fuzz page.",
+    "Script escape states: `<!-->`, `<!--->`, `<!-<script>`, double-escaped then `-->`, `</script data-a=\"</script>\">`, uppercase, FF/CR after the name, unclosed and unclosed double-escaped scripts all agree with Dom\\HTMLDocument.",
+    "F4 reach on en/fr: new entry (all values as typed on both sites, fr and en pages set in their own languages), shared CKEditor edit (as typed, logged at info), translatable Plain Text on an existing entry (en in English, fr in French), title edit on one site, and Craft’s draft → apply path (en converted only after the first save, fr untouched).",
+    "FU6 trust: a filter is trusted only when Twig itself would print its output unescaped; checked 16 filter/strategy forms.",
+    "Memory and time: 1 MB article 37 ms/3.3 MB, table 148 ms/14.4 MB, tags 107 ms/36.2 MB, onepara 295 ms/69.4 MB, inches 120 ms/61.2 MB; 6 MB tags 207 MB, onepara 443 MB (≤ 77 bytes per byte, inside the 100× estimate). In Craft at 256M a 6 MB page comes back unchanged with one warning; at maxPageBytes 10 MB the memory estimate refuses it."
+  ],
+  "notDone": [
+    "FU2 (PHP 8.2 speed) not measured: deferred by the orchestrator.",
+    "No Team/Pro testbed: FU7’s permission paths are covered only through EVENT_AUTHORIZE_SAVE, as the suite does.",
+    "Matrix (nested entry) propagation and section propagation methods other than the testbed’s were not probed for F4.",
+    "R2-9 (maxPageBytes coercion) is static, not run."
+  ],
+  "sources": [
+    "Read directly: git diff 0f62402 ce68339 (src, tests, docs), the first receipt’s findings, tests/README.md, CLAUDE.md, Craft 5.12.0.1 vendor/craftcms/cms/src/services/Drafts.php:284-425, services/Elements.php:4005-4035, controllers/ElementsController.php:2932-2965, filters/IpRateLimitIdentity.php.",
+    "Run directly: every command quoted in a repro, closure entry or confirmedSound line; outputs in /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-x4p9/.",
+    "Taken from the brief, not re-derived: the orchestrator’s design rulings (F4, F5, FU7 scope, FU8) and the deferrals (FU2, D817–D819)."
+  ],
+  "verdict": "CLOSED WITH FOLLOW-UPS"
+}
