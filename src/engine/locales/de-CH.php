@@ -23,5 +23,11 @@ return [
     'dash' => ['mark' => '–', 'spaced' => true],
     'spacing' => [],
     // Named alternatives to the CLDR defaults above. A variant lists only the keys it changes.
-    'variants' => [],
+    'variants' => [
+        // Schweizerische Bundeskanzlei, Schreibweisungen, 2nd ed. 2013 (corrected 2015), section 2.1.1 (rules 202 and 203): guillemets « » for a quotation and half guillemets ‹ › for one inside it, a space outside each mark and none inside (read in the copy at https://kr-geschaefte.zug.ch/dokumente/11187/3468-2-17179_Beilage2-Schreibweisungen-Bund.pdf). The rule is for federal texts; CLDR 49.0.0 gives de-CH the German marks „…“ ‚…‘.
+        'guillemets' => [
+            'quotes' => ['«', '»'],
+            'nested' => ['‹', '›'],
+        ],
+    ],
 ];

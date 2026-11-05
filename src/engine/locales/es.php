@@ -23,5 +23,11 @@ return [
     'dash' => ['mark' => '—', 'spaced' => false],
     'spacing' => [],
     // Named alternatives to the CLDR defaults above. A variant lists only the keys it changes.
-    'variants' => [],
+    'variants' => [
+        // Real Academia Española, Ortografía de la lengua española (2010), chapter III, “Las comillas” (https://www.rae.es/ortografía/las-comillas): in print, the angular marks « » first, then the English marks “ ”, then the single marks ‘ ’ for a quotation inside a quotation. Not read at rae.es (it refused automated fetches): the order is as the Universidad de Piura’s Castellano actual quotes it from the RAE Libro de estilo de la lengua española (2018), p. 120.
+        'guillemets-outer' => [
+            'quotes' => ['«', '»'],
+            'nested' => ['“', '”'],
+        ],
+    ],
 ];

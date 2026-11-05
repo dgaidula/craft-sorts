@@ -101,12 +101,24 @@ const LOCALES = [
   { id: 'de', cldr: 'de', name: 'German', dash: EN_SPACED,
     source: 'Dash: Duden, Gedankenstrich as a spaced Halbgeviertstrich.' },
   { id: 'de-CH', cldr: 'de-CH', name: 'German (Switzerland)', dash: EN_SPACED,
+    variants: {
+      guillemets: {
+        quotes: ['\u00AB', '\u00BB'], nested: ['\u2039', '\u203A'],
+        source: 'Schweizerische Bundeskanzlei, Schreibweisungen, 2nd ed. 2013 (corrected 2015), section 2.1.1 (rules 202 and 203): guillemets « » for a quotation and half guillemets ‹ › for one inside it, a space outside each mark and none inside (read in the copy at https://kr-geschaefte.zug.ch/dokumente/11187/3468-2-17179_Beilage2-Schreibweisungen-Bund.pdf). The rule is for federal texts; CLDR 49.0.0 gives de-CH the German marks „…“ ‚…‘.',
+      },
+    },
     source: 'Dash: as de (Duden); no separate Swiss-German authority was consulted.' },
   { id: 'fr-CH', cldr: 'fr-CH', name: 'French (Switzerland)', dash: EN_SPACED, spacing: FRENCH_SPACING,
     source: 'Dash and spacing: as fr (Imprimerie nationale, Lexique des règles typographiques); no separate Swiss authority was consulted.' },
   { id: 'fr', cldr: 'fr', name: 'French', dash: EN_SPACED, spacing: FRENCH_SPACING,
     source: 'Dash: Imprimerie nationale, Lexique des règles typographiques, spaced demi-cadratin. Spacing: the same, a narrow no-break space before ; ! ? and inside guillemets, a no-break space before the colon (the OECD French style guide also asks for a non-breaking space there).' },
   { id: 'es', cldr: 'es', name: 'Spanish', dash: EM,
+    variants: {
+      'guillemets-outer': {
+        quotes: ['\u00AB', '\u00BB'], nested: ['\u201C', '\u201D'],
+        source: 'Real Academia Española, Ortografía de la lengua española (2010), chapter III, “Las comillas” (https://www.rae.es/ortografía/las-comillas): in print, the angular marks « » first, then the English marks “ ”, then the single marks ‘ ’ for a quotation inside a quotation. Not read at rae.es (it refused automated fetches): the order is as the Universidad de Piura’s Castellano actual quotes it from the RAE Libro de estilo de la lengua española (2018), p. 120.',
+      },
+    },
     source: 'Dash: Real Academia Española, Ortografía de la lengua española (2010), raya closed up to the words it encloses.' },
   { id: 'it', cldr: 'it', name: 'Italian', dash: EN_SPACED,
     source: 'Dash: Treccani, lineetta with spaces.' },
