@@ -115,13 +115,15 @@ final class Context
     }
 
     /**
-     * Whether the text after the run, ignoring spaces at its ends, still holds a
-     * space between two words. Stops at the first one it finds, so it stays cheap
-     * in a long flow.
+     * Whether the text after the run still holds a space between two words. A space
+     * at its start counts only when the run itself ends in a word (`two` + ` three`:
+     * the gap is after the run; `two ` + `three`: it is the run’s own), and a space
+     * at its end never does. Stops at the first one it finds, so it stays cheap in a
+     * long flow.
      */
     public function spaceAfter(): bool
     {
-        $seenText = false;
+        $seenText = preg_match('/\S$/u', $this->flow->texts[$this->index] ?? '') === 1;
         $seenGap = false;
         for ($i = $this->index + 1, $n = count($this->flow->texts); $i < $n; $i++) {
             $text = $this->flow->texts[$i];

@@ -168,3 +168,15 @@
 @ w-title-element-quotes-not-widows
 < <title>Dan's "page" and more words</title>
 > <title>Dan’s “page” and more words</title>
+
+@ w-last-space-at-start-of-inline only=widows
+< <h1>one two<b> three</b></h1>
+> <h1>one two<b>\u{A0}three</b></h1>
+
+@ w-last-space-alone-in-inline only=widows
+< <h1>one two<i> </i>three</h1>
+> <h1>one two<i>\u{A0}</i>three</h1>
+
+@ w-last-space-before-inline only=widows
+< <h1>one two <b>three</b></h1>
+> <h1>one two\u{A0}<b>three</b></h1>
