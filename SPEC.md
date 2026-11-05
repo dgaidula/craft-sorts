@@ -1,6 +1,6 @@
 # Sorts — build spec
 
-Status: **draft for Dan’s approval, 2026-11-05.** Decisions marked **D** are open (§9); everything else is settled.
+Status: **approved for build, 2026-11-05.** One decision is still open (D814, editions and price, §9); it doesn’t block the build.
 
 ## 1. The problem
 
@@ -75,8 +75,8 @@ First release: `en-US`, `en-GB` (single quotes outermost), `de` (`„…“ ‚�
 `delimiters` data and its spacing from CLDR or the locale’s style authority, and record the CLDR version in
 the README. Unknown languages fall back to the site’s default set, then `en-US`.
 
-**D812** decides whether locales beyond English ship in Pro or as paid add-ons. Build them as rule-set data
-either way, behind one interface, so the answer moves files, not code.
+Every locale ships in Pro (D812, Dan 2026-11-05). Build them as rule-set data behind one interface anyway, so a
+locale is a file, not code.
 
 ## 5. Architecture
 
@@ -121,7 +121,7 @@ either way, behind one interface, so the answer moves files, not code.
 - `data-sorts="off"` on any element skips it and its subtree; `data-sorts-lang="…"` overrides the locale.
 - Settings: extra tags or class names to skip; URI patterns to skip (e.g. `/api/*`).
 
-### 5.5 Extension API (proposed 2026-11-05, D813)
+### 5.5 Extension API (Pro, first release; D813, Dan 2026-11-05)
 
 Sites have their own domain conversions, for example a recipe site that turns scaled decimal quantities into
 Unicode fractions (`0.875` → `⅞`, `1.5` → `1½`) except before metric units and ounces. Those belong in the
@@ -168,13 +168,13 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
 - **Build mode: release.** Sorts will run on production sites, so `dgbuilder` builds, then a `gate` at
   `xhigh` with mutants, fix rounds per the casting rules, and the README’s `**Hardened:**` line.
 
-## 9. Open decisions (Dan)
+## 9. Decisions (fleet ledger, claude-ops `DECISIONS-OPEN.md`)
 
-- **D812 — locales:** all in Pro (recommended), or English in Pro and other locales as paid add-on plugins.
-  Editions can’t do per-country upgrades (one edition per install, one ladder); add-ons would be separate Store
-  listings that require Sorts, each with its own review, changelog, license and support.
-- **D813 — extension API (§5.5):** build it in the first release, in Pro? Recommended: yes; a site with its own
-  conversions is exactly who needs the automatic page pass, and the built-in rules use the same interface.
-- **D814 — price:** Pro **$39 + $19/yr** recommended (Store data: paid installs are flat across price bands, so
+- **D812 — locales: decided 2026-11-05 (Dan: y).** Every locale ships in Pro; no per-language add-ons.
+- **D813 — extension API (§5.5): decided 2026-11-05 (Dan: y).** In the first release, in Pro.
+- **D815 — public repo: done 2026-11-05 (Dan: y).** `github.com/dgaidula/craft-sorts`.
+- **D814 — editions and price: open, in discussion (Dan, 2026-11-05: must Lite be free?).** It doesn’t block
+  the build: the Lite/Pro gate is one method, `Plugin::isPro()`, whatever Lite costs. Current recommendation:
+  Lite free, Pro **$39 + $19/yr** (Store data: paid installs are flat across price bands, so
   cheap buys nothing; Craft’s guidance puts small utilities at $10–29, and Pro’s audit/fix utility is more than
   that). Not needed until Store submission.
