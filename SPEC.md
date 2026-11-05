@@ -75,7 +75,7 @@ First release: `en-US`, `en-GB` (single quotes outermost), `de` (`„…“ ‚�
 `delimiters` data and its spacing from CLDR or the locale’s style authority, and record the CLDR version in
 the README. Unknown languages fall back to the site’s default set, then `en-US`.
 
-**D1** decides whether locales beyond English ship in Pro or as paid add-ons. Build them as rule-set data
+**D812** decides whether locales beyond English ship in Pro or as paid add-ons. Build them as rule-set data
 either way, behind one interface, so the answer moves files, not code.
 
 ## 5. Architecture
@@ -121,7 +121,7 @@ either way, behind one interface, so the answer moves files, not code.
 - `data-sorts="off"` on any element skips it and its subtree; `data-sorts-lang="…"` overrides the locale.
 - Settings: extra tags or class names to skip; URI patterns to skip (e.g. `/api/*`).
 
-### 5.5 Extension API (proposed 2026-11-05, D3)
+### 5.5 Extension API (proposed 2026-11-05, D813)
 
 Sites have their own domain conversions, for example a recipe site that turns scaled decimal quantities into
 Unicode fractions (`0.875` → `⅞`, `1.5` → `1½`) except before metric units and ounces. Those belong in the
@@ -170,11 +170,11 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
 
 ## 9. Open decisions (Dan)
 
-- **D1 — locales:** all in Pro (recommended), or English in Pro and other locales as paid add-on plugins.
+- **D812 — locales:** all in Pro (recommended), or English in Pro and other locales as paid add-on plugins.
   Editions can’t do per-country upgrades (one edition per install, one ladder); add-ons would be separate Store
   listings that require Sorts, each with its own review, changelog, license and support.
-- **D3 — extension API (§5.5):** build it in the first release, in Pro? Recommended: yes; a site with its own
+- **D813 — extension API (§5.5):** build it in the first release, in Pro? Recommended: yes; a site with its own
   conversions is exactly who needs the automatic page pass, and the built-in rules use the same interface.
-- **D2 — price:** Pro **$39 + $19/yr** recommended (Store data: paid installs are flat across price bands, so
+- **D814 — price:** Pro **$39 + $19/yr** recommended (Store data: paid installs are flat across price bands, so
   cheap buys nothing; Craft’s guidance puts small utilities at $10–29, and Pro’s audit/fix utility is more than
   that). Not needed until Store submission.
