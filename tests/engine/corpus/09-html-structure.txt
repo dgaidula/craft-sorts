@@ -596,3 +596,41 @@
 @ h-cdata-upper-lower
 < <![cdata[ "x" ]]> "y"
 > <![cdata[ "x" ]]> “y”
+
+# A bogus comment or a doctype inside a paragraph is markup, not a tag: the text
+# either side of it is one flow (one pair of quotes, one heading for widows).
+
+@ h-bogus-comment-question-mark-in-a-flow
+< <p>"a<?x>b"</p>
+> <p>“a<?x>b”</p>
+
+@ h-bogus-comment-bang-in-a-flow
+< <h1>one<!x> two three</h1>
+> <h1>one<!x> two\u{00A0}three</h1>
+
+@ h-doctype-in-a-flow
+< <h1>one<!DOCTYPE x> two three</h1>
+> <h1>one<!DOCTYPE x> two\u{00A0}three</h1>
+
+# A CDATA section ends at ]]>, not at ]].
+
+@ h-cdata-ends-at-the-full-marker
+< <![CDATA[ a ]] "b" ]]><p>"c"</p>
+> <![CDATA[ a ]] "b" ]]><p>“c”</p>
+
+# A raw-text element's end tag is found in any case.
+
+@ h-raw-text-end-tag-upper-case-style
+< <STYLE>p{}</STYLE><p>"x"</p>
+> <STYLE>p{}</STYLE><p>“x”</p>
+
+@ h-raw-text-end-tag-upper-case-textarea
+< <TEXTAREA>"a"</TEXTAREA><p>"x"</p>
+> <TEXTAREA>"a"</TEXTAREA><p>“x”</p>
+
+# An element closed by an implied end is closed: a stray end tag of its name later
+# closes nothing, and the next end tag still closes its own element.
+
+@ h-stray-end-tag-after-an-implied-end
+< <p>a<div data-sorts="off">"b"</p></div><p>"c"</p>
+> <p>a<div data-sorts="off">"b"</p></div><p>“c”</p>

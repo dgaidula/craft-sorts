@@ -44,7 +44,8 @@ final class DashesRule extends AbstractRule
                 $after = self::charAfter($text, $offset + $length, $context);
                 $blankBefore = $before === '' || preg_match('/^\s$/u', $before);
 
-                if ($before === '<' || $after === '>' || str_starts_with(substr($text, $offset + $length), '&gt;')) {
+                // Four bytes, not the rest of the run: a copy per match made a long run quadratic.
+                if ($before === '<' || $after === '>' || substr($text, $offset + $length, 4) === '&gt;') {
                     return null;
                 }
                 if ($blankBefore && $after !== '' && preg_match('/^[A-Za-z0-9]$/', $after)) {

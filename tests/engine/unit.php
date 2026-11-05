@@ -395,16 +395,41 @@ check('invalid UTF-8 is not an error', null, ($engine->apply("caf\xE9") === "caf
 $engine->apply('<p>"ok"</p>');
 check('pattern failure: the next call clears it', null, $engine->lastError());
 
-// ---- The quote scan is linear on a long text node ------------------------------
+// ---- Speed guards: ratios, not time budgets ------------------------------------
+// Each guard times two pages in this process and compares them, so a slow or busy
+// machine (PHP 8.2 in Docker, CI) slows both alike and only the shape of the cost is
+// tested: 4× the input in under 8× the time passes a linear pass (about 4×) and fails a
+// quadratic one (about 16×). Best of 3 for each page.
 
-$possessive = "<p>'" . str_repeat("the dogs' bowls ", 12_800) . "'</p>";
-$best = INF;
-for ($try = 0; $try < 3; $try++) {
-    $t = hrtime(true);
-    $engine->apply($possessive);
-    $best = min($best, (hrtime(true) - $t) / 1e6);
-}
-check(sprintf('perf guard: a 200 KB possessive paragraph takes under 50 ms (best of 3: %.1f ms)', $best), true, $best < 50);
+$slower = static function (string $small, string $large, ?Options $options = null) use ($engine): array {
+    $times = [];
+    foreach ([$small, $large] as $html) {
+        $best = INF;
+        for ($try = 0; $try < 3; $try++) {
+            $t = hrtime(true);
+            $engine->apply($html, [], $options);
+            $best = min($best, (hrtime(true) - $t) / 1e6);
+        }
+        $times[] = $best;
+    }
+    return [$times[1] / max($times[0], 0.001), $times[0], $times[1]];
+};
+
+// The quote scan is linear on a long text node.
+$page = static fn (int $n): string => "<p>'" . str_repeat("the dogs' bowls ", $n) . "'</p>";
+[$ratio, $a, $b] = $slower($page(3_200), $page(12_800));
+check(sprintf('perf guard: a possessive paragraph 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+
+// So are the dashes on one: a match does not copy the rest of the run (R2-4).
+$page = static fn (int $n): string => '<p>' . str_repeat('a -- b. ', $n) . '</p>';
+[$ratio, $a, $b] = $slower($page(16_384), $page(65_536), new Options(rules: array_merge($allOff->rules, ['dashes' => true])));
+check(sprintf('perf guard: a paragraph of dashes 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+
+// An end tag that matches no open element costs the same at any depth (R2-5): the same
+// stray </font> tags under 1,000 open divs and under 250.
+$page = static fn (int $depth): string => str_repeat('<div>', $depth) . str_repeat('</font>y ', 25_000) . str_repeat('</div>', $depth);
+[$ratio, $a, $b] = $slower($page(250), $page(1_000), $allOff);
+check(sprintf('perf guard: stray end tags under 4× the nesting take under 2× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 2);
 
 // ---- Settled marks move with an earlier, shrinking edit in the same call -------
 

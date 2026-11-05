@@ -200,6 +200,9 @@ final class Engine
         $at = 0;
         // One string per tag name, shared by every frame of that name.
         $names = [];
+        // How many elements of each name are open, so an end tag that closes nothing
+        // costs no walk of the stack.
+        $open = [];
 
         while ($at < $length) {
             if (preg_match_all(self::TOKENS, $input, $m, 0, $at) === false) {
@@ -231,10 +234,13 @@ final class Engine
                     if (!isset(Html::INLINE[$name])) {
                         $flow = $this->flush($flow, $pass);
                     }
-                    for ($f = $top; $f->parent !== null; $f = $f->parent) {
-                        if ($f->name === $name) {
-                            $top = $f->parent;
-                            break;
+                    if (($open[$name] ?? 0) > 0) {
+                        for ($f = $top; $f->parent !== null; $f = $f->parent) {
+                            $open[$f->name]--;
+                            if ($f->name === $name) {
+                                $top = $f->parent;
+                                break;
+                            }
                         }
                     }
                     continue;
@@ -249,6 +255,7 @@ final class Engine
                     continue;
                 }
                 while (isset(Html::IMPLIED_END[$top->name][$name])) {
+                    $open[$top->name]--;
                     $top = $top->parent;
                 }
                 $inline = isset(Html::INLINE[$name]);
@@ -301,6 +308,7 @@ final class Engine
                 // Only a class lookup reads a frame’s tag, so a tag without one is not kept.
                 $raw = stripos($token, 'class') === false ? '' : $token;
                 $top = new Frame($name, $raw, $top, $locale, $skip, $scope, $inline ? $top->block : $name);
+                $open[$name] = ($open[$name] ?? 0) + 1;
                 if ($top->depth > self::MAX_DEPTH) {
                     return $input;
                 }
@@ -493,12 +501,12 @@ final class Engine
             $frame = $flow->frames[$i];
             if ($flow->editable[$i] && $text !== '') {
                 $set = $this->ruleSet($pass, $frame);
-                if ($set['rules'] && ($set['union'] === null || strpbrk($text, $set['union']) !== false)) {
+                if ($set['rules'] && ($set['union'] === null || preg_match($set['union'], $text) !== 0)) {
                     $run = new Run($text);
                     $context = null;
                     $current = $text;
                     foreach ($set['rules'] as [$rule, $triggers]) {
-                        if ($triggers !== null && strpbrk($current, $triggers) === false) {
+                        if ($triggers !== null && preg_match($triggers, $current) === 0) {
                             continue;
                         }
                         $context ??= new Context($frame->locale, $pass->options, $flow, $i, $frame, $set['active']);
@@ -517,8 +525,9 @@ final class Engine
     }
 
     /**
-     * The rules that run for a locale and a rule scope, in order, with the
-     * characters that call for any of them. Built once per pair per call.
+     * The rules that run for a locale and a rule scope, in order, each with a pattern
+     * for the characters that call for it, and one for any of them. Built once per
+     * pair per call.
      *
      * @return array{rules: list<array{RuleInterface, ?string}>, union: ?string, active: array<string, true>}
      */
@@ -549,15 +558,25 @@ final class Engine
             if ($triggers === '') {
                 $triggers = null;
             }
-            $rules[] = [$rule, $triggers];
+            $rules[] = [$rule, $triggers === null ? null : self::anyByte($triggers)];
             $active[$handle] = true;
             if ($union !== null) {
                 $union = $triggers === null ? null : $union . $triggers;
             }
         }
         if ($union !== null && $union !== '') {
-            $union = count_chars($union, 3);
+            $union = self::anyByte($union);
         }
         return $frame->ruleSet = $pass->ruleSets[$key] = ['rules' => $rules, 'union' => $union === '' ? null : $union, 'active' => $active];
+    }
+
+    /**
+     * A pattern that matches any one of the bytes in $chars: the test strpbrk() makes,
+     * which on PHP 8.2 walks the whole list for every byte of the text and copies the
+     * rest of the text when it finds one. A byte class is several times faster there.
+     */
+    private static function anyByte(string $chars): string
+    {
+        return '/[' . implode('', array_map(static fn (int $byte): string => sprintf('\\x%02X', $byte), array_keys(count_chars($chars, 1)))) . ']/';
     }
 }
