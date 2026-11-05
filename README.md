@@ -4,6 +4,8 @@
 
 A Craft 5 plugin by Danniel T. Gaidula.
 
+**Hardened:** 2026-11-05 · 98db482 · gate CLOSED WITH FOLLOW-UPS (`gates/2026-11-05-sorts-release-recheck-2.json`, after a FAIL and two fix rounds)
+
 Editors type and paste straight quotes. Craft 5 leaves them alone, and Twig prints them as `&quot;` and `&#039;`. Install Sorts and every page is typeset correctly (titles, every field type, text hard-coded in your templates) with no template edits. In the control panel, editors get the right characters as they type.
 
 ```html
@@ -43,7 +45,7 @@ Edition gates control features, never safety. The opt-out (`data-sorts="off"`) a
 
 ## What it does
 
-Sorts is a typography engine (plain PHP, no Craft code, in `src/engine/`) with a Craft layer around it. The engine reads HTML with a tokenizer and edits text and nothing else: attributes, `script`, `style`, `pre`, `code`, `kbd`, `samp`, `var`, `textarea`, `math`, `svg`, `template`, `noscript` and comments are never touched, and a page with nothing to fix comes out byte for byte the same.
+Sorts is a typography engine (plain PHP, no Craft code, in `src/engine/`) with a Craft layer around it. The engine reads HTML with a tokenizer and edits text and nothing else: attributes, `script`, `style`, `pre`, `code`, `kbd`, `samp`, `var`, `textarea`, `math`, `svg`, `template`, `noscript` and comments are never touched in well-formed HTML (two malformed comment forms are the exception; see [Known limits](#known-limits)), and a page with nothing to fix comes out byte for byte the same.
 
 | Rule | Example | Default |
 | --- | --- | :---: |
@@ -287,6 +289,7 @@ HTML pages rendered by Craft templates. Not handled: JSON and XML responses, ema
 - **Compiled templates after an update.** The filter’s escaping is decided when Twig compiles a template (`RawInputVisitor`). Craft runs Twig with `auto_reload` on, but Twig compares a compiled template only with the template and the extension class files, not the visitor, so a Sorts update that changes how the filter compiles may not reach templates compiled before it. Craft clears compiled templates when `php craft up` runs, after the updater runs migrations, and when Craft’s own version changes (verified against Craft 5.12.0.1: `console/controllers/UpController.php:99-100`, `services/Updates.php:264`, `web/Application.php:257-260`), but not after a Composer update of a plugin on its own. **After updating Sorts, run `php craft up` or clear compiled templates** (Utilities → Caches → Compiled templates, or `php craft clear-caches/compiled-templates`).
 - **Two malformed comment forms.** HTML5 also ends a comment at `--!>`, and reads a `<![CDATA[` outside SVG or MathML as a bogus comment that ends at the first `>`. Sorts ends a comment only at `-->` and a CDATA section only at `]]>`. Both forms are parse errors, and on a page that uses one Sorts can leave text a browser shows unconverted, or typeset text a browser reads as part of a later `<script>` (in `<!-- a --!> <script> --><p>"x"</p>` the quotes Sorts curls are inside what the browser reads as script).
 - **A vertical tab in a script tag.** Inside a script’s `<!--`, Sorts takes a vertical tab (U+000B) after `<script` or `</script` as the end of the tag name; HTML5 does not. In that case Sorts can leave text after the script unconverted. It only ever leaves text alone this way; it never edits the script.
+- **Widows beside an inline tag with spaces on both sides.** In a heading such as `<h2>A new <a href="…"> library</a></h2>`, with a space before the tag and another inside it, widow control puts a no-break space at both, which shows as a double gap. Keep one of the two spaces, or turn widows off for that heading with `data-sorts="off"`.
 - **The audit lists every section.** The audit utility’s scan shows titles and before-and-after excerpts from every section to anyone who may open the utility, whether or not they may view those entries. The fix itself skips any entry the user who queued it may not save (Craft’s `canSave()`). Give the utility permission only to people who may see every entry. This is not covered by a test: the testbed runs Craft Solo, which has one user.
 
 ## Performance
@@ -301,7 +304,7 @@ The engine is measured on a generated, realistic page of about 100 KB (a news ar
 
 About three sentences in ten on the typical article need typesetting; every sentence on the stress page does.
 
-The budget is 5 ms for a 100 KB page on PHP 8.2, the oldest version Sorts supports (measured 2026-11-05). It is met for both pages on every version above, with no margin left for the dense page on PHP 8.2 (medians of 4.95 to 5.00 ms over three runs).
+The budget is 5 ms for a 100 KB page on PHP 8.2, the oldest version Sorts supports (measured 2026-11-05). The medians meet it for both pages on every version above. The dense page on PHP 8.2 has no margin: the final gate measured a median of 4.87 ms over five runs, with single runs up to 5.28 ms.
 
 **Memory.** Peak memory for one pass, per megabyte of page, measured on PHP 8.5.12 (2026-11-05): about 3.5 MB for an article, 15 MB for a product table, 37 MB for a page of nothing but tiny inline elements, and up to 73 MB for one paragraph of quotes a megabyte long. The page pass allows 100 bytes of memory per byte of page and sends a page it might not have the memory for as rendered (see *It never breaks a page*), and it skips any page over `maxPageBytes` (1,000,000 bytes by default) whatever the memory. A 6 MB page at `memory_limit = 256M` is sent as rendered with a warning, not a fatal error.
 
