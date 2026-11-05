@@ -30,7 +30,7 @@ Sorts ships two editions. Lite holds only what the market already gives away; Pr
 | CKEditor as-you-type quotes | ✅ | ✅ |
 | Automatic whole-page pass, no template edits <sup>PRO</sup> | — | ✅ |
 | Every rule and every locale <sup>PRO</sup> | — | ✅ |
-| Rule switches, quotation styles and the widow setting <sup>PRO</sup> | — | ✅ |
+| Rule switches, quotation styles, normalizing quotes by depth and the widow setting <sup>PRO</sup> | — | ✅ |
 | `data-sorts="off"` and `data-sorts-lang` on an element | ✅ | ✅ |
 | Exclusion settings: skipped tags, classes and paths <sup>PRO</sup> | — | ✅ |
 | Page title and meta descriptions <sup>PRO</sup> | — | ✅ |
@@ -63,6 +63,21 @@ Sorts is a typography engine (plain PHP, no Craft code, in `src/engine/`) with a
 | No-break spaces | number and unit (`10 kg`), initials, `Dr. Smith`, `§ 5` | on |
 | Locale spacing | French narrow no-break space before `; : ! ?` and inside `« »` | by language |
 | Styling hooks | `&` in `<span class="amp">`, runs of capitals in `<span class="caps">`, an opening quote in `<span class="dquo">` | off |
+
+### Which quotation marks a quote gets
+
+Sorts keeps the quote type the author typed. A straight `"` pair becomes the language’s **primary** quotation marks and a straight `'` pair its **secondary** (nested) marks, whatever the depth, so the same text typed in a CKEditor field (where `quotesPrimary` and `quotesSecondary` do the same) and pasted in agree on one page. It is a matter of level, not of the shape of the glyph, so a language’s variant still applies:
+
+| Typed | en-US | en-GB `single-outer` | de |
+| --- | --- | --- | --- |
+| `"no"` | `“no”` | `‘no’` | `„no“` |
+| `'no'` | `‘no’` | `“no”` | `‚no‘` |
+| `"She said 'no'"` | `“She said ‘no’”` | `‘She said “no”’` | `„She said ‚no‘“` |
+| `'She said "no"'` | `‘She said “no”’` | `“She said ‘no’”` | `‚She said „no“‘` |
+
+Apostrophes, primes and the rules that tell an apostrophe or a prime from a quotation (`don't`, `'90s`, `5'10"`) do not depend on this; only the choice of marks for a quotation Sorts has recognised does.
+
+Pro has a setting, *Normalize quotes to house style* (`normalizeQuotes`, off by default), that sets every quotation by its nesting depth instead: the primary marks outermost, the secondary marks inside them, then alternating, whichever mark was typed. With it on, `'She said "no"'` becomes `“She said ‘no’”` in en-US. It applies to the page pass, the filter, `@sorts`, fix on save and the audit. Lite always keeps the quote type typed.
 
 Ranges, multiplication and fractions are off because they would catch phone numbers, ISBNs, SKUs and dates. Ordinals and the styling hooks write markup, so they never run in plain-text mode and are never written into stored content.
 
@@ -121,6 +136,7 @@ CP → Settings → Plugins → Sorts, stored in project config, with every key 
 | Rule switches (a map of rule handle to on or off) | `rules` | the table above | Pro |
 | Fewest words in a heading before widows are joined | `widowsMinWords` | 3 | Pro |
 | Quotation style per language | `variants` | CLDR | Pro |
+| Normalize quotes to house style (set every quotation by depth, not by the mark typed) | `normalizeQuotes` | off | Pro |
 | Extra tags to skip | `skipTags` | none | Pro |
 | Extra classes to skip | `skipClasses` | none | Pro |
 | Request paths to skip (`*` matches any run of characters) | `skipUris` | none | Pro |
@@ -161,7 +177,15 @@ In settings <sup>PRO</sup>: extra tags, classes and request paths to skip. A pat
 
 Sorts sets quotation marks, nested quotation marks, dashes and spacing by language: `en-US`, `en-GB`, `de`, `de-CH`, `fr`, `fr-CH`, `es`, `it`, `pt`, `nl`, `sv`, `fi`, `da`, `nb` (also `no`), `pl` and `cs`. The quotation marks come from Unicode CLDR **49.0.0**; dash style and spacing come from each language’s style authority, named in its locale file. A `lang` attribute on any element switches the language for everything inside it, and an unknown language falls back to the site’s language, then to `en-US`. Lite has `en-US` and `en-GB`.
 
-CLDR is the default for every language. Where a style authority writes it differently, that convention is a named variant you can choose per language <sup>PRO</sup>. The one built so far is `single-outer` for `en-GB` (‘single’ quotation marks outermost, “double” inside, as in New Hart’s Rules).
+CLDR is the default for every language. Where a style authority writes it differently, that convention is a named variant you can choose per language <sup>PRO</sup>. Built so far:
+
+| Language | Variant | Marks | Authority |
+| --- | --- | --- | --- |
+| `en-GB` | `single-outer` | ‘…’ outermost, “…” inside | New Hart’s Rules (Oxford University Press), 2nd ed. |
+| `de-CH` | `guillemets` | «…» outermost, ‹…› inside | Schweizerische Bundeskanzlei, *Schreibweisungen*, 2nd ed. 2013, section 2.1.1 |
+| `es` | `guillemets-outer` | «…» outermost, “…” inside | Real Academia Española, *Ortografía de la lengua española* (2010), “Las comillas” |
+
+A variant changes only the quotation marks it names; the spacing and the dash stay the language’s own. The variant sets which marks are the primary and secondary pair, and the quote type typed picks between them (see above). An unknown variant name falls back to CLDR. The authority for each is in its locale file (`src/engine/locales/`).
 
 ## CKEditor
 
@@ -171,7 +195,9 @@ What CKEditor allows, and what Sorts makes of it:
 
 - The editor’s config reaches the browser as JSON, and JSON cannot carry a regular expression, so Sorts can only switch on CKEditor’s built-in transformations by name.
 
-- Quotation marks: enabled only where one of CKEditor’s matches the site language’s pair. English gets “…” and ‘…’; `en-GB` `single-outer` gets ‘…’ for the single key; Polish gets „…” for the double key. German, French and the rest are left straight as typed, and the page pass or fix on save sets them correctly later.
+- Quotation marks: the key typed picks the language’s primary pair (`"`) or secondary pair (`'`), as Sorts does elsewhere, and a key is enabled only where one of CKEditor’s transformations has exactly that pair. English gets “…” for `"` and ‘…’ for `'`; Polish gets „…” for `"`. German, French and the rest, and every variant (`single-outer`, `guillemets`, `guillemets-outer`), are left straight as typed, because CKEditor’s config cannot carry a pair it does not know by name; the page pass or fix on save sets them correctly later. CKEditor’s `en-GB` pairs put ‘…’ on `'`, which is not what `single-outer` does (it puts ‘…’ on `"`), so Sorts does not use them.
+
+- With *Normalize quotes to house style* on, only `"` is converted while typing: a typed `'` may be an outermost quotation, which depth sets in the primary marks, and CKEditor cannot know that.
 
 - Dashes, ellipsis and symbols follow the rules that are on. `--` becomes an en dash only for languages where Sorts’ `--` is a spaced en dash.
 
@@ -269,7 +295,7 @@ $csv = Sorts::getInstance()->engine->apply($cell, ['recipe-fractions'], null, 't
 
 The page pass fixes what visitors see. Feeds, APIs, search and exports read what is stored. Two tools fix the stored text.
 
-Both change characters only: quotes, apostrophes, primes, dashes, ellipsis and symbols, plus fractions, ranges and multiplication signs when you switch those rules on. They never write spacing or markup, or run a rule you registered, into the database. They never touch slugs, URIs, handles, URLs, email addresses, or Plain Text fields set to code, and a fix that would push a value past its field’s character limit is skipped.
+Both follow the same quote setting as the page (the quote type typed, or *Normalize quotes to house style*), and both change characters only: quotes, apostrophes, primes, dashes, ellipsis and symbols, plus fractions, ranges and multiplication signs when you switch those rules on. They never write spacing or markup, or run a rule you registered, into the database. They never touch slugs, URIs, handles, URLs, email addresses, or Plain Text fields set to code, and a fix that would push a value past its field’s character limit is skipped.
 
 **Across languages.** Quotes and dashes depend on the language, so a value is converted only when every site it reaches on that save is in the same language (the same locale and quotation style) as the site it is saved on. Craft copies a new entry’s title and every field to each site it is propagated to, and copies a field that is not translated per site (Craft’s default for a new field) to every site that shares it. On a site with English and French sites, then, a new entry goes in as typed, and so does an edit to a shared CKEditor field; an edit to a title or a field translated per site is converted in that site’s language. A value left as typed is logged at info, and the page pass sets it on each page in that page’s language. The audit follows the same rule.
 
@@ -284,6 +310,8 @@ HTML pages rendered by Craft templates. Not handled: JSON and XML responses, ema
 **Hyphenation** is the browser’s job. Use CSS `hyphens: auto` with a correct `lang` attribute (Craft sets one if your layout prints `{{ currentSite.language }}`).
 
 ## Known limits
+
+- **A typed quote is taken as the level it was typed at.** Because `"` is always the primary pair and `'` always the secondary pair, a quotation typed with the same mark inside itself gets the same marks both times (`"She said "no""` becomes `“She said “no””`), and a single-quoted quotation at the outermost level gets the secondary marks (`'No,' she said.` becomes `‘No,’ she said.` in en-US, and `“No,” she said.` in en-GB `single-outer`). Switch on *Normalize quotes to house style* to have the nesting depth decide instead.
 
 - **Misnested markup inside code.** Sorts reads the page as it is written and does not rebuild HTML5’s tree: an end tag closes the nearest open element of that name, and Sorts does not run the browser’s repair of misnested formatting (the adoption agency and the reopening of formatting elements). In well-formed pages this changes nothing. In misnested ones, text that a browser would still show inside `code`, `kbd`, `samp` or `var` (after, say, a stray `</figcaption>` inside a `<code>`) can be typeset. Sorts assumes well-formed markup inside code-like elements.
 - **Compiled templates after an update.** The filter’s escaping is decided when Twig compiles a template (`RawInputVisitor`). Craft runs Twig with `auto_reload` on, but Twig compares a compiled template only with the template and the extension class files, not the visitor, so a Sorts update that changes how the filter compiles may not reach templates compiled before it. Craft clears compiled templates when `php craft up` runs, after the updater runs migrations, and when Craft’s own version changes (verified against Craft 5.12.0.1: `console/controllers/UpController.php:99-100`, `services/Updates.php:264`, `web/Application.php:257-260`), but not after a Composer update of a plugin on its own. **After updating Sorts, run `php craft up` or clear compiled templates** (Utilities → Caches → Compiled templates, or `php craft clear-caches/compiled-templates`).

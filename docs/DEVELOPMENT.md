@@ -181,9 +181,18 @@ and the options: a rule that is on runs everywhere; any rule also runs inside
 
 The quote rules are one scan because their decisions depend on each other (a
 quote after a digit is a prime or a closing quote depending on whether a quotation
-is open). Quote depth, not the typed character, picks the pair: the outermost
-level uses the locale’s primary pair, the next its nested pair, then they
-alternate.
+is open). Which pair a recognised quotation gets is `Options::$quoteNesting`
+(`Context::$quoteNesting` in a rule). `typed`, the default and the only mode in
+Lite, keeps the quote type typed (D818): a straight `"` pair gets the locale’s
+primary pair and a straight `'` pair its nested pair, at any depth, as CKEditor’s
+`quotesPrimary` and `quotesSecondary` do. It is level, not glyph shape, so a
+variant that swaps the pairs (`en-GB` `single-outer`) swaps what each key gives.
+`depth` normalises: the outermost level uses the primary pair, the next the
+nested pair, then they alternate. Only the choice of glyph differs; what is a
+quotation, an apostrophe or a prime is decided before it and is the same in both.
+The Pro setting `normalizeQuotes` selects `depth`; `EngineService::options()`
+builds it into every path, `applyWith()` forces `typed` on Lite, and an audit job
+carries it in its options like the variants.
 
 ### Settled characters
 
@@ -216,7 +225,15 @@ entry lists only the keys it changes (`quotes`, `nested`, `apostrophe`, `dash`,
 table is where they are declared (`variants: { 'single-outer': … }` on `en-GB`).
 A caller picks one per locale with `new Options(variants: ['en-GB' =>
 'single-outer'])`; an unknown name, or a locale without that variant, means the
-CLDR default and never an error.
+CLDR default and never an error. Built: `en-GB` `single-outer`, `de-CH`
+`guillemets` and `es` `guillemets-outer`. A variant is added only after its authority
+has been read at the source and is named in the locale file; `de` book style
+(`»…«`), `fr`/`fr-CH` with `“…”` nested and `nl` `“…”`/`‘…’` were proposed (D819)
+and are not built, because the sources read on 2026-11-05 did not support them: Duden’s
+online rules (D 5–D 12, §79 of the official rules) give only „…“ ‚…‘ and say nothing of »…«; the
+Imprimerie nationale’s *Lexique* (3rd ed., 1990, “Citations de deuxième rang”) nests by repeating « »,
+and uses “…” only exceptionally in French text; the Taalunie’s taaladvies.net says there is no
+rule for double or single marks.
 
 ### Tests and speed
 
@@ -229,6 +246,8 @@ php tests/engine/perf.php            # timing on a generated ~100 KB page
 The corpus (`tests/engine/corpus/*.txt`) records each case’s input, locale, mode,
 rules and expected output, and every case is also run a second time on its own
 output. See the header of `tests/engine/corpus.php` for the format.
+`13-quote-nesting.txt` holds the quote-type cases (every locale and variant, typed and
+`depth`); its `-depth` copies of earlier cases keep the expectations from before D818.
 
 ## The editions model
 
@@ -382,7 +401,7 @@ src/
 ├── icon.svg
 ├── engine/                        # Typography engine: pure PHP, no Craft (see above)
 │   ├── Engine.php                 # Tokenize, walk, run rules; register(), apply()
-│   ├── Options.php                # Locale, mode, rule switches and settings, skips
+│   ├── Options.php                # Locale, mode, rule switches and settings, skips, quote nesting
 │   ├── RuleInterface.php          # The one interface for built-in and site rules
 │   ├── Run.php                    # Editable text plus settled marks
 │   ├── Context.php                # What a rule sees around its run
