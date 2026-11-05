@@ -1,0 +1,364 @@
+<?php
+
+/**
+ * Unit tests: the Run edit API and settled characters, the engine API, the
+ * locale registry, rule scopes, what a rule sees in its Context, and the
+ * tokenizer’s promise that markup comes out byte for byte.
+ */
+
+use iceboxind\sorts\engine\Context;
+use iceboxind\sorts\engine\DataLocale;
+use iceboxind\sorts\engine\Engine;
+use iceboxind\sorts\engine\LocaleRegistry;
+use iceboxind\sorts\engine\Options;
+use iceboxind\sorts\engine\Run;
+use iceboxind\sorts\engine\rules\AbstractRule;
+use iceboxind\sorts\tests\engine\RecipeFractionsRule;
+
+function throws(string $name, string $class, callable $fn): void
+{
+    try {
+        $fn();
+    } catch (Throwable $e) {
+        check($name, $class, get_class($e));
+        return;
+    }
+    fail($name, "  expected $class, nothing was thrown");
+}
+
+// ---- Run: edits and settled characters --------------------------------------
+
+$run = new Run('abcdef');
+check('run: replace returns true', true, $run->replace(1, 2, 'XYZ'));
+check('run: replace changes text', 'aXYZdef', $run->text());
+check('run: replacement is settled', true, $run->isSettled(1) && $run->isSettled(3));
+check('run: text around is not settled', false, $run->isSettled(0) || $run->isSettled(4));
+check('run: edit touching settled text is refused', false, $run->replace(2, 1, 'Q'));
+check('run: refused edit leaves text', 'aXYZdef', $run->text());
+check('run: edit just before settled text is allowed', true, $run->replace(0, 1, 'AA'));
+check('run: text after edit before settled span', 'AAXYZdef', $run->text());
+check('run: settled spans shifted by an earlier edit, and the new text settled', [true, true, true, true, true, false], array_map([$run, 'isSettled'], [0, 1, 2, 3, 4, 5]));
+check('run: edit after settled text is allowed', true, $run->replace(7, 1, 'FFF'));
+check('run: settled spans kept after a later edit', [true, false, true], [$run->isSettled(4), $run->isSettled(5), $run->isSettled(7)]);
+check('run: text after later edit', 'AAXYZdeFFF', $run->text());
+
+$run = new Run('abc');
+$run->replace(1, 1, 'Q', false);
+check('run: replace with settle=false is not settled', false, $run->isSettled(1));
+check('run: unsettled text can be edited again', true, $run->replace(1, 1, 'R'));
+
+$run = new Run('abcdef');
+check('run: edit() applies several', 2, $run->edit([[0, 1, 'X'], [4, 1, 'Y']]));
+check('run: edit() result', 'XbcdYf', $run->text());
+check('run: edit() skips only the refused edit', 1, $run->edit([[0, 1, 'Z'], [2, 1, 'W']]));
+check('run: edit() mixed result', 'XbWdYf', $run->text());
+
+$run = new Run('abcdef');
+$run->replace(2, 2, 'LONGER');
+check('run: insertion at the start of a settled span is allowed', true, $run->replace(2, 0, '<'));
+check('run: insertion at the end of a settled span is allowed', true, $run->replace(9, 0, '>'));
+check('run: insertion inside a settled span is refused', false, $run->replace(5, 0, '!'));
+check('run: text after insertions', 'ab<LONGER>ef', $run->text());
+
+$run = new Run('1-1/2 and 3-4');
+$count = $run->replaceAll('~1/2~', static fn (): string => '½');
+check('run: replaceAll counts', 1, $count);
+$count = $run->replaceAll('~(\d)-(\S)~u', static fn (array $m): string => $m[1] . '–' . $m[2]);
+check('run: replaceAll skips a match over settled text, keeps the other', '1-½ and 3–4', $run->text());
+check('run: replaceAll count excludes the skipped', 1, $count);
+
+$run = new Run('keep');
+check('run: replaceAll with no match', 0, $run->replaceAll('~zzz~', static fn (): string => 'x'));
+check('run: replaceAll callback returning null leaves the match', 0, $run->replaceAll('~e~', static fn (): ?string => null));
+check('run: text unchanged', 'keep', $run->text());
+
+$run = new Run('é-é');
+$run->replaceAll('~-~u', static fn (): string => '–');
+check('run: multibyte offsets', 'é–é', $run->text());
+
+$run = new Run('a');
+$run->replace(0, 1, "\u{E000}x");
+check('run: text holds only what rules wrote (no markers)', "\u{E000}x", $run->text());
+
+// ---- Engine API --------------------------------------------------------------
+
+$engine = newEngine();
+$handles = array_map(static fn ($r) => $r->handle(), $engine->rules());
+check('engine: sixteen built-in rules plus four fixtures', 20, count($handles));
+check('engine: built-in handles', [
+    'symbols', 'ellipsis', 'dashes', 'fractions', 'ranges', 'multiplication', 'primes', 'apostrophes', 'quotes',
+    'nbsp', 'locale-spacing', 'widows', 'ordinals', 'hook-amp', 'hook-caps', 'hook-quotes',
+], array_slice(array_values(array_diff($handles, ['recipe-fractions', 'fixture-en-dash', 'fixture-markup', 'fixture-german'])), 0, 16));
+$priorities = array_map(static fn ($r) => $r->priority(), $engine->rules());
+$sorted = $priorities;
+sort($sorted);
+check('engine: rules() is in priority order', $sorted, $priorities);
+
+throws('engine: duplicate handle is refused', InvalidArgumentException::class, static fn () => $engine->register(new RecipeFractionsRule()));
+$bad = new class extends AbstractRule {
+    public function handle(): string
+    {
+        return 'Bad Handle';
+    }
+    public function priority(): int
+    {
+        return 1;
+    }
+    public function defaultEnabled(): bool
+    {
+        return false;
+    }
+    public function apply(Run $run, Context $context): void
+    {
+    }
+};
+throws('engine: handle with capitals and spaces is refused', InvalidArgumentException::class, static fn () => $engine->register($bad));
+throws('engine: naming an unknown rule is refused', InvalidArgumentException::class, static fn () => $engine->apply('x', ['nope']));
+
+check('engine: empty string comes back', '', $engine->apply(''));
+$latin1 = "caf\xE9 \"x\"";
+check('engine: invalid UTF-8 comes back untouched', $latin1, $engine->apply($latin1));
+check('engine: invalid UTF-8 in text mode comes back untouched', $latin1, $engine->apply($latin1, [], new Options(mode: 'text')));
+
+// equal priorities keep registration order
+$trace = [];
+$makeRule = static function (string $handle, int $priority) use (&$trace): AbstractRule {
+    return new class ($handle, $priority, $trace) extends AbstractRule {
+        public function __construct(private string $h, private int $p, private array &$trace)
+        {
+        }
+        public function handle(): string
+        {
+            return $this->h;
+        }
+        public function priority(): int
+        {
+            return $this->p;
+        }
+        public function defaultEnabled(): bool
+        {
+            return true;
+        }
+        public function apply(Run $run, Context $context): void
+        {
+            $this->trace[] = $this->h;
+        }
+    };
+};
+$e2 = new Engine();
+$e2->register($makeRule('late-b', 5000));
+$e2->register($makeRule('early', -5));
+$e2->register($makeRule('late-a', 5000));
+$e2->apply('text');
+check('engine: rules run by priority, ties in registration order', ['early', 'late-b', 'late-a'], $trace);
+
+// triggers: a rule is not called for a run without its characters
+$calls = 0;
+$e3 = new Engine();
+$e3->register(new class ($calls) extends AbstractRule {
+    public function __construct(private int &$calls)
+    {
+    }
+    public function handle(): string
+    {
+        return 'needs-hash';
+    }
+    public function priority(): int
+    {
+        return 1;
+    }
+    public function defaultEnabled(): bool
+    {
+        return true;
+    }
+    public function triggers(): ?string
+    {
+        return '#';
+    }
+    public function apply(Run $run, Context $context): void
+    {
+        $this->calls++;
+    }
+});
+$e3->apply('<p>no marker here</p><p>this has # in it</p>', [], new Options(rules: ['quotes' => false]));
+check('engine: trigger characters gate the call', 1, $calls);
+
+// ---- Locales -----------------------------------------------------------------
+
+$registry = new LocaleRegistry();
+$expectedIds = ['cs', 'da', 'de', 'de-CH', 'en-GB', 'en-US', 'es', 'fi', 'fr', 'fr-CH', 'it', 'nb', 'nl', 'pl', 'pt', 'sv'];
+$ids = $registry->ids();
+sort($ids);
+check('locales: the sixteen first-release locales load', $expectedIds, $ids);
+foreach ($expectedIds as $id) {
+    $l = $registry->resolve($id);
+    check("locales: $id round-trips", $id, $l?->id());
+    check("locales: $id has two marks in each pair", [2, 2], [count($l->quotes()), count($l->nestedQuotes())]);
+}
+check('locales: no resolves to nb', 'nb', $registry->resolve('no')?->id());
+check('locales: de-AT resolves to de', 'de', $registry->resolve('de-AT')?->id());
+check('locales: en resolves to en-US', 'en-US', $registry->resolve('en')?->id());
+check('locales: unknown resolves to null', null, $registry->resolve('xx'));
+check('locales: fallback is the caller’s default', 'fr', $registry->resolveOrFallback('xx', 'fr')->id());
+check('locales: then en-US', 'en-US', $registry->resolveOrFallback('xx', 'yy')->id());
+check('locales: CLDR en-GB quotes', [['“', '”'], ['‘', '’']], [$registry->resolve('en-GB')->quotes(), $registry->resolve('en-GB')->nestedQuotes()]);
+check('locales: CLDR de-CH quotes', [['„', '“'], ['‚', '‘']], [$registry->resolve('de-CH')->quotes(), $registry->resolve('de-CH')->nestedQuotes()]);
+check('locales: French spacing data', ["\u{202F}", "\u{00A0}", "\u{202F}"], [
+    $registry->resolve('fr')->spacing()['before']['?'],
+    $registry->resolve('fr')->spacing()['before'][':'],
+    $registry->resolve('fr')->spacing()['guillemets'],
+]);
+check('locales: English has no spacing rules', [], $registry->resolve('en-US')->spacing());
+
+// variants: CLDR is the default, another convention is a named alternative
+$gb = $registry->resolve('en-GB');
+check('variants: en-GB offers single-outer', ['single-outer'], $gb->variants());
+check('variants: other locales offer none', [], $registry->resolve('de')->variants());
+$single = $gb->withVariant('single-outer');
+check('variants: single-outer swaps the pairs', [['‘', '’'], ['“', '”'], 'en-GB'], [$single->quotes(), $single->nestedQuotes(), $single->id()]);
+check('variants: a variant keeps the keys it does not change', [$gb->dash(), $gb->apostrophe()], [$single->dash(), $single->apostrophe()]);
+check('variants: the locale itself is untouched', [['“', '”'], ['‘', '’']], [$gb->quotes(), $gb->nestedQuotes()]);
+check('variants: an unknown name returns the locale itself', true, $gb->withVariant('nonsense') === $gb);
+throws('variants: a variant with one mark in a pair is refused', InvalidArgumentException::class, static fn () => DataLocale::fromArray(['id' => 'q', 'quotes' => ['a', 'b'], 'nested' => ['a', 'b'], 'apostrophe' => 'x', 'dash' => [], 'variants' => ['v' => ['quotes' => ['a']]]]));
+check('variants: Options keeps them', ['en-GB' => 'single-outer'], (new Options(variants: ['en-GB' => 'single-outer']))->with(locale: 'de')->variants);
+
+// adding a locale is adding data
+$dir = sys_get_temp_dir() . '/sorts-locale-test-' . bin2hex(random_bytes(4));
+mkdir($dir);
+file_put_contents($dir . '/tlh.php', "<?php\nreturn ['id' => 'tlh', 'aliases' => ['klingon'], 'quotes' => ['<<', '>>'], 'nested' => ['<', '>'], 'apostrophe' => \"'\", 'dash' => ['mark' => '=', 'spaced' => false]];\n");
+$custom = new Engine(new Options(), new LocaleRegistry($dir));
+check('locales: a file in the folder is a locale', '<<a <b>>>', $custom->apply('"a \'b\'"', [], new Options(locale: 'klingon', rules: ['primes' => false])));
+unlink($dir . '/tlh.php');
+rmdir($dir);
+$one = DataLocale::fromArray(['id' => 'zz', 'quotes' => ['[', ']'], 'nested' => ['(', ')'], 'apostrophe' => '`', 'dash' => ['mark' => '-', 'spaced' => false]]);
+$reg = new LocaleRegistry($dir . '-none');
+$reg->register($one);
+check('locales: register() adds a locale object', 'zz', $reg->resolve('zz')?->id());
+throws('locales: data missing a key is refused', InvalidArgumentException::class, static fn () => DataLocale::fromArray(['id' => 'q']));
+throws('locales: a pair with one mark is refused', InvalidArgumentException::class, static fn () => DataLocale::fromArray(['id' => 'q', 'quotes' => ['a'], 'nested' => ['a', 'b'], 'apostrophe' => 'x', 'dash' => []]));
+
+// ---- Scopes: one rule, three ways in, identical output ------------------------
+
+$text = 'Add 1.5 cups, 0.875 kg of flour and 0.25 cup of oil.';
+$expected = 'Add 1½ cups, 0.875 kg of flour and ¼ cup of oil.';
+$only = new Options(rules: array_fill_keys($handles, false));
+
+$everywhere = new Engine();
+$everywhere->register(new RecipeFractionsRule(true));
+$a = $everywhere->apply("<p>$text</p>", [], $only->with(rules: array_merge($only->rules, ['recipe-fractions' => true])));
+
+$engine = newEngine();
+$b = $engine->apply("<p data-sorts-rules=\"recipe-fractions\">$text</p>", [], $only);
+$c = $engine->apply($text, ['recipe-fractions'], $only);
+$cInPage = $engine->apply("<p>$text</p>", ['recipe-fractions'], $only);
+
+check('scope (a) everywhere', "<p>$expected</p>", $a);
+check('scope (b) inside a data-sorts-rules element', "<p data-sorts-rules=\"recipe-fractions\">$expected</p>", $b);
+check('scope (c) named in the call', $expected, $c);
+check('scope (c) named in the call, on a page', "<p>$expected</p>", $cInPage);
+check('scopes: page-style call and direct apply() give the same text', $c, preg_replace('~</?p[^>]*>~', '', $b));
+check('scopes: all three agree once the marker attribute is set aside', [$a, $a, $a], [$a, str_replace(' data-sorts-rules="recipe-fractions"', '', $b), $cInPage]);
+check('scopes: a rule that is off by default does nothing unnamed', $text, $engine->apply($text, [], $only));
+
+// ---- Context: what a rule can see ---------------------------------------------
+
+$seen = [];
+$spy = new class ($seen) extends AbstractRule {
+    public function __construct(private array &$seen)
+    {
+    }
+    public function handle(): string
+    {
+        return 'spy';
+    }
+    public function priority(): int
+    {
+        return 1;
+    }
+    public function defaultEnabled(): bool
+    {
+        return true;
+    }
+    public function apply(Run $run, Context $context): void
+    {
+        $this->seen[$run->text()] = [
+            'locale' => $context->locale->id(),
+            'mode' => $context->mode,
+            'ancestors' => $context->ancestors(),
+            'block' => $context->block(),
+            'before' => $context->before(3),
+            'after' => $context->after(3),
+            'class' => $context->hasAncestorClass('lead'),
+            'em' => $context->hasAncestor('EM'),
+            'after-all' => $context->textAfter(),
+        ];
+    }
+};
+$e4 = new Engine();
+$e4->register($spy);
+$e4->apply('<div lang="de"><p class="lead">one <em>two</em> three</p></div><p>four</p>', [], new Options(rules: array_fill_keys($handles, false)));
+check('context: locale from lang', 'de', $seen['one ']['locale']);
+check('context: mode', 'html', $seen['one ']['mode']);
+check('context: ancestors outermost first', ['div', 'p'], $seen['one ']['ancestors']);
+check('context: block', 'p', $seen['one ']['block']);
+check('context: before at flow start is empty', '', $seen['one ']['before']);
+check('context: after looks through inline tags', 'two', $seen['one ']['after']);
+check('context: class of an ancestor', true, $seen['one ']['class']);
+check('context: no class on a sibling flow', false, $seen['four']['class']);
+check('context: text of the earlier run is before', 'ne ', $seen['two']['before']);
+check('context: em is an ancestor of two', true, $seen['two']['em']);
+check('context: em is not an ancestor of one', false, $seen['one ']['em']);
+check('context: ancestors include the inline element', ['div', 'p', 'em'], $seen['two']['ancestors']);
+check('context: textAfter is the rest of the flow', ' three', $seen['two']['after-all']);
+check('context: a new flow does not see the last', ['', 'en-US'], [$seen['four']['before'], $seen['four']['locale']]);
+
+// ---- The tokenizer: everything not changed comes out byte for byte -----------
+
+$allOff = new Options(rules: array_fill_keys($handles, false));
+$awkward = [
+    '', ' ', "\n", "\u{FEFF}", "\u{FEFF}<p>\"x\"</p>", "<p>a\r\n\"b\"\r\n</p>\r\n",
+    '<p>unclosed', '<p>"a<p>"b', '<div><span>"x"</div>', '</b>"x"</i>', 'a < b > c', '1<2 and 3>2', '<3 "x"',
+    '<a href="a>b">"x"</a>', "<a href='a\"b>c'>\"x\"</a>", '<a title="it\'s" data-x=\'say "hi"\'>x</a>',
+    '<a href=foo"bar>"x"', '<a href="unterminated>"x" more', '<a', '<', '<!', '<!-', '<!--', '<!-- never closed "x"',
+    '<!-->"x"', '<!--->"x"', '<!---->"x"', '<!-- a --> "x" <!-- b -->', '<!--[if IE]><p>"x"</p><![endif]-->',
+    '<![CDATA[ "x" ]]> "y"', '<![CDATA[ never closed "x"', '<!DOCTYPE html>"x"', '<!doctype html PUBLIC "a" "b">',
+    '<?xml version="1.0"?>"x"', '<? php "x" ?>', '</ >"x"', '</>"x"', '</3>"x"',
+    '<script>if (a < b) { x = "</p>"; }</script>"x"', '<script>never closed "x"', '<SCRIPT TYPE="x">"</script >"x"',
+    '<style>p::before{content:"x"}</style>"y"', '<textarea>"x" <b>y</b></textarea>"z"', '<title>"x"</title>',
+    '<pre>"x"\n  "y"</pre>', '<svg viewBox="0 0 1 1"><text>"x"</text></svg>', '<math><mi>"x"</mi></math>',
+    '<template><p>"x"</p></template>', '<noscript><img src=x>"y"</noscript>', '<xmp><b>"x"</b></xmp>',
+    '<iframe src="a">"x"</iframe>', '<p data-sorts="off">"x"</p>', '<p lang="fr">"x"</p>',
+    '<br/><br />\'x\'<hr>', '<img src="a.png" alt="it\'s"><input value="">', '<table><tr><td>"x"</table>',
+    'Tom &amp; Jerry &quot;x&quot; &#39;y&#39; &lt;b&gt; &hellip;', '&amp', '&;', '&#;', '&#x;', '&bogus;',
+    "tab\there\x0Bvt\x0Cff", "nul\x00byte", "\u{200B}zero\u{200D}width", 'emoji 🎉 "x"', '日本語 "x"',
+];
+foreach ($awkward as $i => $input) {
+    check("tokenizer: all rules off is byte-identical (#$i)", $input, $engine->apply($input, [], $allOff));
+}
+
+$convertible = [
+    ['<p lang="DE">"x"</p>', null],
+    ['<title>"x"</title>', '<title>“x”</title>'],
+    ['<TITLE>"x"</TITLE>', '<TITLE>“x”</TITLE>'],
+    ['<p>"x"<script>"y"</script>"z"</p>', '<p>“x”<script>"y"</script>“z”</p>'],
+    ['<a href=foo"bar>"x"', '<a href=foo"bar>“x”'],
+    ["<p>a</p>\r\n<p>\"b\"</p>\r\n", "<p>a</p>\r\n<p>“b”</p>\r\n"],
+];
+foreach ($convertible as $i => [$input, $want]) {
+    if ($want === null) {
+        $want = str_replace('"x"', '„x“', $input);
+    }
+    check("tokenizer: only text runs change (#$i)", $want, $engine->apply($input, [], new Options(rules: array_merge($allOff->rules, ['quotes' => true]))));
+}
+
+// nothing convertible with the default rules: the very same bytes
+$plain = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Plain page</title><style>a{}</style></head><body><h1>Plain words</h1><p>Nothing here needs fixing.</p><pre>"code"</pre><script>var a = "b";</script></body></html>';
+check('tokenizer: nothing convertible with defaults is byte-identical', $plain, $engine->apply($plain));
+
+// a pathologically long attribute / many tags do not break the pass
+$big = str_repeat('<a href="' . str_repeat('x', 5000) . '" title="it\'s">y</a> ', 400);
+check('tokenizer: long attributes and many tags survive', $big, $engine->apply($big, [], $allOff));
+$deep = str_repeat('<div>', 1000) . '"x"' . str_repeat('</div>', 1000);
+check('tokenizer: nesting to the limit is still typeset', str_replace('"x"', '“x”', $deep), $engine->apply($deep));
+$tooDeep = str_repeat('<b>', 300000) . '"x"';
+check('tokenizer: absurd nesting comes back unchanged, without crashing', $tooDeep, $engine->apply($tooDeep));

@@ -1,0 +1,209 @@
+# Styling hooks, text mode, and whole paragraphs with the default rules.
+
+@ k-amp-entity only=hook-amp
+< Tom &amp; Jerry
+> Tom <span class="amp">&amp;</span> Jerry
+
+@ k-amp-bare only=hook-amp
+< Tom & Jerry
+> Tom <span class="amp">&amp;</span> Jerry
+
+@ k-amp-attached only=hook-amp
+< R&D and AT&amp;T
+> R<span class="amp">&amp;</span>D and AT<span class="amp">&amp;</span>T
+
+@ k-amp-other-entities-left-alone only=hook-amp
+< &copy; &lt; &#8212; &nbsp;
+
+@ k-amp-custom-class only=hook-amp config={"ruleOptions":{"hook-amp":{"class":"ampersand"}}}
+< a &amp; b
+> a <span class="ampersand">&amp;</span> b
+
+@ k-amp-already-wrapped-left-alone only=hook-amp
+< a <span class="amp">&amp;</span> b
+
+@ k-amp-inside-code-left-alone only=hook-amp
+< <code>a & b</code>
+
+@ k-amp-off-by-default 
+< a &amp; b
+
+@ k-amp-text-mode-never-markup named=hook-amp only= mode=text
+< Tom & Jerry
+
+@ k-caps-words only=hook-caps
+< NASA and HTML5 and USA.
+> <span class="caps">NASA</span> and <span class="caps">HTML5</span> and <span class="caps">USA</span>.
+
+@ k-caps-single-letters-and-mixed-left-alone only=hook-caps
+< I am A4 in iPhone and Dr. X and NaSA
+
+@ k-caps-glued-left-alone only=hook-caps
+< xNASA and NASAx and 3D
+
+@ k-caps-in-entity-left-alone only=hook-caps
+< &AMP; &#X27;
+
+@ k-caps-custom-class only=hook-caps config={"ruleOptions":{"hook-caps":{"class":"sc"}}}
+< the BBC
+> the <span class="sc">BBC</span>
+
+@ k-caps-already-wrapped-left-alone only=hook-caps
+< the <span class="caps">BBC</span>
+
+@ k-caps-text-mode-never-markup named=hook-caps only= mode=text
+< the BBC
+
+@ k-quotes-double-at-block-start only=quotes,apostrophes,primes,hook-quotes
+< <p>"Hello" she said.</p>
+> <p><span class="dquo">“</span>Hello” she said.</p>
+
+@ k-quotes-single-curly-at-block-start only=hook-quotes
+< <p>‘Hello’ she said.</p>
+> <p><span class="quo">‘</span>Hello’ she said.</p>
+
+@ k-quotes-guillemet-at-block-start only=hook-quotes locale=fr
+< <p>«Bonjour»</p>
+> <p><span class="dquo">«</span>Bonjour»</p>
+
+@ k-quotes-german-low-quote only=hook-quotes locale=de
+< <p>„Hallo“</p>
+> <p><span class="dquo">„</span>Hallo“</p>
+
+@ k-quotes-not-mid-paragraph only=quotes,apostrophes,primes,hook-quotes
+< <p>He said "hi".</p>
+> <p>He said “hi”.</p>
+
+@ k-quotes-after-br only=quotes,apostrophes,primes,hook-quotes
+< <p>one<br>"two"</p>
+> <p>one<br><span class="dquo">“</span>two”</p>
+
+@ k-quotes-inside-inline-tag-at-start only=quotes,apostrophes,primes,hook-quotes
+< <p><i>"x"</i></p>
+> <p><i><span class="dquo">“</span>x”</i></p>
+
+@ k-quotes-heading only=quotes,apostrophes,primes,hook-quotes
+< <h1>"Title"</h1>
+> <h1><span class="dquo">“</span>Title”</h1>
+
+@ k-quotes-custom-classes only=hook-quotes config={"ruleOptions":{"hook-quotes":{"doubleClass":"hang-d","singleClass":"hang-s"}}}
+< <p>“a”</p><p>‘b’</p>
+> <p><span class="hang-d">“</span>a”</p><p><span class="hang-s">‘</span>b’</p>
+
+@ k-quotes-already-wrapped-left-alone only=hook-quotes
+< <p><span class="dquo">“</span>Hello”</p>
+
+@ k-quotes-text-mode-never-markup named=hook-quotes only= mode=text
+< “Hello”
+
+@ k-all-three-together only=quotes,apostrophes,primes,hook-amp,hook-caps,hook-quotes
+< <p>"NASA & JPL"</p>
+> <p><span class="dquo">“</span><span class="caps">NASA</span> <span class="amp">&amp;</span> <span class="caps">JPL</span>”</p>
+
+@ t-quotes-and-apostrophes mode=text
+< She said "it's fine".
+> She said “it’s fine”.
+
+@ t-paragraph-break-resets-quotes mode=text only=quotes,apostrophes,primes
+< "One
+< 
+< "Two"
+> “One
+> 
+> “Two”
+
+@ t-single-newline-keeps-quote-state mode=text only=quotes,apostrophes,primes
+< "One
+< two"
+> “One
+> two”
+
+@ t-crlf-paragraphs mode=text only=quotes,apostrophes,primes
+< "One
+< 
+< "Two"
+> “One
+> 
+> “Two”
+
+@ t-angle-brackets-are-text mode=text only=ellipsis
+< a<b...c>d
+> a<b…c>d
+
+@ t-ampersand-entity-literal mode=text only=quotes
+< &amp; "x" &quot;y&quot;
+> &amp; “x” &quot;y&quot;
+
+@ t-all-defaults mode=text
+< "Hello" -- it's 5'10" and (c) 2024...
+> “Hello” — it’s 5′10″ and © 2024…
+
+@ t-default-no-widows-in-text mode=text
+< A long heading here
+> A long heading here
+
+@ t-locale-fr mode=text locale=fr
+< "Bonjour" !
+> « Bonjour » !
+
+@ t-empty mode=text
+< 
+
+@ t-only-whitespace mode=text
+<   
+< 
+<   
+
+@ t-unicode-text-untouched mode=text
+< 日本語のテキスト and emoji 🎉
+> 日本語のテキスト and emoji 🎉
+
+@ t-curly-left-alone mode=text
+< “already” ‘curly’ don’t
+
+@ d-paragraph-en 
+< <p>"It's a trap," he said--"run!" The '90s are over... (c) 2024.</p>
+> <p>“It’s a trap,” he said—“run!” The ’90s are over… © 2024.</p>
+
+@ d-heading-and-paragraph 
+< <h2>"Sorts" fixes it's typography</h2><p>See Dr. Smith, 5'10" tall, weighs 70 kg.</p>
+> <h2>“Sorts” fixes it’s typography</h2><p>See Dr. Smith, 5′10″ tall, weighs 70 kg.</p>
+
+@ d-paragraph-de locale=de
+< <p>"Er sagte 'nein'" -- und ging...</p>
+> <p>„Er sagte ‚nein‘“ – und ging…</p>
+
+@ d-paragraph-en-GB locale=en-GB
+< <p>She said "no" -- twice.</p>
+> <p>She said “no” – twice.</p>
+
+@ d-link-and-emphasis 
+< <p>Read <a href="/x">"the guide"</a> or <em>don't</em>.</p>
+> <p>Read <a href="/x">“the guide”</a> or <em>don’t</em>.</p>
+
+@ d-list-and-table 
+< <ul><li>"One"</li><li>Don't</li></ul><table><tr><td>5'10"</td></tr></table>
+> <ul><li>“One”</li><li>Don’t</li></ul><table><tr><td>5′10″</td></tr></table>
+
+@ d-nothing-to-change 
+< <p>Plain words with nothing to fix.</p>
+
+@ d-already-typeset 
+< <p>“It’s a trap,” he said—“run!” The ’90s are over… © 2024.</p>
+
+@ d-mixed-curly-and-straight 
+< <p>“Hello” she said, 'it's fine'</p>
+> <p>“Hello” she said, “it’s fine”</p>
+
+@ d-mixed-curly-outer-straight-inner 
+< <p>“She said 'no'”</p>
+> <p>“She said ‘no’”</p>
+
+@ d-fr-paragraph locale=fr
+< <p>Il dit "Bonjour !" -- puis: "Merci".</p>
+> <p>Il dit « Bonjour ! » – puis : « Merci ».</p>
+
+@ d-title-and-body 
+< <title>Dan's "best" site</title><h1>Dan's "best" site</h1>
+> <title>Dan’s “best” site</title><h1>Dan’s “best” site</h1>
+

@@ -27,7 +27,8 @@
     "cs-check": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
     "cs-fix": "@php vendor/bin/php-cs-fixer fix",
     "lint": "@php vendor/bin/parallel-lint src",
-    "phpstan": "@php vendor/bin/phpstan --memory-limit=1G"
+    "phpstan": "@php vendor/bin/phpstan --memory-limit=1G",
+    "test-engine": "@php tests/engine/run.php"
   },
   "config": {
     "allow-plugins": {

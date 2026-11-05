@@ -1,0 +1,122 @@
+# Variants: CLDR is the default; another convention is a named variant chosen per locale.
+# en-GB single-outer is the New Hart’s Rules book convention: single quotation marks outermost.
+
+@ v-en-GB-default-nested only=quotes,apostrophes,primes locale=en-GB
+< "She said 'no'"
+> “She said ‘no’”
+
+@ v-en-GB-default-apostrophe-in-nested only=quotes,apostrophes,primes locale=en-GB
+< "She said 'don't'"
+> “She said ‘don’t’”
+
+@ v-en-GB-default-typed-single-outer only=quotes,apostrophes,primes locale=en-GB
+< 'Hello,' she said.
+> “Hello,” she said.
+
+@ v-en-GB-default-three-deep only=quotes,apostrophes,primes locale=en-GB
+< "A 'B "C"'"
+> “A ‘B “C”’”
+
+@ v-en-GB-single-outer-nested only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "She said 'no'"
+> ‘She said “no”’
+
+@ v-en-GB-single-outer-apostrophe-in-nested only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "She said 'don't'"
+> ‘She said “don’t”’
+
+@ v-en-GB-single-outer-apostrophe-in-outer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "I don't know"
+> ‘I don’t know’
+
+@ v-en-GB-single-outer-typed-single only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< 'Don't go,' she said.
+> ‘Don’t go,’ she said.
+
+@ v-en-GB-single-outer-three-deep only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "A 'B "C"'"
+> ‘A “B ‘C’”’
+
+@ v-en-GB-single-outer-possessive-plural only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< 'The dogs' bowls are empty'
+> ‘The dogs’ bowls are empty’
+
+@ v-en-GB-single-outer-leading-apostrophes only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "I loved the '90s and 'tis the season"
+> ‘I loved the ’90s and ’tis the season’
+
+@ v-en-GB-single-outer-primes only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "He is 5'10" tall"
+> ‘He is 5′10″ tall’
+
+@ v-en-GB-single-outer-quotation-ends-in-number only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< He said "I am 25"
+> He said ‘I am 25’
+
+@ v-en-GB-single-outer-already-typeset-left-alone only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< ‘She said “no”’ and don’t
+
+@ v-en-GB-single-outer-curly-outer-straight-inner only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< ‘She said "no"’
+> ‘She said “no”’
+
+@ v-en-GB-single-outer-curly-inner-straight-outer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "She said “no”"
+> ‘She said “no”’
+
+@ v-en-GB-single-outer-across-tags only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>"She said <i>'no'</i> twice"</p>
+> <p>‘She said <i>“no”</i> twice’</p>
+
+@ v-en-GB-single-outer-entities only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< &quot;She said &#039;no&#039;&quot;
+> ‘She said “no”’
+
+@ v-en-GB-single-outer-text-mode only=quotes,apostrophes,primes mode=text locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "She said 'no'"
+> ‘She said “no”’
+
+@ v-en-GB-single-outer-with-defaults locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>"It's -- well, 'tis" 5'10"...</p>
+> <p>‘It’s – well, ’tis’ 5′10″…</p>
+
+@ v-en-GB-single-outer-hanging-hook only=quotes,apostrophes,primes,hook-quotes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>"Hi"</p>
+> <p><span class="quo">‘</span>Hi’</p>
+
+@ v-en-GB-single-outer-lang-attribute only=quotes,apostrophes,primes config={"variants":{"en-GB":"single-outer"}}
+< <p lang="en-GB">"a 'b'"</p><p lang="en-US">"a 'b'"</p><p>"a"</p>
+> <p lang="en-GB">‘a “b”’</p><p lang="en-US">“a ‘b’”</p><p>“a”</p>
+
+@ v-en-GB-single-outer-lang-region-falls-to-id only=quotes,apostrophes,primes locale=de config={"variants":{"en-GB":"single-outer"}}
+< <p lang="en-GB-oxendict">"a"</p>
+> <p lang="en-GB-oxendict">‘a’</p>
+
+@ v-en-GB-single-outer-not-for-en-US only=quotes,apostrophes,primes locale=en-US config={"variants":{"en-GB":"single-outer"}}
+< "She said 'no'"
+> “She said ‘no’”
+
+@ v-en-GB-single-outer-not-for-other-locales only=quotes,apostrophes,primes locale=de config={"variants":{"en-GB":"single-outer"}}
+< "She said 'no'"
+> „She said ‚no‘“
+
+@ v-unknown-variant-name-falls-back only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"nonsense"}}
+< "She said 'no'"
+> “She said ‘no’”
+
+@ v-empty-variant-name-falls-back only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":""}}
+< "She said 'no'"
+> “She said ‘no’”
+
+@ v-variant-for-locale-without-it-falls-back only=quotes,apostrophes,primes locale=de config={"variants":{"de":"single-outer"}}
+< "She said 'no'"
+> „She said ‚no‘“
+
+@ v-variant-for-unknown-locale-key-ignored only=quotes,apostrophes,primes locale=en-GB config={"variants":{"xx":"single-outer"}}
+< "She said 'no'"
+> “She said ‘no’”
+
+@ v-variant-only-quotes-dash-unchanged only=dashes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< a--b
+> a – b
+

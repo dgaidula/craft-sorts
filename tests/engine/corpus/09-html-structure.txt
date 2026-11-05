@@ -1,0 +1,478 @@
+# HTML structure: what is never touched, locale switching, scoping, text mode, hooks.
+
+@ h-skip-pre only=quotes,apostrophes,primes
+< "a" <pre>"x" don't 5'10"</pre> "b"
+> “a” <pre>"x" don't 5'10"</pre> “b”
+
+@ h-skip-code only=quotes,apostrophes,primes
+< "a" <code>"x" don't 5'10"</code> "b"
+> “a” <code>"x" don't 5'10"</code> “b”
+
+@ h-skip-kbd only=quotes,apostrophes,primes
+< "a" <kbd>"x" don't 5'10"</kbd> "b"
+> “a” <kbd>"x" don't 5'10"</kbd> “b”
+
+@ h-skip-samp only=quotes,apostrophes,primes
+< "a" <samp>"x" don't 5'10"</samp> "b"
+> “a” <samp>"x" don't 5'10"</samp> “b”
+
+@ h-skip-var only=quotes,apostrophes,primes
+< "a" <var>"x" don't 5'10"</var> "b"
+> “a” <var>"x" don't 5'10"</var> “b”
+
+@ h-skip-textarea only=quotes,apostrophes,primes
+< "a" <textarea>"x" don't 5'10"</textarea> "b"
+> “a” <textarea>"x" don't 5'10"</textarea> “b”
+
+@ h-skip-script only=quotes,apostrophes,primes
+< "a" <script>"x" don't 5'10"</script> "b"
+> “a” <script>"x" don't 5'10"</script> “b”
+
+@ h-skip-style only=quotes,apostrophes,primes
+< "a" <style>"x" don't 5'10"</style> "b"
+> “a” <style>"x" don't 5'10"</style> “b”
+
+@ h-skip-math only=quotes,apostrophes,primes
+< "a" <math>"x" don't 5'10"</math> "b"
+> “a” <math>"x" don't 5'10"</math> “b”
+
+@ h-skip-svg only=quotes,apostrophes,primes
+< "a" <svg>"x" don't 5'10"</svg> "b"
+> “a” <svg>"x" don't 5'10"</svg> “b”
+
+@ h-skip-template only=quotes,apostrophes,primes
+< "a" <template>"x" don't 5'10"</template> "b"
+> “a” <template>"x" don't 5'10"</template> “b”
+
+@ h-skip-noscript only=quotes,apostrophes,primes
+< "a" <noscript>"x" don't 5'10"</noscript> "b"
+> “a” <noscript>"x" don't 5'10"</noscript> “b”
+
+@ h-skip-pre-multiline only=quotes,apostrophes,primes
+< <pre>
+< "x"
+<   'y'
+< </pre>
+< <p>"z"</p>
+> <pre>
+> "x"
+>   'y'
+> </pre>
+> <p>“z”</p>
+
+@ h-skip-script-with-tags-inside only=quotes,apostrophes,primes
+< <script>document.write("<b>x</b>");</script>"a"
+> <script>document.write("<b>x</b>");</script>“a”
+
+@ h-skip-script-closing-case only=quotes,apostrophes,primes
+< <SCRIPT>var a="x";</SCRIPT> "b"
+> <SCRIPT>var a="x";</SCRIPT> “b”
+
+@ h-skip-style-in-head only=quotes,apostrophes,primes
+< <head><style>a::before{content:"x"}</style></head><p>"y"</p>
+> <head><style>a::before{content:"x"}</style></head><p>“y”</p>
+
+@ h-skip-svg-nested-tags only=quotes,apostrophes,primes
+< <svg><g><text>"x"</text></g></svg> "y"
+> <svg><g><text>"x"</text></g></svg> “y”
+
+@ h-skip-svg-title-element only=quotes,apostrophes,primes
+< <svg><title>"x"</title></svg>
+
+@ h-skip-noscript-block only=quotes,apostrophes,primes
+< <noscript><p>"x"</p></noscript><p>"y"</p>
+> <noscript><p>"x"</p></noscript><p>“y”</p>
+
+@ h-skip-code-is-context-for-quotes only=quotes,apostrophes,primes
+< Use "<code>foo</code>" now
+> Use “<code>foo</code>” now
+
+@ h-skip-code-inside-quotation-nested-tags only=quotes,apostrophes,primes
+< "a <code>"b"</code> c"
+> “a <code>"b"</code> c”
+
+@ h-skip-kbd-pre-nested only=quotes,apostrophes,primes
+< <pre><code>"x"</code></pre>
+
+@ h-skip-pre-then-unclosed-p only=quotes,apostrophes,primes
+< <pre>"x"</pre><p>"y"
+> <pre>"x"</pre><p>“y”
+
+@ h-comment only=quotes,apostrophes,primes
+< <!-- "x" --> "y"
+> <!-- "x" --> “y”
+
+@ h-comment-multiline only=quotes,apostrophes,primes
+< <!--
+< "x"
+< -->
+< "y"
+> <!--
+> "x"
+> -->
+> “y”
+
+@ h-comment-conditional only=quotes,apostrophes,primes
+< <!--[if IE]>"x"<![endif]--> "y"
+> <!--[if IE]>"x"<![endif]--> “y”
+
+@ h-comment-downlevel-revealed only=quotes,apostrophes,primes
+< <![if !IE]>"x"<![endif]>
+> <![if !IE]>“x”<![endif]>
+
+@ h-comment-empty only=quotes,apostrophes,primes
+< <!----> "y"
+> <!----> “y”
+
+@ h-comment-unterminated-swallows-rest only=quotes,apostrophes,primes
+< "x" <!-- "y"
+> “x” <!-- "y"
+
+@ h-cdata only=quotes,apostrophes,primes
+< <![CDATA["x" > y]]> "z"
+> <![CDATA["x" > y]]> “z”
+
+@ h-doctype only=quotes,apostrophes,primes
+< <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+< <p>"x"</p>
+> <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+> <p>“x”</p>
+
+@ h-processing-instruction only=quotes,apostrophes,primes
+< <?xml version="1.0"?>
+< <p>"x"</p>
+> <?xml version="1.0"?>
+> <p>“x”</p>
+
+@ h-php-style-instruction only=quotes,apostrophes,primes
+< <?php echo "x"; ?> "y"
+> <?php echo "x"; ?> “y”
+
+@ h-attr-quotes-untouched only=quotes,apostrophes,primes
+< <a title="Don't" href='/it"s'>"x"</a>
+> <a title="Don't" href='/it"s'>“x”</a>
+
+@ h-attr-gt-inside-value only=quotes,apostrophes,primes
+< <a title="a > b" href="/">"x"</a>
+> <a title="a > b" href="/">“x”</a>
+
+@ h-attr-unquoted only=quotes,apostrophes,primes
+< <a href=/x title=it's>"x"</a>
+> <a href=/x title=it's>“x”</a>
+
+@ h-attr-newlines only=quotes,apostrophes,primes
+< <a
+<   href="/x"
+<   title="it's"
+< >"x"</a>
+> <a
+>   href="/x"
+>   title="it's"
+> >“x”</a>
+
+@ h-attr-empty-and-boolean only=quotes,apostrophes,primes
+< <input disabled value=""> "x"
+> <input disabled value=""> “x”
+
+@ h-attr-meta-content-untouched only=quotes,apostrophes,primes
+< <meta name="description" content="Dan's "best" page"><p>"x"</p>
+> <meta name="description" content="Dan's "best" page"><p>“x”</p>
+
+@ h-attr-alt-and-img-between only=quotes,apostrophes,primes
+< "<img src="a.png" alt="it's">"
+> “<img src="a.png" alt="it's">”
+
+@ h-attr-unterminated-quote-swallows-rest only=quotes,apostrophes,primes
+< "x" <a href="y>"z"
+> “x” <a href="y>"z"
+
+@ h-tag-uppercase only=quotes,apostrophes,primes
+< <P>"x"</P><BR>"y"
+> <P>“x”</P><BR>“y”
+
+@ h-tag-self-closing-br only=quotes,apostrophes,primes
+< a<br/>"x"<br />"y"
+> a<br/>“x”<br />“y”
+
+@ h-less-than-in-text only=quotes,apostrophes,primes
+< a < b and "x" and 1<2
+> a < b and “x” and 1<2
+
+@ h-less-than-then-quote only=quotes,apostrophes,primes
+< if x <"y" then
+> if x <“y” then
+
+@ h-ampersand-and-gt-in-text only=quotes,apostrophes,primes
+< a > b & "c"
+> a > b & “c”
+
+@ h-empty-input only=quotes,apostrophes,primes
+< 
+
+@ h-whitespace-only only=quotes,apostrophes,primes
+<   
+< 	 
+
+@ h-no-markup-no-quotes only=quotes,apostrophes,primes
+< Plain text with nothing to change.
+
+@ h-crlf-preserved only=quotes,apostrophes,primes
+< <p>"a"
+< "b"</p>
+< 
+> <p>“a”
+> “b”</p>
+> 
+
+@ h-bom-preserved only=quotes,apostrophes,primes
+< ﻿<p>"a"</p>
+> ﻿<p>“a”</p>
+
+@ h-bom-before-text only=quotes,apostrophes,primes
+< ﻿"a"
+> ﻿“a”
+
+@ h-tabs-and-newlines-preserved only=quotes,apostrophes,primes
+< <ul>
+< 	<li>"a"</li>
+< 	<li>"b"</li>
+< </ul>
+> <ul>
+> 	<li>“a”</li>
+> 	<li>“b”</li>
+> </ul>
+
+@ h-unclosed-inline-tags only=quotes,apostrophes,primes
+< <p><b>"a <i>b" c
+> <p><b>“a <i>b” c
+
+@ h-stray-closing-tag only=quotes,apostrophes,primes
+< "a"</b></div> "b"
+> “a”</b></div> “b”
+
+@ h-block-inside-inline only=quotes,apostrophes,primes
+< <a href="#"><div>"x"</div></a>
+> <a href="#"><div>“x”</div></a>
+
+@ h-entity-soup only=quotes,apostrophes,primes
+< Don&#039;t &amp; &quot;go&quot; &lt;b&gt; &copy; &#8212; &nbsp;
+> Don’t &amp; “go” &lt;b&gt; &copy; &#8212; &nbsp;
+
+@ h-entity-soup-no-quote-rule only=dashes
+< Don&#039;t &amp; &quot;go&quot; -- ok
+> Don&#039;t &amp; &quot;go&quot; — ok
+
+@ h-entities-kept-when-rules-off only=ellipsis
+< &quot;x&quot; &#039;y&#039; and...
+> &quot;x&quot; &#039;y&#039; and…
+
+@ h-off-paragraph only=quotes,apostrophes,primes
+< <p data-sorts="off">"x"</p> "y"
+> <p data-sorts="off">"x"</p> “y”
+
+@ h-off-subtree only=quotes,apostrophes,primes
+< <div data-sorts="off"><p>"x"</p><ul><li>'y'</li></ul></div><p>"z"</p>
+> <div data-sorts="off"><p>"x"</p><ul><li>'y'</li></ul></div><p>“z”</p>
+
+@ h-off-uppercase-value only=quotes,apostrophes,primes
+< <p data-sorts="OFF">"x"</p>
+
+@ h-off-single-quoted-attr only=quotes,apostrophes,primes
+< <p data-sorts='off'>"x"</p>
+
+@ h-off-with-spaces-around-value only=quotes,apostrophes,primes
+< <p data-sorts=" off ">"x"</p>
+
+@ h-off-other-value-still-processed only=quotes,apostrophes,primes
+< <p data-sorts="on">"x"</p>
+> <p data-sorts="on">“x”</p>
+
+@ h-off-bare-attribute-still-processed only=quotes,apostrophes,primes
+< <p data-sorts>"x"</p>
+> <p data-sorts>“x”</p>
+
+@ h-off-inline-is-context only=quotes,apostrophes,primes
+< "<span data-sorts="off">x</span>"
+> “<span data-sorts="off">x</span>”
+
+@ h-off-inline-in-sentence only=quotes,apostrophes,primes
+< a <span data-sorts="off">"b"</span> "c"
+> a <span data-sorts="off">"b"</span> “c”
+
+@ h-off-in-attribute-text-not-markup only=quotes,apostrophes,primes
+< data-sorts="off" "x"
+> data-sorts=“off” “x”
+
+@ h-off-after-close-resumes only=quotes,apostrophes,primes
+< <p data-sorts="off">"a"</p><p>"b"</p>
+> <p data-sorts="off">"a"</p><p>“b”</p>
+
+@ h-lang-switch-paragraphs only=quotes,apostrophes,primes
+< <p lang="de">"a"</p><p lang="fr">"b"</p><p>"c"</p>
+> <p lang="de">„a“</p><p lang="fr">«b»</p><p>“c”</p>
+
+@ h-lang-ancestor-wins-over-default only=quotes,apostrophes,primes locale=de
+< <div lang="en-GB"><p>"a"</p></div><p>"b"</p>
+> <div lang="en-GB"><p>“a”</p></div><p>„b“</p>
+
+@ h-lang-nearest-ancestor only=quotes,apostrophes,primes
+< <div lang="de"><p>"a"</p><p lang="fr">"b"</p><p>"c"</p></div>
+> <div lang="de"><p>„a“</p><p lang="fr">«b»</p><p>„c“</p></div>
+
+@ h-lang-inline-span-mid-sentence only=quotes,apostrophes,primes
+< <p>Say <span lang="fr">"oui"</span> now "ok"</p>
+> <p>Say <span lang="fr">«oui»</span> now “ok”</p>
+
+@ h-lang-on-html-root only=quotes,apostrophes,primes
+< <html lang="sv"><body><p>"a"</p></body></html>
+> <html lang="sv"><body><p>”a”</p></body></html>
+
+@ h-lang-region-falls-to-primary only=quotes,apostrophes,primes
+< <p lang="de-AT">"a"</p><p lang="pt-BR">"b"</p>
+> <p lang="de-AT">„a“</p><p lang="pt-BR">“b”</p>
+
+@ h-lang-underscore-and-case only=quotes,apostrophes,primes
+< <p lang="DE_ch">"a"</p>
+> <p lang="DE_ch">„a“</p>
+
+@ h-lang-unknown-uses-default only=quotes,apostrophes,primes locale=de
+< <p lang="xx">"a"</p>
+> <p lang="xx">„a“</p>
+
+@ h-lang-unknown-without-default-is-en-US only=quotes,apostrophes,primes
+< <p lang="xx">"a"</p>
+> <p lang="xx">“a”</p>
+
+@ h-lang-empty-ignored only=quotes,apostrophes,primes locale=de
+< <p lang="">"a"</p>
+> <p lang="">„a“</p>
+
+@ h-lang-no-to-nb only=quotes,apostrophes,primes
+< <p lang="no">"a"</p>
+> <p lang="no">«a»</p>
+
+@ h-lang-data-sorts-lang-wins-same-element only=quotes,apostrophes,primes
+< <p lang="de" data-sorts-lang="fr">"a"</p>
+> <p lang="de" data-sorts-lang="fr">«a»</p>
+
+@ h-lang-data-sorts-lang-alone only=quotes,apostrophes,primes
+< <p data-sorts-lang="fr">"a"</p>
+> <p data-sorts-lang="fr">«a»</p>
+
+@ h-lang-data-sorts-lang-on-ancestor-lang-on-child only=quotes,apostrophes,primes
+< <div data-sorts-lang="fr"><p lang="de">"a"</p></div>
+> <div data-sorts-lang="fr"><p lang="de">„a“</p></div>
+
+@ h-lang-resets-after-element only=quotes,apostrophes,primes
+< <p lang="de">"a"</p><p>"b"</p>
+> <p lang="de">„a“</p><p>“b”</p>
+
+@ h-lang-implied-end-of-p only=quotes,apostrophes,primes
+< <p lang="de">"a"<p>"b"
+> <p lang="de">„a“<p>“b”
+
+@ h-lang-dash-follows-locale only=dashes
+< <p lang="en-GB">a--b</p><p>a--b</p>
+> <p lang="en-GB">a – b</p><p>a—b</p>
+
+@ h-lang-french-spacing-only-in-french only=locale-spacing
+< <p lang="fr">Oui !</p><p>Oui !</p>
+> <p lang="fr">Oui !</p><p>Oui !</p>
+
+@ h-lang-attr-in-text-ignored only=quotes,apostrophes,primes
+< lang="de" "x"
+> lang=“de” “x”
+
+@ h-lang-with-attribute-order-and-case only=quotes,apostrophes,primes
+< <p CLASS="a" LANG="de">"x"</p>
+> <p CLASS="a" LANG="de">„x“</p>
+
+@ h-scope-attribute-enables-rule 
+< <p data-sorts-rules="ranges">pages 10-12</p><p>pages 10-12</p>
+> <p data-sorts-rules="ranges">pages 10–12</p><p>pages 10-12</p>
+
+@ h-scope-two-handles 
+< <p data-sorts-rules="ranges fractions">10-12 and 1/2</p><p>10-12 and 1/2</p>
+> <p data-sorts-rules="ranges fractions">10–12 and ½</p><p>10-12 and 1/2</p>
+
+@ h-scope-inherited-by-descendants 
+< <div data-sorts-rules="ranges"><p>10-12 <b>3-4</b></p></div><p>10-12</p>
+> <div data-sorts-rules="ranges"><p>10–12 <b>3–4</b></p></div><p>10-12</p>
+
+@ h-scope-nested-adds-handle 
+< <div data-sorts-rules="ranges"><p data-sorts-rules="fractions">10-12 1/2</p><p>10-12 1/2</p></div>
+> <div data-sorts-rules="ranges"><p data-sorts-rules="fractions">10–12 ½</p><p>10–12 1/2</p></div>
+
+@ h-scope-unknown-handle-ignored 
+< <p data-sorts-rules="nope">10-12</p>
+
+@ h-scope-extra-whitespace-and-case 
+< <p data-sorts-rules="  RANGES   fractions ">10-12 1/2</p>
+> <p data-sorts-rules="  RANGES   fractions ">10–12 ½</p>
+
+@ h-scope-named-call-everywhere named=ranges
+< <p>10-12</p><p>3-4</p>
+> <p>10–12</p><p>3–4</p>
+
+@ h-scope-named-and-attribute named=ranges
+< <p data-sorts-rules="fractions">10-12 1/2</p><p>10-12 1/2</p>
+> <p data-sorts-rules="fractions">10–12 ½</p><p>10–12 1/2</p>
+
+@ h-scope-attribute-beats-disabled-setting off=ranges
+< <p data-sorts-rules="ranges">10-12</p><p>10-12</p>
+> <p data-sorts-rules="ranges">10–12</p><p>10-12</p>
+
+@ h-scope-off-element-wins 
+< <p data-sorts="off" data-sorts-rules="ranges">10-12</p>
+
+@ h-scope-default-on-rule-can-be-switched-off off=quotes
+< <p>"a" and ... b</p>
+> <p>"a" and … b</p>
+
+@ h-scope-on-attribute-enables-for-whole-call on=ranges
+< <p>10-12</p>
+> <p>10–12</p>
+
+@ h-config-skip-tag only=quotes,apostrophes,primes config={"skipTags":["blockquote"]}
+< <blockquote>"x"</blockquote> "y"
+> <blockquote>"x"</blockquote> “y”
+
+@ h-config-skip-tag-case-insensitive only=quotes,apostrophes,primes config={"skipTags":["BlockQuote"]}
+< <blockquote>"x"</blockquote>
+
+@ h-config-skip-class only=quotes,apostrophes,primes config={"skipClasses":["notranslate"]}
+< <span class="notranslate">"x"</span> "y"
+> <span class="notranslate">"x"</span> “y”
+
+@ h-config-skip-class-among-several only=quotes,apostrophes,primes config={"skipClasses":["notranslate"]}
+< <p class="a notranslate b">"x"</p><p class="notranslate-not">"y"</p>
+> <p class="a notranslate b">"x"</p><p class="notranslate-not">“y”</p>
+
+@ h-config-skip-class-subtree only=quotes,apostrophes,primes config={"skipClasses":["raw"]}
+< <div class="raw"><p>"x"</p></div><p>"y"</p>
+> <div class="raw"><p>"x"</p></div><p>“y”</p>
+
+@ h-config-skip-title only=quotes,apostrophes,primes config={"skipTags":["title"]}
+< <title>"x"</title><p>"y"</p>
+> <title>"x"</title><p>“y”</p>
+
+@ h-title-processed-by-default only=quotes,apostrophes,primes
+< <title>Dan's "best" page</title>
+> <title>Dan’s “best” page</title>
+
+@ h-title-with-attributes only=quotes,apostrophes,primes
+< <title lang="de">"x"</title>
+> <title lang="de">“x”</title>
+
+@ h-title-contains-tag-like-text only=quotes,apostrophes,primes
+< <title>a <b> "x"</title>
+> <title>a <b> “x”</title>
+
+@ h-title-entity-in-title only=quotes,apostrophes,primes
+< <title>&quot;x&quot; &amp; y</title>
+> <title>“x” &amp; y</title>
+
+@ h-title-is-a-boundary only=quotes,apostrophes,primes
+< "a<title>"b"</title>"c"
+> “a<title>“b”</title>“c”
+

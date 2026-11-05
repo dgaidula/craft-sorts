@@ -1,0 +1,121 @@
+# French spacing: U+202F before ; ! ? and inside guillemets, U+00A0 before a colon.
+
+@ fr-exclamation-spaced only=locale-spacing locale=fr
+< Bonjour !
+> Bonjour\u{202F}!
+
+@ fr-exclamation-closed only=locale-spacing locale=fr
+< Bonjour!
+> Bonjour\u{202F}!
+
+@ fr-question only=locale-spacing locale=fr
+< Vraiment ? Oui?
+> Vraiment\u{202F}? Oui\u{202F}?
+
+@ fr-semicolon only=locale-spacing locale=fr
+< Oui; non ; peut-être
+> Oui\u{202F}; non\u{202F}; peut-être
+
+@ fr-colon-nbsp only=locale-spacing locale=fr
+< Note: ceci et note : cela
+> Note\u{A0}: ceci et note\u{A0}: cela
+
+@ fr-already-narrow-left-alone only=locale-spacing locale=fr
+< Oui\u{202F}! Non\u{202F}? Ah\u{A0}: bon
+
+@ fr-nbsp-before-bang-becomes-narrow only=locale-spacing locale=fr
+< Oui\u{A0}!
+> Oui\u{202F}!
+
+@ fr-narrow-before-colon-becomes-nbsp only=locale-spacing locale=fr
+< Ah\u{202F}: bon
+> Ah\u{A0}: bon
+
+@ fr-interrobang only=locale-spacing locale=fr
+< Quoi ?! Quoi?!
+> Quoi\u{202F}?! Quoi\u{202F}?!
+
+@ fr-time-left-alone only=locale-spacing locale=fr
+< à 10:30 ou 9:05
+
+@ fr-url-left-alone only=locale-spacing locale=fr
+< voir https://exemple.fr/a?b=1&c=2 ici
+
+@ fr-important-left-alone only=locale-spacing locale=fr
+< a !important rule
+
+@ fr-entity-semicolon-left-alone only=locale-spacing locale=fr
+< Tom &amp; Jerry &copy; fin
+
+@ fr-entity-and-real-semicolon only=locale-spacing locale=fr
+< Tom &amp; Jerry ; fin
+> Tom &amp; Jerry\u{202F}; fin
+
+@ fr-after-closing-paren only=locale-spacing locale=fr
+< (oui) ? (non)!
+> (oui)\u{202F}? (non)\u{202F}!
+
+@ fr-after-number only=locale-spacing locale=fr
+< Combien : 2 ? 3!
+> Combien\u{A0}: 2\u{202F}? 3\u{202F}!
+
+@ fr-bang-before-tag only=locale-spacing locale=fr
+< Bravo!<br>Encore !</b> fin
+> Bravo\u{202F}!<br>Encore\u{202F}!</b> fin
+
+@ fr-guillemets-spaced only=locale-spacing locale=fr
+< Il dit « Bonjour » à tous
+> Il dit «\u{202F}Bonjour\u{202F}» à tous
+
+@ fr-guillemets-closed only=locale-spacing locale=fr
+< Il dit «Bonjour» à tous
+> Il dit «\u{202F}Bonjour\u{202F}» à tous
+
+@ fr-guillemets-nbsp-become-narrow only=locale-spacing locale=fr
+< «\u{A0}Bonjour\u{A0}»
+> «\u{202F}Bonjour\u{202F}»
+
+@ fr-guillemets-already-narrow-left-alone only=locale-spacing locale=fr
+< «\u{202F}Bonjour\u{202F}»
+
+@ fr-guillemets-single-pair only=locale-spacing locale=fr-CH
+< ‹ oui › et ‹non›
+> ‹\u{202F}oui\u{202F}› et ‹\u{202F}non\u{202F}›
+
+@ fr-guillemets-across-tags only=locale-spacing locale=fr
+< «<i>Bonjour</i>» et « <i>Salut</i> »
+> «\u{202F}<i>Bonjour</i>\u{202F}» et «\u{202F}<i>Salut</i>\u{202F}»
+
+@ fr-guillemet-closing-after-tag only=locale-spacing locale=fr
+< « <i>x</i> »
+> «\u{202F}<i>x</i>\u{202F}»
+
+@ fr-quotes-then-spacing locale=fr
+< Il dit "Bonjour"
+> Il dit «\u{202F}Bonjour\u{202F}»
+
+@ fr-quotes-with-bang-inside locale=fr
+< Il dit "Bonjour !"
+> Il dit «\u{202F}Bonjour\u{202F}!\u{202F}»
+
+@ fr-nested-quotes locale=fr
+< "Il dit 'oui'"
+> «\u{202F}Il dit «\u{202F}oui\u{202F}»\u{202F}»
+
+@ fr-CH-nested-quotes locale=fr-CH
+< "Il dit 'oui'"
+> «\u{202F}Il dit ‹\u{202F}oui\u{202F}›\u{202F}»
+
+@ fr-colon-after-quote-default-set locale=fr
+< Il a dit: "oui"
+> Il a dit\u{A0}: «\u{202F}oui\u{202F}»
+
+@ fr-text-mode only=locale-spacing locale=fr mode=text
+< Bonjour ! Note: «ok»
+> Bonjour\u{202F}! Note\u{A0}: «\u{202F}ok\u{202F}»
+
+@ fr-other-locale-left-alone only=locale-spacing locale=de
+< Bonjour ! Note: « ok »
+
+@ fr-english-left-alone only=locale-spacing locale=en-US
+< Hello ! Note: « ok »

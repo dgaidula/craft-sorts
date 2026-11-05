@@ -1,0 +1,120 @@
+# Primes against closing quotes.
+
+@ p-feet-inches only=quotes,apostrophes,primes
+< He is 5'10" tall.
+> He is 5′10″ tall.
+
+@ p-feet-inches-spaced only=quotes,apostrophes,primes
+< a 5' 10" frame
+> a 5′ 10″ frame
+
+@ p-feet-alone only=quotes,apostrophes,primes
+< a 6' fence
+> a 6′ fence
+
+@ p-feet-end-of-sentence only=quotes,apostrophes,primes
+< The fence is 6'.
+> The fence is 6′.
+
+@ p-inches-alone only=quotes,apostrophes,primes
+< a 27" monitor
+> a 27″ monitor
+
+@ p-inches-decimal only=quotes,apostrophes,primes
+< a 5.5" screen
+> a 5.5″ screen
+
+@ p-inches-fraction-ascii only=quotes,apostrophes,primes
+< 1/2" pipe
+> 1/2″ pipe
+
+@ p-inches-fraction-char only=quotes,apostrophes,primes
+< ½" pipe
+> ½″ pipe
+
+@ p-degrees-minutes only=quotes,apostrophes,primes
+< 45°30' north
+> 45°30′ north
+
+@ p-degrees-minutes-at-end only=quotes,apostrophes,primes
+< 45°30'
+> 45°30′
+
+@ p-degrees-minutes-seconds only=quotes,apostrophes,primes
+< 45°30'15" north
+> 45°30′15″ north
+
+@ p-latitude-longitude only=quotes,apostrophes,primes
+< 40°26'46"N 79°58'56"W
+> 40°26′46″N 79°58′56″W
+
+@ p-minutes-seconds-time only=quotes,apostrophes,primes
+< a 3'45" track
+> a 3′45″ track
+
+@ p-prime-inside-quotation only=quotes,apostrophes,primes
+< "He is 5'10" tall," she said.
+> “He is 5′10″ tall,” she said.
+
+@ p-inch-inside-quotation-then-more only=quotes,apostrophes,primes
+< "The screen is 27" wide"
+> “The screen is 27″ wide”
+
+@ p-quotation-ends-in-number only=quotes,apostrophes,primes
+< "I am 25"
+> “I am 25”
+
+@ p-quotation-ends-in-number-sentence only=quotes,apostrophes,primes
+< She said "I am 25" and left.
+> She said “I am 25” and left.
+
+@ p-quoted-number only=quotes,apostrophes,primes
+< He said "5"
+> He said “5”
+
+@ p-two-quotations-ending-in-numbers only=quotes,apostrophes,primes
+< "Chapter 3" and "Chapter 4"
+> “Chapter 3” and “Chapter 4”
+
+@ p-single-quoted-number only=quotes,apostrophes,primes
+< '5'
+> “5”
+
+@ p-single-quoted-two-digit-number only=quotes,apostrophes,primes
+< '90'
+> “90”
+
+@ p-single-quotation-ends-in-number only=quotes,apostrophes,primes
+< He said 'I am 6' and left
+> He said “I am 6” and left
+
+@ p-hes-six-feet only=quotes,apostrophes,primes
+< He's 6'
+> He’s 6′
+
+@ p-primes-off-quotes-on only=quotes,apostrophes
+< 5'10" and "x"
+> 5'10" and “x”
+
+@ p-primes-only only=primes
+< 5'10" and "x" don't
+> 5′10″ and "x" don't
+
+@ p-already-primes only=quotes,apostrophes,primes
+< 5′10″ and “x”
+
+@ p-entity-forms only=quotes,apostrophes,primes
+< 5&#039;10&quot; tall
+> 5′10″ tall
+
+@ p-text-mode only=quotes,apostrophes,primes mode=text
+< He is 5'10" tall.
+> He is 5′10″ tall.
+
+@ p-prime-across-tag only=quotes,apostrophes,primes
+< a <b>27</b>" screen
+> a <b>27</b>″ screen
+
+@ p-minutes-before-direction-letter only=quotes,apostrophes,primes
+< 45°30'N and 12°5'E
+> 45°30′N and 12°5′E

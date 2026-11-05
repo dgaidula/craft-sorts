@@ -1,0 +1,170 @@
+# Non-breaking spaces and widows.
+
+@ n-unit-kg only=nbsp
+< 10 kg of flour
+> 10\u{A0}kg of flour
+
+@ n-units-various only=nbsp
+< 5 km, 3 GB, 20 °C, 100 %, 5 min, 10 px, 3 hrs
+> 5\u{A0}km, 3\u{A0}GB, 20\u{A0}°C, 100\u{A0}%, 5\u{A0}min, 10\u{A0}px, 3\u{A0}hrs
+
+@ n-unit-kmh only=nbsp
+< 100 km/h
+> 100\u{A0}km/h
+
+@ n-unit-thousands-decimal only=nbsp
+< 1,000 kg and 2.5 m
+> 1,000\u{A0}kg and 2.5\u{A0}m
+
+@ n-unit-word-left-alone only=nbsp
+< 10 kilograms and 10 people and 10 in the box
+
+@ n-unit-double-space-left-alone only=nbsp
+< 10  kg
+
+@ n-unit-already-nbsp-left-alone only=nbsp
+< 10\u{A0}kg and 10&nbsp;kg
+
+@ n-unit-letter-prefix-left-alone only=nbsp
+< Chapter xv kg
+
+@ n-honorific-dr only=nbsp
+< Dr. Smith arrived
+> Dr.\u{A0}Smith arrived
+
+@ n-honorifics-various only=nbsp
+< Mr. Jones, Mrs. Jones, Ms. Lee, Prof. Ada Lovelace, St. Louis, Fr. Brown
+> Mr.\u{A0}Jones, Mrs.\u{A0}Jones, Ms.\u{A0}Lee, Prof.\u{A0}Ada Lovelace, St.\u{A0}Louis, Fr.\u{A0}Brown
+
+@ n-honorific-lowercase-left-alone only=nbsp
+< Dr. smith and mr. jones
+
+@ n-honorific-no-space-left-alone only=nbsp
+< Dr.Smith
+
+@ n-honorific-part-of-word-left-alone only=nbsp
+< Sundr. Smith
+
+@ n-initials-three only=nbsp
+< J. R. R. Tolkien
+> J.\u{A0}R.\u{A0}R.\u{A0}Tolkien
+
+@ n-initial-one only=nbsp
+< J. Smith
+> J.\u{A0}Smith
+
+@ n-initials-run-together only=nbsp
+< T.S. Eliot and the U.S. Army
+> T.S.\u{A0}Eliot and the U.S.\u{A0}Army
+
+@ n-initial-lowercase-left-alone only=nbsp
+< e.g. this and i. e. that
+
+@ n-initial-after-word-left-alone only=nbsp
+< NASA. The Moon
+
+@ n-section-sign only=nbsp
+< See § 5 and §§ 5–7 and ¶ 3
+> See §\u{A0}5 and §§\u{A0}5–7 and ¶\u{A0}3
+
+@ n-section-sign-closed-left-alone only=nbsp
+< See §5
+
+@ n-all-together only=nbsp
+< Dr. J. Smith weighs 70 kg
+> Dr.\u{A0}J.\u{A0}Smith weighs 70\u{A0}kg
+
+@ n-across-tag-left-alone only=nbsp
+< 10 <b>kg</b>
+
+@ n-text-mode only=nbsp mode=text
+< Dr. Smith, 5 km
+> Dr.\u{A0}Smith, 5\u{A0}km
+
+@ n-on-by-default
+< Dr. Smith and 10 kg
+> Dr.\u{A0}Smith and 10\u{A0}kg
+
+@ w-h1 only=widows
+< <h1>The quick brown fox jumps</h1>
+> <h1>The quick brown fox\u{A0}jumps</h1>
+
+@ w-all-heading-levels only=widows
+< <h2>One two three</h2><h3>One two three</h3><h4>One two three</h4><h5>One two three</h5><h6>One two three</h6>
+> <h2>One two\u{A0}three</h2><h3>One two\u{A0}three</h3><h4>One two\u{A0}three</h4><h5>One two\u{A0}three</h5><h6>One two\u{A0}three</h6>
+
+@ w-paragraph-left-alone-by-default only=widows
+< <p>A long paragraph sentence here</p>
+
+@ w-paragraph-when-configured only=widows config={"ruleOptions":{"widows":{"tags":["h1","p"]}}}
+< <p>A long paragraph sentence here</p>
+> <p>A long paragraph sentence\u{A0}here</p>
+
+@ w-list-item-when-configured only=widows config={"ruleOptions":{"widows":{"tags":["li"]}}}
+< <ul><li>One two three</li></ul>
+> <ul><li>One two\u{A0}three</li></ul>
+
+@ w-too-few-words-left-alone only=widows
+< <h2>Two words</h2>
+
+@ w-exactly-min-words only=widows
+< <h2>Three little words</h2>
+> <h2>Three little\u{A0}words</h2>
+
+@ w-min-words-raised only=widows config={"ruleOptions":{"widows":{"minWords":5}}}
+< <h2>Four little words here</h2><h2>Five little words are here</h2>
+> <h2>Four little words here</h2><h2>Five little words are\u{A0}here</h2>
+
+@ w-trailing-inline-tag only=widows
+< <h2>The quick brown <em>fox</em></h2>
+> <h2>The quick brown\u{A0}<em>fox</em></h2>
+
+@ w-inline-tag-in-middle only=widows
+< <h2>The <em>quick brown</em> fox jumps</h2>
+> <h2>The <em>quick brown</em> fox\u{A0}jumps</h2>
+
+@ w-last-word-is-a-link only=widows
+< <h2>The quick brown fox <a href="/x">jumps</a></h2>
+> <h2>The quick brown fox\u{A0}<a href="/x">jumps</a></h2>
+
+@ w-last-two-words-inside-tag only=widows
+< <h2>The quick <em>brown fox</em></h2>
+> <h2>The quick <em>brown\u{A0}fox</em></h2>
+
+@ w-source-whitespace-around only=widows
+< <h2>
+<   A long heading here
+< </h2>
+> <h2>
+>   A long heading\u{A0}here
+> </h2>
+
+@ w-double-space-collapses only=widows
+< <h2>A long  heading</h2>
+> <h2>A long\u{A0}heading</h2>
+
+@ w-already-nbsp-left-alone only=widows
+< <h2>A long\u{A0}heading</h2>
+
+@ w-br-splits-flows only=widows
+< <h2>One two three<br>four five six</h2>
+> <h2>One two\u{A0}three<br>four five\u{A0}six</h2>
+
+@ w-entity-in-heading only=widows
+< <h2>Tom &amp; Jerry meet again</h2>
+> <h2>Tom &amp; Jerry meet\u{A0}again</h2>
+
+@ w-text-mode-left-alone only=widows mode=text
+< A long heading here
+
+@ w-in-defaults-with-quotes
+< <h2>"Hello" said the cat</h2>
+> <h2>“Hello” said the\u{A0}cat</h2>
+
+@ w-heading-in-defaults-paragraph-untouched
+< <h2>A long heading here</h2><p>A long paragraph here</p>
+> <h2>A long heading\u{A0}here</h2><p>A long paragraph here</p>
+
+@ w-title-element-quotes-not-widows
+< <title>Dan's "page" and more words</title>
+> <title>Dan’s “page” and more words</title>

@@ -1,0 +1,321 @@
+# Rules that are off by default: each case turns the rule on (only=) or leaves defaults.
+
+@ r-simple only=ranges
+< 1-5
+> 1–5
+
+@ r-pages only=ranges
+< pages 10-12
+> pages 10–12
+
+@ r-sentence only=ranges
+< Read chapters 3-5, then 6-8.
+> Read chapters 3–5, then 6–8.
+
+@ r-in-parentheses only=ranges
+< (10-12)
+> (10–12)
+
+@ r-years-full only=ranges
+< 2019-2020
+> 2019–2020
+
+@ r-years-abbreviated only=ranges
+< 1990-95
+> 1990–95
+
+@ r-thousands only=ranges
+< 10,000-20,000 people
+> 10,000–20,000 people
+
+@ r-decimals only=ranges
+< 5.5-6.5 kg
+> 5.5–6.5 kg
+
+@ r-currency only=ranges
+< $5-10
+> $5–10
+
+@ r-weeks only=ranges
+< 2-4 weeks
+> 2–4 weeks
+
+@ r-end-of-sentence only=ranges
+< It takes 10-12.
+> It takes 10–12.
+
+@ r-phone-local-left-alone only=ranges
+< Call 555-1234
+
+@ r-phone-full-left-alone only=ranges
+< Call 555-123-4567
+
+@ r-phone-international-left-alone only=ranges
+< +1-555-123-4567
+
+@ r-isbn-left-alone only=ranges
+< ISBN 978-3-16-148410-0
+
+@ r-sku-letters-first-left-alone only=ranges
+< SKU AB-12-34 and A12-34
+
+@ r-sku-letter-after-left-alone only=ranges
+< part 12-34B
+
+@ r-sku-prefix-left-alone only=ranges
+< X-100-200
+
+@ r-date-iso-left-alone only=ranges
+< 2024-01-15
+
+@ r-date-year-month-left-alone only=ranges
+< due 2024-01
+
+@ r-date-year-month-twelve-left-alone only=ranges
+< due 2024-12
+
+@ r-date-us-left-alone only=ranges
+< 01-15-2024
+
+@ r-equal-numbers-left-alone only=ranges
+< 3-3
+
+@ r-descending-left-alone only=ranges
+< 10-5
+
+@ r-version-left-alone only=ranges
+< v1.2-3
+
+@ r-time-left-alone only=ranges
+< 10:30-11:00
+
+@ r-words-left-alone only=ranges
+< Mon-Fri and e-mail
+
+@ r-url-left-alone only=ranges
+< example.com/2024-25
+
+@ r-unit-glued-left-alone only=ranges
+< 10-12kg
+
+@ r-fraction-after-left-alone only=ranges
+< 1-1/2 cups
+
+@ r-letter-before-left-alone only=ranges
+< x1-5
+
+@ r-off-by-default
+< pages 10-12
+
+@ r-on-via-on-attribute on=ranges only=ranges,nbsp
+< pages 10-12 and 5 kg
+> pages 10–12 and 5\u{A0}kg
+
+@ r-text-mode only=ranges mode=text
+< pages 10-12
+> pages 10–12
+
+@ f-half only=fractions
+< 1/2
+> ½
+
+@ f-quarter-cup only=fractions
+< add 1/4 cup
+> add ¼ cup
+
+@ f-three-quarters only=fractions
+< 3/4 done
+> ¾ done
+
+@ f-thirds only=fractions
+< 1/3 and 2/3
+> ⅓ and ⅔
+
+@ f-fifths only=fractions
+< 1/5 2/5 3/5 4/5
+> ⅕ ⅖ ⅗ ⅘
+
+@ f-sixths only=fractions
+< 1/6 5/6
+> ⅙ ⅚
+
+@ f-eighths only=fractions
+< 1/8 3/8 5/8 7/8
+> ⅛ ⅜ ⅝ ⅞
+
+@ f-seventh-ninth-tenth only=fractions
+< 1/7 1/9 1/10
+> ⅐ ⅑ ⅒
+
+@ f-mixed-number-hyphen only=fractions
+< 1-1/2 cups
+> 1-½ cups
+
+@ f-mixed-number-space only=fractions
+< 10 1/2 miles
+> 10 ½ miles
+
+@ f-with-hyphen-after only=fractions
+< a 1/2-inch pipe
+> a ½-inch pipe
+
+@ f-in-parentheses only=fractions
+< (1/2)
+> (½)
+
+@ f-sentence-end only=fractions
+< Add 1/2.
+> Add ½.
+
+@ f-before-inch-mark only=fractions
+< a 1/2" pipe
+> a ½" pipe
+
+@ f-date-left-alone only=fractions
+< 1/2/2024
+
+@ f-date-short-left-alone only=fractions
+< 1/2/24
+
+@ f-date-trailing-part-left-alone only=fractions
+< 12/1/2
+
+@ f-url-left-alone only=fractions
+< http://example.com/1/2/
+
+@ f-path-left-alone only=fractions
+< see a/1/2
+
+@ f-not-in-set-left-alone only=fractions
+< 7/16 and 2/4 and 3/10
+
+@ f-longer-numbers-left-alone only=fractions
+< 11/2 and 1/20
+
+@ f-decimal-after-left-alone only=fractions
+< 1/2.5
+
+@ f-thousands-after-left-alone only=fractions
+< 1/2,000
+
+@ f-letter-before-left-alone only=fractions
+< W1/2
+
+@ f-and-or-left-alone only=fractions
+< and/or
+
+@ f-off-by-default
+< add 1/2 cup
+
+@ f-text-mode only=fractions mode=text
+< 1/2 and 3/4
+> ½ and ¾
+
+@ m-simple only=multiplication
+< 3x4
+> 3×4
+
+@ m-spaced only=multiplication
+< 1920 x 1080
+> 1920 × 1080
+
+@ m-capital-x only=multiplication
+< 1920 X 1080
+> 1920 × 1080
+
+@ m-chain only=multiplication
+< 3x4x5
+> 3×4×5
+
+@ m-with-unit-after only=multiplication
+< 10x20cm
+> 10×20cm
+
+@ m-decimals only=multiplication
+< 2.5x3.5
+> 2.5×3.5
+
+@ m-lumber only=multiplication
+< a 2x4 beam
+> a 2×4 beam
+
+@ m-equation only=multiplication
+< 5 x 5 = 25
+> 5 × 5 = 25
+
+@ m-hex-left-alone only=multiplication
+< 0x1F
+
+@ m-uneven-spacing-left-alone only=multiplication
+< 1920 x1080
+
+@ m-letter-before-left-alone only=multiplication
+< a3x4
+
+@ m-identifier-left-alone only=multiplication
+< x86x64
+
+@ m-no-number-after-left-alone only=multiplication
+< 3 x y and exit 3x
+
+@ m-word-left-alone only=multiplication
+< 3 xylophones
+
+@ m-off-by-default
+< 3x4 and 1920 x 1080
+
+@ m-text-mode only=multiplication mode=text
+< 3x4
+> 3×4
+
+@ o-first only=ordinals
+< the 1st of May
+> the 1<sup>st</sup> of May
+
+@ o-all-suffixes only=ordinals
+< 1st 2nd 3rd 4th
+> 1<sup>st</sup> 2<sup>nd</sup> 3<sup>rd</sup> 4<sup>th</sup>
+
+@ o-teens only=ordinals
+< 11th 12th 13th
+> 11<sup>th</sup> 12<sup>th</sup> 13<sup>th</sup>
+
+@ o-twenties-and-hundreds only=ordinals
+< 21st 22nd 23rd 101st 111th
+> 21<sup>st</sup> 22<sup>nd</sup> 23<sup>rd</sup> 101<sup>st</sup> 111<sup>th</sup>
+
+@ o-thousands only=ordinals
+< the 1,000th visitor
+> the 1,000<sup>th</sup> visitor
+
+@ o-century only=ordinals
+< 20th Century
+> 20<sup>th</sup> Century
+
+@ o-wrong-suffix-left-alone only=ordinals
+< 1th and 2st and 3nd
+
+@ o-decimal-left-alone only=ordinals
+< 3.1st
+
+@ o-glued-letters-left-alone only=ordinals
+< A1st and 1stly
+
+@ o-already-sup-left-alone only=ordinals
+< 1<sup>st</sup>
+
+@ o-inside-sup-left-alone only=ordinals
+< <sup>1st</sup>
+
+@ o-en-GB only=ordinals locale=en-GB
+< 2nd
+> 2<sup>nd</sup>
+
+@ o-other-locale-left-alone only=ordinals locale=de
+< 1st
+
+@ o-text-mode-no-markup only=ordinals mode=text
+< the 1st of May
+
+@ o-off-by-default
+< the 1st of May

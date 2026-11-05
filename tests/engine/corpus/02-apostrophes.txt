@@ -1,0 +1,153 @@
+# Apostrophes, including the leading ones that look like opening quotes.
+
+@ a-contraction-dont-fixed only=quotes,apostrophes,primes
+< I don't think it's what we've said
+> I don’t think it’s what we’ve said
+
+@ a-contractions-ll-d-re-m only=quotes,apostrophes,primes
+< they'll, she'd, you're, I'm, can't, won't
+> they’ll, she’d, you’re, I’m, can’t, won’t
+
+@ a-oclock only=quotes,apostrophes,primes
+< at six o'clock
+> at six o’clock
+
+@ a-names-obrien-dangelo only=quotes,apostrophes,primes
+< O'Brien and D'Angelo
+> O’Brien and D’Angelo
+
+@ a-possessive-singular only=quotes,apostrophes,primes
+< the dog's bowl and Mary's coat
+> the dog’s bowl and Mary’s coat
+
+@ a-possessive-irregular-plural only=quotes,apostrophes,primes
+< the children's toys
+> the children’s toys
+
+@ a-possessive-plural-trailing only=quotes,apostrophes,primes
+< the dogs' bowls
+> the dogs’ bowls
+
+@ a-possessive-s-name only=quotes,apostrophes,primes
+< James' book
+> James’ book
+
+@ a-dropped-g only=quotes,apostrophes,primes
+< goin' home and talkin' loud
+> goin’ home and talkin’ loud
+
+@ a-decade-leading only=quotes,apostrophes,primes
+< the '90s and the '80s
+> the ’90s and the ’80s
+
+@ a-decade-leading-at-start only=quotes,apostrophes,primes
+< '90s music
+> ’90s music
+
+@ a-decade-year-short only=quotes,apostrophes,primes
+< class of '99
+> class of ’99
+
+@ a-decade-oughts only=quotes,apostrophes,primes
+< the '00s
+> the ’00s
+
+@ a-decade-attached-s only=quotes,apostrophes,primes
+< the 1990's
+> the 1990’s
+
+@ a-leading-tis only=quotes,apostrophes,primes
+< 'tis the season
+> ’tis the season
+
+@ a-leading-twas only=quotes,apostrophes,primes
+< It was 'twas the night
+> It was ’twas the night
+
+@ a-leading-em only=quotes,apostrophes,primes
+< give 'em hell
+> give ’em hell
+
+@ a-leading-cause only=quotes,apostrophes,primes
+< 'cause I said so
+> ’cause I said so
+
+@ a-leading-til only=quotes,apostrophes,primes
+< wait 'til dark
+> wait ’til dark
+
+@ a-leading-bout only=quotes,apostrophes,primes
+< what 'bout it
+> what ’bout it
+
+@ a-rock-n-roll only=quotes,apostrophes,primes
+< rock 'n' roll
+> rock ’n’ roll
+
+@ a-rock-n-roll-capital only=quotes,apostrophes,primes
+< Rock 'N' Roll
+> Rock ’N’ Roll
+
+@ a-rock-n-roll-attached only=quotes,apostrophes,primes
+< rock'n'roll
+> rock’n’roll
+
+@ a-rock-n-roll-in-quotes only=quotes,apostrophes,primes
+< He loves "rock 'n' roll" best
+> He loves “rock ’n’ roll” best
+
+@ a-leading-tis-inside-double-quotes only=quotes,apostrophes,primes
+< "'Tis the season," he said
+> “’Tis the season,” he said
+
+@ a-leading-decade-inside-double-quotes only=quotes,apostrophes,primes
+< "I loved the '90s"
+> “I loved the ’90s”
+
+@ a-apostrophe-inside-single-quotes only=quotes,apostrophes,primes
+< 'Don't go,' she said
+> “Don’t go,” she said
+
+@ a-single-quotes-around-word-sentence-end only=quotes,apostrophes,primes
+< He called it 'home'.
+> He called it “home”.
+
+@ a-single-quotes-possessive-inside only=quotes,apostrophes,primes
+< 'The dogs' bowls are empty'
+> “The dogs’ bowls are empty”
+
+@ a-french-elision only=quotes,apostrophes,primes locale=fr
+< l'homme d'affaires
+> l’homme d’affaires
+
+@ a-dutch-leading-t only=quotes,apostrophes,primes locale=nl
+< 't Is mooi en 's avonds laat
+> ’t Is mooi en ’s avonds laat
+
+@ a-stray-apostrophe-between-spaces only=quotes,apostrophes,primes
+< a ' b
+> a ’ b
+
+@ a-after-entity-quote-text only=quotes,apostrophes,primes
+< It&#039;s &#x27;tis
+> It’s ’tis
+
+@ a-apostrophes-off-quotes-on only=quotes,primes
+< don't "x"
+> don't “x”
+
+@ a-quotes-off-apostrophes-on only=apostrophes
+< "don't"
+> "don’t"
+
+@ a-text-mode only=quotes,apostrophes,primes mode=text
+< Don't say "no" at six o'clock.
+> Don’t say “no” at six o’clock.
+
+@ a-german-apostrophe-differs-from-closing-quote only=quotes,apostrophes,primes locale=de
+< 'geht's nicht'
+> „geht’s nicht“
+
+@ a-german-quote-and-apostrophe only=quotes,apostrophes,primes locale=de
+< "Er sagte 'nein', weil's regnet"
+> „Er sagte ‚nein‘, weil’s regnet“

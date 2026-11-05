@@ -1,0 +1,215 @@
+# Dashes, ellipsis, symbols.
+
+@ d-en-US-double-hyphen only=dashes
+< a--b
+> a—b
+
+@ d-en-US-double-hyphen-spaced-stays-spaced only=dashes
+< a -- b
+> a — b
+
+@ d-en-US-triple-hyphen only=dashes
+< a---b
+> a—b
+
+@ d-en-US-triple-hyphen-spaced only=dashes
+< a --- b
+> a — b
+
+@ d-en-US-start-of-text only=dashes
+< -- Hello
+> — Hello
+
+@ d-en-US-end-of-text only=dashes
+< Wait --
+> Wait —
+
+@ d-en-US-before-quote only=dashes
+< He said--"Yes"
+> He said—"Yes"
+
+@ d-en-US-after-closing-paren only=dashes
+< (see below)--then stop
+> (see below)—then stop
+
+@ d-en-US-numbers-both-sides only=dashes
+< 1--5
+> 1—5
+
+@ d-cli-option-left-alone only=dashes
+< run --force now
+
+@ d-cli-option-git only=dashes
+< git commit --amend --no-edit
+
+@ d-cli-option-at-start only=dashes
+< --version prints the version
+
+@ d-arrow-right-left-alone only=dashes
+< a --> b
+
+@ d-arrow-left-left-alone only=dashes
+< a <-- b
+
+@ d-arrow-entity-left-alone only=dashes
+< a --&gt; b
+
+@ d-four-hyphens-left-alone only=dashes
+< ----
+
+@ d-long-run-left-alone only=dashes
+< -----------
+
+@ d-single-hyphen-left-alone only=dashes
+< well-known and a - b
+
+@ d-entity-dash-left-alone only=dashes
+< a &mdash; b &ndash; c
+
+@ d-existing-em-dash-left-alone only=dashes
+< a—b
+
+@ d-en-GB-closed-becomes-spaced only=dashes locale=en-GB
+< a--b
+> a – b
+
+@ d-en-GB-spaced-stays only=dashes locale=en-GB
+< a -- b
+> a – b
+
+@ d-en-GB-triple-is-em only=dashes locale=en-GB
+< a---b
+> a—b
+
+@ d-en-GB-no-space-before-comma-context only=dashes locale=en-GB
+< well,--yes
+> well, – yes
+
+@ d-en-GB-across-tag only=dashes locale=en-GB
+< a--<b>c</b>
+> a – <b>c</b>
+
+@ d-en-GB-before-tag-closing only=dashes locale=en-GB
+< <b>a</b>--c
+> <b>a</b> – c
+
+@ d-en-GB-start-of-text-flag-like only=dashes locale=en-GB
+< --Hi
+
+@ d-de-spaced-en-dash only=dashes locale=de
+< a--b
+> a – b
+
+@ d-es-closed-em only=dashes locale=es
+< a--b
+> a—b
+
+@ d-pl-spaced-em only=dashes locale=pl
+< a--b
+> a — b
+
+@ d-pt-spaced-em only=dashes locale=pt
+< a--b
+> a — b
+
+@ d-text-mode only=dashes mode=text
+< a--b and c -- d
+> a—b and c — d
+
+@ e-ellipsis-end only=ellipsis
+< Wait...
+> Wait…
+
+@ e-ellipsis-start only=ellipsis
+< ...and then
+> …and then
+
+@ e-ellipsis-middle-spaced only=ellipsis
+< well ... maybe
+> well … maybe
+
+@ e-ellipsis-four-dots only=ellipsis
+< The end....
+> The end….
+
+@ e-ellipsis-five-dots-left-alone only=ellipsis
+< hmm.....
+
+@ e-ellipsis-two-dots-left-alone only=ellipsis
+< a..b
+
+@ e-ellipsis-single-dot-left-alone only=ellipsis
+< a.b and 3.14
+
+@ e-ellipsis-twice only=ellipsis
+< one... two...
+> one… two…
+
+@ e-ellipsis-in-entity-text-left-alone only=ellipsis
+< a&hellip;b
+
+@ e-ellipsis-across-tag-left-alone only=ellipsis
+< a..<b>.</b>
+
+@ e-ellipsis-inside-quotes-default-set only=ellipsis,quotes,apostrophes,primes
+< "..."
+> “…”
+
+@ e-ellipsis-default-with-quotes only=ellipsis,quotes
+< He said "wait..." and left
+> He said “wait…” and left
+
+@ e-ellipsis-text-mode only=ellipsis mode=text
+< Wait...
+> Wait…
+
+@ s-copyright-lower only=symbols
+< (c) 2024 Dan
+> © 2024 Dan
+
+@ s-copyright-upper only=symbols
+< (C) 2024 Dan
+> © 2024 Dan
+
+@ s-registered only=symbols
+< Brand (r) and (R)
+> Brand ® and ®
+
+@ s-trademark-attached only=symbols
+< Brand(tm) and Brand (TM)
+> Brand™ and Brand ™
+
+@ s-copyright-after-punctuation only=symbols
+< Text. (c) 2024
+> Text. © 2024
+
+@ s-copyright-in-parens only=symbols
+< ((c))
+> (©)
+
+@ s-list-marker-c-left-alone only=symbols
+< (a) one (b) two (c) three
+
+@ s-list-marker-c-after-b-across-paragraph-ok only=symbols
+< <p>(b) two</p><p>(c) 2024</p>
+> <p>(b) two</p><p>© 2024</p>
+
+@ s-function-notation-left-alone only=symbols
+< f(c) and g(r)
+
+@ s-list-marker-r-left-alone only=symbols
+< (q) one (r) two
+
+@ s-longer-word-left-alone only=symbols
+< (cc) and (rr) and (tmx)
+
+@ s-entity-copy-left-alone only=symbols
+< &copy; 2024
+
+@ s-text-mode only=symbols mode=text
+< (c) 2024 Brand(tm)
+> © 2024 Brand™
+
+@ s-multiple-in-one-line only=symbols
+< (c) and (r) and (tm)
+> © and ® and ™

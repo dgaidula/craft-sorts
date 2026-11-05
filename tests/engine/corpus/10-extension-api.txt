@@ -1,0 +1,104 @@
+# Extension API: a fixture rule through all three scopes, and the settled-character protection.
+# recipe-fractions is the SPEC 5.5 example (0.875 to ⅞, 1.5 to 1½, not before metric units or ounces).
+
+@ x-scope-c-named-call named=recipe-fractions only=
+< Add 1.5 cups, 0.5 cup and 2.75 tsp.
+> Add 1½ cups, ½ cup and 2¾ tsp.
+
+@ x-scope-c-named-metric-exception named=recipe-fractions only=
+< Use 0.875 kg, 0.25 oz, 0.5 ml, 0.125 l and 0.75 cm.
+
+@ x-scope-c-named-ounce-and-cup named=recipe-fractions only=
+< 0.25 oz but 0.25 cup
+> 0.25 oz but ¼ cup
+
+@ x-scope-c-not-in-table-left-alone named=recipe-fractions only=
+< 3.14 and 0.3 and 1.2.3
+
+@ x-scope-c-without-naming-does-nothing only=
+< Add 1.5 cups
+
+@ x-scope-b-attribute only=
+< <p data-sorts-rules="recipe-fractions">Add 1.5 cups, 0.875 kg.</p><p>Add 1.5 cups.</p>
+> <p data-sorts-rules="recipe-fractions">Add 1½ cups, 0.875 kg.</p><p>Add 1.5 cups.</p>
+
+@ x-scope-b-attribute-on-inline only=
+< Add <span data-sorts-rules="recipe-fractions">1.5</span> cups or 1.5 spoons.
+> Add <span data-sorts-rules="recipe-fractions">1½</span> cups or 1.5 spoons.
+
+@ x-scope-a-enabled-everywhere on=recipe-fractions only=recipe-fractions
+< <p>Add 1.5 cups.</p><p>And 0.5 cup.</p>
+> <p>Add 1½ cups.</p><p>And ½ cup.</p>
+
+@ x-scope-a-with-built-ins on=recipe-fractions
+< <p>"Add 1.5 cups" -- now</p>
+> <p>“Add 1½ cups” — now</p>
+
+@ x-scope-a-and-b-together-same-output on=recipe-fractions
+< <p data-sorts-rules="recipe-fractions">1.5</p>
+> <p data-sorts-rules="recipe-fractions">1½</p>
+
+@ x-scope-c-text-mode named=recipe-fractions only= mode=text
+< Add 1.5 cups
+> Add 1½ cups
+
+@ x-scope-c-with-built-in-quotes named=recipe-fractions only=quotes
+< He said "add 1.5 cups"
+> He said “add 1½ cups”
+
+@ x-unknown-name-in-markup-is-ignored only=
+< <p data-sorts-rules="no-such-rule">1.5</p>
+
+@ x-settled-fixture-hyphen-protected idem=no named=recipe-fractions,fixture-en-dash only=
+< 1-0.5
+> 1-½
+
+@ x-settled-fixture-hyphen-protected-mixed idem=no named=recipe-fractions,fixture-en-dash only=
+< 2-1.5 cups
+> 2-1½ cups
+
+@ x-settled-control-en-dash-alone-would-change named=fixture-en-dash only=
+< 1-½ and 3-4
+> 1–½ and 3–4
+
+@ x-settled-unrelated-match-still-converts idem=no named=recipe-fractions,fixture-en-dash only=
+< 0.5 then 3-4 then 1-0.5
+> ½ then 3–4 then 1-½
+
+@ x-settled-built-in-fractions-then-fixture idem=no named=fixture-en-dash only=fractions
+< 1-1/2 and 3-4
+> 1-½ and 3–4
+
+@ x-settled-nbsp-not-undone-by-widows only=nbsp,widows
+< <h2>It weighs 5 kg</h2>
+> <h2>It weighs 5 kg</h2>
+
+@ x-settled-ellipsis-not-reread-as-dots only=ellipsis,ranges
+< 5...6
+> 5…6
+
+@ x-locale-rule-runs-in-german on=fixture-german only=fixture-german locale=de
+< Ein Beispiel.
+> Ein Muster.
+
+@ x-locale-rule-skips-english only=fixture-german
+< A Beispiel.
+
+@ x-locale-rule-per-element-lang only=fixture-german
+< <p lang="de">Beispiel</p><p lang="en">Beispiel</p><p lang="de-AT">Beispiel</p>
+> <p lang="de">Muster</p><p lang="en">Beispiel</p><p lang="de-AT">Muster</p>
+
+@ x-markup-rule-in-html named=fixture-markup only=
+< foo and foo
+> <b>foo</b> and <b>foo</b>
+
+@ x-markup-rule-skipped-in-text-mode named=fixture-markup only= mode=text
+< foo and foo
+
+@ x-markup-rule-enabled-by-option-skipped-in-text-mode on=fixture-markup only=fixture-markup mode=text
+< foo
+
+@ x-markup-rule-not-in-skipped-element named=fixture-markup only=
+< <code>foo</code> foo
+> <code>foo</code> <b>foo</b>
+

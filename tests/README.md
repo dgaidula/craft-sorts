@@ -12,3 +12,9 @@ override with `TESTBED=`), **never a client site**.
 - Switch edition from a suite with an explicit flush (the shell skips it):
   `$pc = Craft::$app->getProjectConfig(); $pc->set('plugins.sorts.edition', 'pro'); $pc->saveModifiedConfigData();`
 - Suites that mutate state reseed first; they are not isolated from each other.
+
+## Engine tests (no Craft, no testbed)
+
+`composer test-engine` runs `tests/engine/run.php`: the typography corpus, unit tests and a
+seeded HTML fuzz, in plain PHP. `php tests/engine/run.php corpus|unit|fuzz` runs one part.
+`php tests/engine/perf.php` times the engine. `tests/run-all.mjs` does not run these.

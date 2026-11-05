@@ -1,0 +1,379 @@
+# One block per locale: quote pairs (CLDR 49.0.0 delimiters), nesting to three levels,
+# the dash (style authority in each locale file), and the apostrophe.
+
+@ loc-en-US-double only=quotes,apostrophes,primes locale=en-US
+< He said "yes" today
+> He said “yes” today
+
+@ loc-en-US-nested only=quotes,apostrophes,primes locale=en-US
+< "She said 'no'"
+> “She said ‘no’”
+
+@ loc-en-US-three-deep only=quotes,apostrophes,primes locale=en-US
+< "A 'B "C"'"
+> “A ‘B “C”’”
+
+@ loc-en-US-apostrophe only=quotes,apostrophes,primes locale=en-US
+< don't and '90s
+> don’t and ’90s
+
+@ loc-en-US-dash only=dashes locale=en-US
+< a--b
+> a—b
+
+@ loc-en-GB-double only=quotes,apostrophes,primes locale=en-GB
+< He said "yes" today
+> He said “yes” today
+
+@ loc-en-GB-nested only=quotes,apostrophes,primes locale=en-GB
+< "She said 'no'"
+> “She said ‘no’”
+
+@ loc-en-GB-three-deep only=quotes,apostrophes,primes locale=en-GB
+< "A 'B "C"'"
+> “A ‘B “C”’”
+
+@ loc-en-GB-apostrophe only=quotes,apostrophes,primes locale=en-GB
+< don't and '90s
+> don’t and ’90s
+
+@ loc-en-GB-dash only=dashes locale=en-GB
+< a--b
+> a – b
+
+@ loc-de-double only=quotes,apostrophes,primes locale=de
+< He said "yes" today
+> He said „yes“ today
+
+@ loc-de-nested only=quotes,apostrophes,primes locale=de
+< "She said 'no'"
+> „She said ‚no‘“
+
+@ loc-de-three-deep only=quotes,apostrophes,primes locale=de
+< "A 'B "C"'"
+> „A ‚B „C“‘“
+
+@ loc-de-apostrophe only=quotes,apostrophes,primes locale=de
+< don't and '90s
+> don’t and ’90s
+
+@ loc-de-dash only=dashes locale=de
+< a--b
+> a – b
+
+@ loc-de-CH-double only=quotes,apostrophes,primes locale=de-CH
+< He said "yes" today
+> He said „yes“ today
+
+@ loc-de-CH-nested only=quotes,apostrophes,primes locale=de-CH
+< "She said 'no'"
+> „She said ‚no‘“
+
+@ loc-de-CH-three-deep only=quotes,apostrophes,primes locale=de-CH
+< "A 'B "C"'"
+> „A ‚B „C“‘“
+
+@ loc-de-CH-apostrophe only=quotes,apostrophes,primes locale=de-CH
+< don't and '90s
+> don’t and ’90s
+
+@ loc-de-CH-dash only=dashes locale=de-CH
+< a--b
+> a – b
+
+@ loc-fr-CH-double only=quotes,apostrophes,primes locale=fr-CH
+< He said "yes" today
+> He said «yes» today
+
+@ loc-fr-CH-nested only=quotes,apostrophes,primes locale=fr-CH
+< "She said 'no'"
+> «She said ‹no›»
+
+@ loc-fr-CH-three-deep only=quotes,apostrophes,primes locale=fr-CH
+< "A 'B "C"'"
+> «A ‹B «C»›»
+
+@ loc-fr-CH-apostrophe only=quotes,apostrophes,primes locale=fr-CH
+< don't and '90s
+> don’t and ’90s
+
+@ loc-fr-CH-dash only=dashes locale=fr-CH
+< a--b
+> a – b
+
+@ loc-fr-double only=quotes,apostrophes,primes locale=fr
+< He said "yes" today
+> He said «yes» today
+
+@ loc-fr-nested only=quotes,apostrophes,primes locale=fr
+< "She said 'no'"
+> «She said «no»»
+
+@ loc-fr-three-deep only=quotes,apostrophes,primes locale=fr
+< "A 'B "C"'"
+> «A «B «C»»»
+
+@ loc-fr-apostrophe only=quotes,apostrophes,primes locale=fr
+< don't and '90s
+> don’t and ’90s
+
+@ loc-fr-dash only=dashes locale=fr
+< a--b
+> a – b
+
+@ loc-es-double only=quotes,apostrophes,primes locale=es
+< He said "yes" today
+> He said “yes” today
+
+@ loc-es-nested only=quotes,apostrophes,primes locale=es
+< "She said 'no'"
+> “She said ‘no’”
+
+@ loc-es-three-deep only=quotes,apostrophes,primes locale=es
+< "A 'B "C"'"
+> “A ‘B “C”’”
+
+@ loc-es-apostrophe only=quotes,apostrophes,primes locale=es
+< don't and '90s
+> don’t and ’90s
+
+@ loc-es-dash only=dashes locale=es
+< a--b
+> a—b
+
+@ loc-it-double only=quotes,apostrophes,primes locale=it
+< He said "yes" today
+> He said «yes» today
+
+@ loc-it-nested only=quotes,apostrophes,primes locale=it
+< "She said 'no'"
+> «She said “no”»
+
+@ loc-it-three-deep only=quotes,apostrophes,primes locale=it
+< "A 'B "C"'"
+> «A “B «C»”»
+
+@ loc-it-apostrophe only=quotes,apostrophes,primes locale=it
+< don't and '90s
+> don’t and ’90s
+
+@ loc-it-dash only=dashes locale=it
+< a--b
+> a – b
+
+@ loc-pt-double only=quotes,apostrophes,primes locale=pt
+< He said "yes" today
+> He said “yes” today
+
+@ loc-pt-nested only=quotes,apostrophes,primes locale=pt
+< "She said 'no'"
+> “She said ‘no’”
+
+@ loc-pt-three-deep only=quotes,apostrophes,primes locale=pt
+< "A 'B "C"'"
+> “A ‘B “C”’”
+
+@ loc-pt-apostrophe only=quotes,apostrophes,primes locale=pt
+< don't and '90s
+> don’t and ’90s
+
+@ loc-pt-dash only=dashes locale=pt
+< a--b
+> a — b
+
+@ loc-nl-double only=quotes,apostrophes,primes locale=nl
+< He said "yes" today
+> He said ‘yes’ today
+
+@ loc-nl-nested only=quotes,apostrophes,primes locale=nl
+< "She said 'no'"
+> ‘She said ‘no’’
+
+@ loc-nl-three-deep only=quotes,apostrophes,primes locale=nl
+< "A 'B "C"'"
+> ‘A ‘B ‘C’’’
+
+@ loc-nl-apostrophe only=quotes,apostrophes,primes locale=nl
+< don't and '90s
+> don’t and ’90s
+
+@ loc-nl-dash only=dashes locale=nl
+< a--b
+> a – b
+
+@ loc-sv-double only=quotes,apostrophes,primes locale=sv
+< He said "yes" today
+> He said ”yes” today
+
+@ loc-sv-nested only=quotes,apostrophes,primes locale=sv
+< "She said 'no'"
+> ”She said ’no’”
+
+@ loc-sv-three-deep only=quotes,apostrophes,primes locale=sv
+< "A 'B "C"'"
+> ”A ’B ”C”’”
+
+@ loc-sv-apostrophe only=quotes,apostrophes,primes locale=sv
+< don't and '90s
+> don’t and ’90s
+
+@ loc-sv-dash only=dashes locale=sv
+< a--b
+> a – b
+
+@ loc-fi-double only=quotes,apostrophes,primes locale=fi
+< He said "yes" today
+> He said ”yes” today
+
+@ loc-fi-nested only=quotes,apostrophes,primes locale=fi
+< "She said 'no'"
+> ”She said ’no’”
+
+@ loc-fi-three-deep only=quotes,apostrophes,primes locale=fi
+< "A 'B "C"'"
+> ”A ’B ”C”’”
+
+@ loc-fi-apostrophe only=quotes,apostrophes,primes locale=fi
+< don't and '90s
+> don’t and ’90s
+
+@ loc-fi-dash only=dashes locale=fi
+< a--b
+> a – b
+
+@ loc-da-double only=quotes,apostrophes,primes locale=da
+< He said "yes" today
+> He said “yes” today
+
+@ loc-da-nested only=quotes,apostrophes,primes locale=da
+< "She said 'no'"
+> “She said ‘no’”
+
+@ loc-da-three-deep only=quotes,apostrophes,primes locale=da
+< "A 'B "C"'"
+> “A ‘B “C”’”
+
+@ loc-da-apostrophe only=quotes,apostrophes,primes locale=da
+< don't and '90s
+> don’t and ’90s
+
+@ loc-da-dash only=dashes locale=da
+< a--b
+> a – b
+
+@ loc-nb-double only=quotes,apostrophes,primes locale=nb
+< He said "yes" today
+> He said «yes» today
+
+@ loc-nb-nested only=quotes,apostrophes,primes locale=nb
+< "She said 'no'"
+> «She said ‘no’»
+
+@ loc-nb-three-deep only=quotes,apostrophes,primes locale=nb
+< "A 'B "C"'"
+> «A ‘B «C»’»
+
+@ loc-nb-apostrophe only=quotes,apostrophes,primes locale=nb
+< don't and '90s
+> don’t and ’90s
+
+@ loc-nb-dash only=dashes locale=nb
+< a--b
+> a – b
+
+@ loc-pl-double only=quotes,apostrophes,primes locale=pl
+< He said "yes" today
+> He said „yes” today
+
+@ loc-pl-nested only=quotes,apostrophes,primes locale=pl
+< "She said 'no'"
+> „She said «no»”
+
+@ loc-pl-three-deep only=quotes,apostrophes,primes locale=pl
+< "A 'B "C"'"
+> „A «B „C”»”
+
+@ loc-pl-apostrophe only=quotes,apostrophes,primes locale=pl
+< don't and '90s
+> don’t and ’90s
+
+@ loc-pl-dash only=dashes locale=pl
+< a--b
+> a — b
+
+@ loc-cs-double only=quotes,apostrophes,primes locale=cs
+< He said "yes" today
+> He said „yes“ today
+
+@ loc-cs-nested only=quotes,apostrophes,primes locale=cs
+< "She said 'no'"
+> „She said ‚no‘“
+
+@ loc-cs-three-deep only=quotes,apostrophes,primes locale=cs
+< "A 'B "C"'"
+> „A ‚B „C“‘“
+
+@ loc-cs-apostrophe only=quotes,apostrophes,primes locale=cs
+< don't and '90s
+> don’t and ’90s
+
+@ loc-cs-dash only=dashes locale=cs
+< a--b
+> a – b
+
+# Locale resolution: aliases, regional tags and fallbacks.
+@ loc-resolve-no-is-nb only=quotes locale=no
+< "a 'b'"
+> «a ‘b’»
+
+@ loc-resolve-nb-NO only=quotes locale=nb-NO
+< "a"
+> «a»
+
+@ loc-resolve-de-AT only=quotes locale=de-AT
+< "a"
+> „a“
+
+@ loc-resolve-de-underscore-CH only=quotes locale=de_CH
+< "a"
+> „a“
+
+@ loc-resolve-fr-BE only=quotes locale=fr-BE
+< "a"
+> «a»
+
+@ loc-resolve-fr-CA-nested only=quotes locale=fr-CA
+< "a 'b'"
+> «a «b»»
+
+@ loc-resolve-pt-BR only=quotes locale=pt-BR
+< "a"
+> “a”
+
+@ loc-resolve-en-AU only=quotes locale=en-AU
+< "a"
+> “a”
+
+@ loc-resolve-en-bare only=quotes locale=en
+< "a"
+> “a”
+
+@ loc-resolve-uppercase only=quotes locale=DE
+< "a"
+> „a“
+
+@ loc-resolve-unknown-falls-to-en-US only=quotes locale=xx
+< "a"
+> “a”
+
+@ loc-resolve-zh-unknown only=quotes locale=zh-Hans-CN
+< "a"
+> “a”
+
+@ loc-resolve-sv-SE only=quotes locale=sv-SE
+< "a"
+> ”a”
+
+@ loc-resolve-nl-BE only=quotes locale=nl-BE
+< "a"
+> ‘a’

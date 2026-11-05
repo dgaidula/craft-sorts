@@ -1,0 +1,308 @@
+# Straight quotes: direction, nesting, and the context around them.
+# Most cases use only=quotes,apostrophes,primes (the quote family).
+
+@ q-double-simple only=quotes,apostrophes,primes
+< "Hello"
+> “Hello”
+
+@ q-double-in-sentence only=quotes,apostrophes,primes
+< He said "hello" to her.
+> He said “hello” to her.
+
+@ q-double-at-start only=quotes,apostrophes,primes
+< "Hello," she said.
+> “Hello,” she said.
+
+@ q-double-at-end only=quotes,apostrophes,primes
+< She said, "Hello."
+> She said, “Hello.”
+
+@ q-double-question only=quotes,apostrophes,primes
+< "Why?" he asked. "Because!"
+> “Why?” he asked. “Because!”
+
+@ q-two-quotations-in-one-line only=quotes,apostrophes,primes
+< "One" and "two" and "three"
+> “One” and “two” and “three”
+
+@ q-nested-single-in-double only=quotes,apostrophes,primes
+< "She said 'no'"
+> “She said ‘no’”
+
+@ q-nested-double-in-single only=quotes,apostrophes,primes
+< 'She said "no"'
+> “She said ‘no’”
+
+@ q-nested-three-deep only=quotes,apostrophes,primes
+< "He said 'she said "no"'"
+> “He said ‘she said “no”’”
+
+@ q-nested-both-closers-adjacent only=quotes,apostrophes,primes
+< "He said 'go'"
+> “He said ‘go’”
+
+@ q-nested-with-punctuation only=quotes,apostrophes,primes
+< "She said 'no,' and left."
+> “She said ‘no,’ and left.”
+
+@ q-single-quoted-phrase only=quotes,apostrophes,primes
+< the 'best' option
+> the “best” option
+
+@ q-single-quotes-with-apostrophe-inside only=quotes,apostrophes,primes
+< 'I don't know,' she said.
+> “I don’t know,” she said.
+
+@ q-empty-pair only=quotes,apostrophes,primes
+< Say "" now
+> Say “” now
+
+@ q-quote-after-open-paren only=quotes,apostrophes,primes
+< ("no")
+> (“no”)
+
+@ q-quote-before-close-paren only=quotes,apostrophes,primes
+< (he said "yes")
+> (he said “yes”)
+
+@ q-quote-after-open-bracket only=quotes,apostrophes,primes
+< [sic] and ["quoted"]
+> [sic] and [“quoted”]
+
+@ q-quote-after-open-brace only=quotes,apostrophes,primes
+< {"key"}
+> {“key”}
+
+@ q-after-em-dash only=quotes,apostrophes,primes
+< He said—"Yes"
+> He said—“Yes”
+
+@ q-before-em-dash only=quotes,apostrophes,primes
+< "Yes"—he said
+> “Yes”—he said
+
+@ q-after-en-dash-spaced only=quotes,apostrophes,primes
+< He said – "Yes" – and left
+> He said – “Yes” – and left
+
+@ q-after-comma-no-space only=quotes,apostrophes,primes
+< He said,"Hello"
+> He said,“Hello”
+
+@ q-after-colon only=quotes,apostrophes,primes
+< The sign read: "Closed"
+> The sign read: “Closed”
+
+@ q-after-ellipsis only=quotes,apostrophes,primes
+< "Well…" he said
+> “Well…” he said
+
+@ q-before-ellipsis only=quotes,apostrophes,primes
+< "…and then"
+> “…and then”
+
+@ q-between-slashes only=quotes,apostrophes,primes
+< "yes"/"no"
+> “yes”/“no”
+
+@ q-after-exclamation only=quotes,apostrophes,primes
+< "Stop!" "Go!"
+> “Stop!” “Go!”
+
+@ q-lone-straight-closer only=quotes,apostrophes,primes
+< And that was it."
+> And that was it.”
+
+@ q-two-sentences-in-quote only=quotes,apostrophes,primes
+< "First. Second."
+> “First. Second.”
+
+@ q-quote-around-single-letter only=quotes,apostrophes,primes
+< the letter "a"
+> the letter “a”
+
+@ q-quote-after-nbsp-char only=quotes,apostrophes,primes
+< x\u{A0}"y"
+> x\u{A0}“y”
+
+@ q-quote-after-nbsp-entity only=quotes,apostrophes,primes
+< x&nbsp;"y"
+> x&nbsp;“y”
+
+@ q-quote-after-thin-space only=quotes,apostrophes,primes
+< x\u{2009}"y"
+> x\u{2009}“y”
+
+@ q-newline-inside-text only=quotes,apostrophes,primes
+< "line one
+< line two"
+> “line one
+> line two”
+
+@ q-unclosed-opener only=quotes,apostrophes,primes
+< She said "hello
+> She said “hello
+
+@ q-unbalanced-then-new-paragraph only=quotes,apostrophes,primes
+< <p>"First paragraph runs on</p><p>"Second paragraph opens again"</p>
+> <p>“First paragraph runs on</p><p>“Second paragraph opens again”</p>
+
+@ q-quote-pair-resets-per-block only=quotes,apostrophes,primes
+< <p>He said "go</p><p>and 'stay' now</p>
+> <p>He said “go</p><p>and “stay” now</p>
+
+# Quotes beside inline tags: the tags are transparent.
+@ q-tag-italic-inside only=quotes,apostrophes,primes
+< <i>"x"</i>
+> <i>“x”</i>
+
+@ q-tag-link-inside only=quotes,apostrophes,primes
+< "<a href="/x">y</a>"
+> “<a href="/x">y</a>”
+
+@ q-tag-link-outside-then-quote only=quotes,apostrophes,primes
+< He said <a href="/x">"y"</a> today
+> He said <a href="/x">“y”</a> today
+
+@ q-tag-em-closing-quote-after only=quotes,apostrophes,primes
+< "He <em>did</em>" it
+> “He <em>did</em>” it
+
+@ q-tag-strong-around-opening only=quotes,apostrophes,primes
+< <strong>"</strong>Hello<strong>"</strong>
+> <strong>“</strong>Hello<strong>”</strong>
+
+@ q-tag-span-with-attrs only=quotes,apostrophes,primes
+< a <span class="x" title='He said "no"'>"b"</span> c
+> a <span class="x" title='He said "no"'>“b”</span> c
+
+@ q-tag-b-i-nested only=quotes,apostrophes,primes
+< <b><i>"x"</i></b>
+> <b><i>“x”</i></b>
+
+@ q-tag-sup-sub-abbr-cite only=quotes,apostrophes,primes
+< "<sup>1</sup>" "<sub>2</sub>" "<abbr>HTML</abbr>" "<cite>Moby</cite>"
+> “<sup>1</sup>” “<sub>2</sub>” “<abbr>HTML</abbr>” “<cite>Moby</cite>”
+
+@ q-tag-small-mark-q-u-s only=quotes,apostrophes,primes
+< "<small>a</small>" "<mark>b</mark>" "<u>c</u>" "<s>d</s>"
+> “<small>a</small>” “<mark>b</mark>” “<u>c</u>” “<s>d</s>”
+
+@ q-tag-nested-quotation-across-tags only=quotes,apostrophes,primes
+< "She said <i>'no'</i> twice"
+> “She said <i>‘no’</i> twice”
+
+@ q-tag-space-inside-tag-before-quote only=quotes,apostrophes,primes
+< word<i> "x"</i>
+> word<i> “x”</i>
+
+@ q-tag-quote-closes-after-tag-text only=quotes,apostrophes,primes
+< <i>"x</i>"
+> <i>“x</i>”
+
+@ q-tag-comment-between only=quotes,apostrophes,primes
+< "a<!-- note -->b"
+> “a<!-- note -->b”
+
+# Block elements and br are boundaries.
+@ q-boundary-br only=quotes,apostrophes,primes
+< word<br>"x"
+> word<br>“x”
+
+@ q-boundary-br-state-resets only=quotes,apostrophes,primes
+< He said "go<br>now"
+> He said “go<br>now”
+
+@ q-boundary-div only=quotes,apostrophes,primes
+< a<div>"b"</div>
+> a<div>“b”</div>
+
+@ q-boundary-list-items only=quotes,apostrophes,primes
+< <ul><li>"one"</li><li>"two"</li></ul>
+> <ul><li>“one”</li><li>“two”</li></ul>
+
+@ q-boundary-table-cells only=quotes,apostrophes,primes
+< <table><tr><td>"a"</td><td>"b"</td></tr></table>
+> <table><tr><td>“a”</td><td>“b”</td></tr></table>
+
+@ q-boundary-headings only=quotes,apostrophes,primes
+< <h1>"Title"</h1><h2>'Sub'</h2>
+> <h1>“Title”</h1><h2>“Sub”</h2>
+
+@ q-boundary-unclosed-p only=quotes,apostrophes,primes
+< <p>"a<p>"b"
+> <p>“a<p>“b”
+
+@ q-boundary-blockquote only=quotes,apostrophes,primes
+< <blockquote>"Quote"</blockquote>
+> <blockquote>“Quote”</blockquote>
+
+# Entity forms: all seven are read as straight quotes; real characters come out.
+@ q-entity-quot only=quotes,apostrophes,primes
+< &quot;x&quot;
+> “x”
+
+@ q-entity-34 only=quotes,apostrophes,primes
+< &#34;x&#34;
+> “x”
+
+@ q-entity-x22 only=quotes,apostrophes,primes
+< &#x22;x&#x22;
+> “x”
+
+@ q-entity-X22-upper only=quotes,apostrophes,primes
+< &#X22;x&#X22;
+> “x”
+
+@ q-entity-039 only=quotes,apostrophes,primes
+< &#039;x&#039;
+> “x”
+
+@ q-entity-39 only=quotes,apostrophes,primes
+< &#39;x&#39;
+> “x”
+
+@ q-entity-x27 only=quotes,apostrophes,primes
+< &#x27;x&#x27;
+> “x”
+
+@ q-entity-apos only=quotes,apostrophes,primes
+< &apos;x&apos;
+> “x”
+
+@ q-entity-twig-escaped-title only=quotes,apostrophes,primes
+< Don&#039;t say &quot;never&quot;
+> Don’t say “never”
+
+@ q-entity-mixed-with-literal only=quotes,apostrophes,primes
+< &quot;He said 'no'&quot;
+> “He said ‘no’”
+
+@ q-entity-leading-zeros only=quotes,apostrophes,primes
+< &#0034;x&#0034;
+> “x”
+
+@ q-entity-other-left-alone only=quotes,apostrophes,primes
+< &amp; &lt;b&gt; &copy; &nbsp;x
+
+@ q-entity-lsquo-rsquo-left-alone only=quotes,apostrophes,primes
+< &lsquo;x&rsquo; &ldquo;y&rdquo;
+
+@ q-entity-quote-after-entity-space only=quotes,apostrophes,primes
+< a&nbsp;&quot;x&quot;
+> a&nbsp;“x”
+
+@ q-entity-quote-after-mdash-entity only=quotes,apostrophes,primes
+< a&mdash;&quot;x&quot;
+> a&mdash;“x”
+
+@ q-entity-quote-after-ndash-numeric only=quotes,apostrophes,primes
+< a &#8211; &quot;x&quot;
+> a &#8211; “x”
+
+@ q-entity-text-mode-literal only=quotes,apostrophes,primes mode=text
+< &quot;x&quot;
+
+# Already-curly input is left alone.
+@ q-already-curly only=quotes,apostrophes,primes
+< “She said ‘no’” and don’t
