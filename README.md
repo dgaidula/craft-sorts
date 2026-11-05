@@ -107,7 +107,7 @@ On a Lite site, a rule named in `rules:` is skipped rather than raising an error
 
 ## Settings
 
-CP → Settings → Plugins → Sorts, stored in project config, with every key overridable in `config/sorts.php` (see `config.example.php`). A setting a file overrides shows locked in the control panel. All input is validated: lists accept a list or one value per line, tag names are lower-case letters, digits and hyphens, and a bad value is refused with a message.
+CP → Settings → Plugins → Sorts, stored in project config, with every key overridable in `config/sorts.php` (see `config.example.php`). A setting a file overrides shows locked in the control panel. All input is validated: lists accept a list or one value per line, tag names are lower-case letters, digits and hyphens, and a bad value is refused with a message. Craft does not validate what `config/sorts.php` or project config hands the plugin, so a number there that does not validate (`maxPageBytes` set to `'2MB'`, say) falls back to its default, with a warning in the log naming the value.
 
 | Setting | Key | Default | Edition |
 | --- | --- | --- | --- |
@@ -285,6 +285,9 @@ HTML pages rendered by Craft templates. Not handled: JSON and XML responses, ema
 
 - **Misnested markup inside code.** Sorts reads the page as it is written and does not rebuild HTML5’s tree: an end tag closes the nearest open element of that name, and Sorts does not run the browser’s repair of misnested formatting (the adoption agency and the reopening of formatting elements). In well-formed pages this changes nothing. In misnested ones, text that a browser would still show inside `code`, `kbd`, `samp` or `var` (after, say, a stray `</figcaption>` inside a `<code>`) can be typeset. Sorts assumes well-formed markup inside code-like elements.
 - **Compiled templates after an update.** The filter’s escaping is decided when Twig compiles a template (`RawInputVisitor`). Craft runs Twig with `auto_reload` on, but Twig compares a compiled template only with the template and the extension class files, not the visitor, so a Sorts update that changes how the filter compiles may not reach templates compiled before it. Craft clears compiled templates when `php craft up` runs, after the updater runs migrations, and when Craft’s own version changes (verified against Craft 5.12.0.1: `console/controllers/UpController.php:99-100`, `services/Updates.php:264`, `web/Application.php:257-260`), but not after a Composer update of a plugin on its own. **After updating Sorts, run `php craft up` or clear compiled templates** (Utilities → Caches → Compiled templates, or `php craft clear-caches/compiled-templates`).
+- **Two malformed comment forms.** HTML5 also ends a comment at `--!>`, and reads a `<![CDATA[` outside SVG or MathML as a bogus comment that ends at the first `>`. Sorts ends a comment only at `-->` and a CDATA section only at `]]>`. Both forms are parse errors, and on a page that uses one Sorts can leave text a browser shows unconverted, or typeset text a browser reads as part of a later `<script>` (in `<!-- a --!> <script> --><p>"x"</p>` the quotes Sorts curls are inside what the browser reads as script).
+- **A vertical tab in a script tag.** Inside a script’s `<!--`, Sorts takes a vertical tab (U+000B) after `<script` or `</script` as the end of the tag name; HTML5 does not. In that case Sorts can leave text after the script unconverted. It only ever leaves text alone this way; it never edits the script.
+- **The audit lists every section.** The audit utility’s scan shows titles and before-and-after excerpts from every section to anyone who may open the utility, whether or not they may view those entries. The fix itself skips any entry the user who queued it may not save (Craft’s `canSave()`). Give the utility permission only to people who may see every entry. This is not covered by a test: the testbed runs Craft Solo, which has one user.
 
 ## Performance
 
@@ -292,13 +295,15 @@ The engine is measured on a generated, realistic page of about 100 KB (a news ar
 
 | PHP | Where | Typical article | Dense stress page |
 |---|---|---|---|
-| 8.5.12 | MacBook Pro (Apple M1 Max, 32 GB), native | 3.3 ms | 4.7 ms |
-| 8.4.27 | `php:8.4-cli` in Docker Desktop on the same Mac | 3.7 ms | 5.1 ms |
-| 8.2.35 | `php:8.2-cli` in Docker Desktop on the same Mac | 5.5 ms | 6.2 ms |
+| 8.5.12 | MacBook Pro (Apple M1 Max, 32 GB), native | 3.4 ms | 4.7 ms |
+| 8.4.27 | `php:8.4-cli` in Docker Desktop on the same Mac | 3.4 ms | 4.8 ms |
+| 8.2.35 | `php:8.2-cli` in Docker Desktop on the same Mac | 3.6 ms | 5.0 ms |
 
 About three sentences in ten on the typical article need typesetting; every sentence on the stress page does.
 
-**Memory.** Peak memory for one pass, per megabyte of page, measured on PHP 8.5.12 (2026-11-05): about 3.5 MB for an article, 15 MB for a product table, 37 MB for a page of nothing but tiny inline elements, and up to 73 MB for one paragraph of quotes a megabyte long. The page pass allows 100 bytes of memory per byte of page and sends a page it might not have the memory for as rendered (see *It never breaks a page*), and it skips any page over `maxPageBytes` (1,000,000 bytes by default) whatever the memory. A 6 MB page at `memory_limit = 256M` is sent as rendered with a warning, not a fatal error. The budget is 5 ms for a 100 KB page. It is met for the typical page on PHP 8.4 and 8.5 and for both pages on PHP 8.5. It is **not met on PHP 8.2** (the oldest version Sorts supports): the same code takes about 1.5 times as long there as on PHP 8.4 in the same container. Speeding it up for 8.2 is open work.
+The budget is 5 ms for a 100 KB page on PHP 8.2, the oldest version Sorts supports (measured 2026-11-05). It is met for both pages on every version above, with no margin left for the dense page on PHP 8.2 (medians of 4.95 to 5.00 ms over three runs).
+
+**Memory.** Peak memory for one pass, per megabyte of page, measured on PHP 8.5.12 (2026-11-05): about 3.5 MB for an article, 15 MB for a product table, 37 MB for a page of nothing but tiny inline elements, and up to 73 MB for one paragraph of quotes a megabyte long. The page pass allows 100 bytes of memory per byte of page and sends a page it might not have the memory for as rendered (see *It never breaks a page*), and it skips any page over `maxPageBytes` (1,000,000 bytes by default) whatever the memory. A 6 MB page at `memory_limit = 256M` is sent as rendered with a warning, not a fatal error.
 
 ## Development
 

@@ -29,7 +29,9 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
   utility (CP → Utilities → Sorts) that scans entries, previews each change and fixes the ticked
   ones through the queue without a new revision or a changed Date Updated, unless asked.
 - Pro: `maxPageBytes` (1,000,000 bytes by default): the page pass sends a larger page, or one it
-  might not have the memory for under `memory_limit`, as rendered, with a warning in the log.
+  might not have the memory for under `memory_limit`, as rendered, with a warning in the log. A
+  number in `config/sorts.php` or project config that does not validate (`'2MB'`, a negative
+  value) falls back to its default, with a warning, rather than switching the pass off.
 - Pro: on sites in more than one language, fix-on-save and the audit leave as typed a value that
   reaches a site in another language (a new entry, a field shared by every site); the page pass
   sets it on each page in that page’s language.
