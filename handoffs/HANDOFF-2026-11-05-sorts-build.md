@@ -8,7 +8,8 @@
 - Stamped 2026-11-05 from `craft-plugin-base` `309f8f4` with `bin/new-plugin.mjs --vendor iceboxind --handle sorts --name Sorts --no-config-screen`. The stamp is unchanged apart from `SPEC.md`, this handoff and `HANDOFFS.md`.
 - `SPEC.md` is the build spec. Settled by Dan on 2026-11-05: the name (Sorts, `iceboxind/craft-sorts`), the Lite/Pro line (§2), plugin first, and Pro covering every rule in §3.
 - Public repo `github.com/dgaidula/craft-sorts` (D815, 2026-11-05); `main` pushed. Not on Packagist or the Store.
-- Decided 2026-11-05: every locale in Pro (D812); the extension API in the first release, in Pro (D813).
+- Decided 2026-11-05: every locale in Pro (D812); the extension API in the first release, in Pro (D813); Lite free, Pro $39 + $19/yr (D814).
+- Local commits not yet on GitHub: run `git status -sb` first; push only with Dan’s go-ahead.
 
 ## 2. In flight
 
@@ -16,7 +17,7 @@ Nothing.
 
 | Item | State | Basis |
 |---|---|---|
-| `SPEC.md` | Approved for build; D814 (editions and price) in discussion, doesn’t block | `SPEC.md` §9 |
+| `SPEC.md` | Approved for build; every decision settled (D812–D815) | `SPEC.md` §9 |
 | First build | Idle | this handoff |
 
 ## 3. The next three steps
@@ -27,7 +28,7 @@ Nothing.
 
 ## 4. Decisions still Dan’s
 
-1. **D814** 💬 — editions and price. Dan asked on 2026-11-05 whether Lite must be free. Recommendation: Lite free, Pro $39 + $19/yr; fallback, one paid edition (no Lite). Needed only at Store submission; `Plugin::isPro()` gates either way.
+None. D814 decided 2026-11-05 (Dan: y): Lite free, Pro $39 + $19/yr.
 
 ## 5. Unverified beliefs and known gaps
 

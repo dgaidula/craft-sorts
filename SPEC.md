@@ -1,6 +1,6 @@
 # Sorts — build spec
 
-Status: **approved for build, 2026-11-05.** One decision is still open (D814, editions and price, §9); it doesn’t block the build.
+Status: **approved for build, 2026-11-05.** Every decision is settled (§9).
 
 ## 1. The problem
 
@@ -173,8 +173,6 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
 - **D812 — locales: decided 2026-11-05 (Dan: y).** Every locale ships in Pro; no per-language add-ons.
 - **D813 — extension API (§5.5): decided 2026-11-05 (Dan: y).** In the first release, in Pro.
 - **D815 — public repo: done 2026-11-05 (Dan: y).** `github.com/dgaidula/craft-sorts`.
-- **D814 — editions and price: open, in discussion (Dan, 2026-11-05: must Lite be free?).** It doesn’t block
-  the build: the Lite/Pro gate is one method, `Plugin::isPro()`, whatever Lite costs. Current recommendation:
-  Lite free, Pro **$39 + $19/yr** (Store data: paid installs are flat across price bands, so
-  cheap buys nothing; Craft’s guidance puts small utilities at $10–29, and Pro’s audit/fix utility is more than
-  that). Not needed until Store submission.
+- **D814 — editions and price: decided 2026-11-05 (Dan: y).** Lite free; Pro **$39 + $19/yr** at launch (paid
+  installs are flat across price bands, and freemium newcomers out-install paid-only ones; both prices can rise
+  later, since Craft honours only the renewal price in the 30-day reminder).
