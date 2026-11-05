@@ -98,6 +98,21 @@
 }) }}
 {% if lockProcessHead %}{{ carry('processHead', stored.processHead ?? null) }}{% endif %}
 
+{% set lockMaxPage = ('maxPageBytes' in overrides) or not isPro %}
+{{ forms.textField({
+    label: 'Largest page to fix, in bytes'|t('sorts'),
+    instructions: 'A larger page is sent as rendered, with a warning in the log. So is a page the pass might not have the memory for under PHP’s memory_limit.'|t('sorts'),
+    id: 'maxPageBytes',
+    name: 'maxPageBytes',
+    type: 'number',
+    size: 10,
+    min: 1,
+    value: settings.maxPageBytes,
+    disabled: lockMaxPage,
+    warning: 'maxPageBytes' in overrides ? overridden : (not isPro ? proNote),
+}) }}
+{% if lockMaxPage %}{{ carry('maxPageBytes', stored.maxPageBytes ?? null) }}{% endif %}
+
 <hr>
 <h2>{{ 'Rules'|t('sorts') }} <span class="code">Pro</span></h2>
 
@@ -196,7 +211,7 @@
 
 <hr>
 <h2>{{ 'Fix on save'|t('sorts') }} <span class="code">Pro</span></h2>
-<p class="light">{{ 'Changes the characters in stored content as an element is saved, so feeds, APIs and search see them too. It sets quotes, apostrophes, primes, dashes, ellipsis, symbols and, if they are switched on, fractions, ranges and multiplication signs; never spacing or markup. Never touches slugs, URIs, handles, URLs, email addresses or code fields. Skips autosaved drafts, revisions and propagation to other sites. The audit utility (Utilities → Sorts) fixes what is already saved.'|t('sorts') }}</p>
+<p class="light">{{ 'Changes the characters in stored content as an element is saved, so feeds, APIs and search see them too. It sets quotes, apostrophes, primes, dashes, ellipsis, symbols and, if they are switched on, fractions, ranges and multiplication signs; never spacing or markup. Never touches slugs, URIs, handles, URLs, email addresses or code fields. Skips autosaved drafts, revisions and propagation to other sites. A value that reaches a site in another language as it is saved (any value of a new entry, or a field shared by every site) is left as typed: the page pass sets it on each page in that page’s language. The audit utility (Utilities → Sorts) fixes what is already saved, by the same rule.'|t('sorts') }}</p>
 
 {% for name, label in {
     fixOnSave: 'Fix content when an element is saved',

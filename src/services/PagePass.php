@@ -5,6 +5,7 @@ namespace iceboxind\sorts\services;
 use Craft;
 use craft\base\Component;
 use craft\events\TemplateEvent;
+use craft\helpers\App;
 use craft\helpers\FileHelper;
 use craft\helpers\StringHelper;
 use craft\web\View;
@@ -19,7 +20,9 @@ use Throwable;
  * It runs for site page requests that answer with HTML, previews and token
  * requests included. It never runs for the control panel, the console, action
  * requests, or a response that is not HTML. Whatever goes wrong, the page is sent
- * as the template rendered it.
+ * as the template rendered it: a page over the `maxPageBytes` setting, or one the pass
+ * might not have the memory for under `memory_limit`, is sent as rendered with one
+ * warning in the log, and so is a page the engine could not read (a pattern limit).
  */
 class PagePass extends Component
 {
@@ -28,6 +31,13 @@ class PagePass extends Component
         'description', 'og:title', 'og:description', 'og:site_name', 'og:image:alt',
         'twitter:title', 'twitter:description', 'twitter:image:alt',
     ];
+
+    /**
+     * Bytes of memory the pass may need for each byte of page. Measured on PHP 8.5 (2026-11-05):
+     * about 3.5 for an article, 15 for a product table, 37 to 73 for a page of nothing but tiny
+     * inline elements or one paragraph of quotes thousands long; this leaves room above the worst.
+     */
+    public const MEMORY_PER_BYTE = 100;
 
     /** @var list<string> the content types the pass treats as HTML */
     private const HTML_TYPES = ['text/html', 'application/xhtml+xml'];
@@ -52,9 +62,22 @@ class PagePass extends Component
     {
         $plugin = Plugin::getInstance();
         $settings = $plugin->getSettings();
+        $size = strlen($html);
+        if ($size > $settings->maxPageBytes) {
+            Craft::warning(sprintf('Sorts left the page %s as rendered: it is %s bytes, more than the %s the maxPageBytes setting allows.', self::pageName(), number_format($size), number_format($settings->maxPageBytes)), __METHOD__);
+            return $html;
+        }
+        $limit = App::phpConfigValueInBytes('memory_limit');
+        if ($limit > 0 && $size * self::MEMORY_PER_BYTE > $limit - memory_get_usage(true)) {
+            Craft::warning(sprintf('Sorts left the page %s as rendered: at %s bytes it may need about %d MB of memory, and %d MB are left under memory_limit.', self::pageName(), number_format($size), ceil($size * self::MEMORY_PER_BYTE / 1048576), max(0, floor(($limit - memory_get_usage(true)) / 1048576))), __METHOD__);
+            return $html;
+        }
         $service = $plugin->engine;
         $options = $service->options()->with(skipTags: $settings->pageSkipTags());
         $html = $service->applyWith($html, $options);
+        if (($error = $service->engine()->lastError()) !== null) {
+            Craft::warning('Sorts left the page ' . self::pageName() . ' as rendered: ' . $error . '.', __METHOD__);
+        }
         if ($settings->processHead) {
             $html = $this->fixMeta($html, $options->with(mode: Options::TEXT));
         }
@@ -85,6 +108,13 @@ class PagePass extends Component
             return false;
         }
         return !self::matchesAny($request->getFullPath(), $plugin->getSettings()->skipUris);
+    }
+
+    /** The page being sent, for the log: its path, or what kind of request it is. */
+    private static function pageName(): string
+    {
+        $request = Craft::$app->getRequest();
+        return $request instanceof \craft\web\Request ? '“/' . $request->getFullPath() . '”' : '(a console request)';
     }
 
     /**

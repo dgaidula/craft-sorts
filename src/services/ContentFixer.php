@@ -5,10 +5,13 @@ namespace iceboxind\sorts\services;
 use Craft;
 use craft\base\Component;
 use craft\base\ElementInterface;
+use craft\db\Query;
+use craft\db\Table;
 use craft\events\ElementEvent;
 use craft\fields\PlainText;
 use craft\helpers\ElementHelper;
 use craft\htmlfield\HtmlFieldData;
+use iceboxind\sorts\engine\LocaleRegistry;
 use iceboxind\sorts\engine\Options;
 use iceboxind\sorts\Plugin;
 use Throwable;
@@ -26,11 +29,20 @@ use yii\db\Migration;
  * field set to code. Only the rules in {@see EngineService::STORED_RULES} run (characters,
  * not spacing or markup). A converted value that would not fit its field’s character limit
  * is left as it was, so a fix can never make a save fail.
+ *
+ * Quotes and dashes depend on the language, so a value is converted only when every site
+ * it will reach on this save sets type the same way as the element’s own site (the same
+ * locale and variant). Craft copies a new element’s title and fields to every site it
+ * supports, and a field that is not translated per site to every site that shares its
+ * translation key; a value that reaches a site in another language is left as typed, and
+ * the page pass sets it on each page in that page’s language. See {@see reach()}.
  */
 class ContentFixer extends Component
 {
     /** The longest title Craft saves. */
     private const MAX_TITLE_LENGTH = 255;
+
+    private ?LocaleRegistry $locales = null;
 
     /**
      * The fix-on-save handler: fixes the element’s values before they are saved.
@@ -62,19 +74,22 @@ class ContentFixer extends Component
     /**
      * What fixing the element would change.
      *
+     * @param array{text: Options, html: Options}|null $options the stored-content options for the
+     *   element’s site ({@see optionsFor()}); the settings’ now by default. The audit’s job passes the
+     *   ones it was queued with.
      * @return list<array{attribute: string, handle: ?string, label: string, before: string, after: string, html: bool}>
      */
-    public function changes(ElementInterface $element): array
+    public function changes(ElementInterface $element, ?array $options = null): array
     {
         $settings = Plugin::getInstance()->getSettings();
         $service = Plugin::getInstance()->engine;
-        $language = $this->languageOf($element);
-        $text = $service->storedOptions($language, Options::TEXT);
-        $html = $service->storedOptions($language, Options::HTML);
+        ['text' => $text, 'html' => $html] = $options ?? $this->optionsFor($this->languageOf($element));
+        $sites = $this->otherSites($element);
         $changes = [];
 
-        if ($settings->fixTitles && $element::hasTitles() && is_string($element->title) && $element->title !== '') {
-            $after = $service->applyWith($element->title, $text);
+        if ($settings->fixTitles && $element::hasTitles() && is_string($element->title) && $element->title !== ''
+            && $this->onlySameLocale($element, $sites, static fn (ElementInterface $e): string => $e->getTitleTranslationKey(), $text, 'title')) {
+            $after = $service->applyStored($element->title, $text);
             if ($after !== $element->title && mb_strlen($after) <= self::MAX_TITLE_LENGTH) {
                 $changes[] = ['attribute' => 'title', 'handle' => null, 'label' => Craft::t('app', 'Title'), 'before' => $element->title, 'after' => $after, 'html' => false];
             }
@@ -87,10 +102,11 @@ class ContentFixer extends Component
             }
             $value = $element->getFieldValue($field->handle);
             $before = $value instanceof HtmlFieldData ? $value->getRawContent() : $value;
-            if (!is_string($before) || $before === '') {
+            if (!is_string($before) || $before === ''
+                || !$this->onlySameLocale($element, $sites, static fn (ElementInterface $e): string => $field->getTranslationKey($e), $text, $field->handle)) {
                 continue;
             }
-            $after = $service->applyWith($before, $isCkeditor ? $html : $text);
+            $after = $service->applyStored($before, $isCkeditor ? $html : $text);
             if ($after === $before || !$this->fits($field, $after)) {
                 continue;
             }
@@ -101,10 +117,12 @@ class ContentFixer extends Component
 
     /**
      * Put the fixed values on the element (it still has to be saved). Returns how many changed.
+     *
+     * @param array{text: Options, html: Options}|null $options see {@see changes()}
      */
-    public function apply(ElementInterface $element): int
+    public function apply(ElementInterface $element, ?array $options = null): int
     {
-        $changes = $this->changes($element);
+        $changes = $this->changes($element, $options);
         foreach ($changes as $change) {
             if ($change['attribute'] === 'title') {
                 $element->title = $change['after'];
@@ -113,6 +131,92 @@ class ContentFixer extends Component
             }
         }
         return count($changes);
+    }
+
+    /**
+     * The stored-content options for a language, for plain text and for HTML.
+     *
+     * @return array{text: Options, html: Options}
+     */
+    public function optionsFor(string $language): array
+    {
+        $service = Plugin::getInstance()->engine;
+        return ['text' => $service->storedOptions($language, Options::TEXT), 'html' => $service->storedOptions($language, Options::HTML)];
+    }
+
+    /**
+     * The other sites this save will write to, by id: for each, whether it gets every value
+     * (`true`, a site the element is new to, or every site when `propagateAll` is set) or only
+     * the values whose translation key it shares (a copy of the element as that site sees it).
+     *
+     * Verified against Craft 5.12.0.1 (2026-11-05): `Elements::_saveElementInternal()` sets
+     * `propagateAll` on a new element that is not a draft or revision before
+     * `EVENT_BEFORE_SAVE_ELEMENT` fires (services/Elements.php:4013-4033), then propagates to
+     * every other site in `ElementHelper::supportedSitesForElement()` (Elements.php:4345-4377;
+     * helpers/ElementHelper.php:333-367, which drops sites marked `propagate => false` by
+     * `getSupportedSites()`). `_propagateElement()` clones the whole element for a site it is
+     * new to and for `propagateAll` (Elements.php:4688-4708) and copies every field value to a
+     * new site (:4783-4786); otherwise it copies the title when `getTitleTranslationKey()`
+     * matches (:4724-4732) and a changed field when `Field::getTranslationKey()` matches
+     * (:4788-4806; base/Field.php:636-639, helpers/ElementHelper.php:803-821).
+     *
+     * @return array<int, ElementInterface|true>
+     */
+    private function otherSites(ElementInterface $element): array
+    {
+        if (!$element::isLocalized() || !Craft::$app->getIsMultiSite()) {
+            return [];
+        }
+        $existing = $element->id
+            ? array_map('intval', (new Query())->select('siteId')->from(Table::ELEMENTS_SITES)->where(['elementId' => $element->id])->column())
+            : [];
+        $sites = [];
+        foreach (ElementHelper::supportedSitesForElement($element) as $info) {
+            $siteId = (int) $info['siteId'];
+            if ($siteId === (int) $element->siteId) {
+                continue;
+            }
+            if ($element->propagateAll || !in_array($siteId, $existing, true)) {
+                $sites[$siteId] = true;
+            } else {
+                $copy = clone $element;
+                $copy->siteId = $siteId;
+                $sites[$siteId] = $copy;
+            }
+        }
+        return $sites;
+    }
+
+    /**
+     * Whether every site a value reaches sets type like the element’s own site. Logs, at info
+     * level, a value it leaves as typed.
+     *
+     * @param array<int, ElementInterface|true> $sites {@see otherSites()}
+     * @param callable(ElementInterface): string $key the value’s translation key on an element
+     */
+    private function onlySameLocale(ElementInterface $element, array $sites, callable $key, Options $options, string $value): bool
+    {
+        $own = $this->localeKey($this->languageOf($element), $options->variants);
+        $ownKey = null;
+        foreach ($sites as $siteId => $copy) {
+            if ($copy !== true && $key($copy) !== ($ownKey ??= $key($element))) {
+                continue;   // Craft does not copy this value to that site
+            }
+            $site = Craft::$app->getSites()->getSiteById($siteId);
+            if ($site !== null && $this->localeKey($site->language, $options->variants) !== $own) {
+                Craft::info("Sorts left the {$value} of element {$element->id} as typed: it also reaches the site “{$site->handle}” ({$site->language}), which sets type differently.", __METHOD__);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** The engine locale and variant a site language is set in. */
+    private function localeKey(string $language, array $variants): string
+    {
+        $locale = ($this->locales ??= new LocaleRegistry())->resolveOrFallback($language);
+        $variant = $variants[$locale->id()] ?? '';
+        return $locale->id() . '|' . (in_array($variant, $locale->variants(), true) ? $variant : '');
     }
 
     /** The language of the site an element lives in. */

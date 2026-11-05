@@ -83,6 +83,9 @@ class Settings extends Model
     /** Pro. Also fix the text of `<title>` and the prose `<meta>` descriptions. */
     public bool $processHead = false;
 
+    /** Pro. The largest page, in bytes, the page pass sets; a larger one is sent as rendered, with a warning in the log. */
+    public int $maxPageBytes = 1_000_000;
+
     /** Pro. Fix titles and field values as elements are saved. */
     public bool $fixOnSave = false;
 
@@ -115,8 +118,10 @@ class Settings extends Model
                 $values[$name] = self::coerceList($values[$name]);
             }
         }
-        if (array_key_exists('widowsMinWords', $values)) {
-            $values['widowsMinWords'] = is_numeric($values['widowsMinWords']) ? (int) $values['widowsMinWords'] : 0;
+        foreach (['widowsMinWords', 'maxPageBytes'] as $name) {
+            if (array_key_exists($name, $values)) {
+                $values[$name] = is_numeric($values[$name]) ? (int) $values[$name] : 0;
+            }
         }
         foreach (['ckeditorAsYouType', 'pagePass', 'processHead', 'fixOnSave', 'fixTitles', 'fixPlainText', 'fixCkeditor', 'fixOnSaveBulk'] as $name) {
             if (array_key_exists($name, $values)) {
@@ -134,6 +139,7 @@ class Settings extends Model
         return [
             [['pluginName'], 'string', 'max' => 100],
             [['widowsMinWords'], 'integer', 'min' => 2, 'max' => 20],
+            [['maxPageBytes'], 'integer', 'min' => 1],
             [['skipTags'], 'validateList', 'params' => ['pattern' => '/^[a-z][a-z0-9-]*$/', 'hint' => 'lower-case letters, digits and hyphens, starting with a letter']],
             [['skipClasses'], 'validateList', 'params' => ['pattern' => '/^[^\s"\'<>=`]+$/', 'hint' => 'a class name with no spaces, quotes, angle brackets or equals signs']],
             [['skipUris'], 'validateList', 'params' => ['pattern' => '/^[^\s\x00-\x1f]+$/', 'hint' => 'a path with no spaces; use * to match any run of characters']],

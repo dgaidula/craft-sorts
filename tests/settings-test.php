@@ -67,6 +67,10 @@ sortsTry('validation', function () use ($make) {
     sortsCheck('widows: 1 is refused', !$make(['widowsMinWords' => 1])->validate(['widowsMinWords']));
     sortsCheck('widows: 21 is refused', !$make(['widowsMinWords' => 21])->validate(['widowsMinWords']));
     sortsEq('widows: 2 to 20 are valid', true, $make(['widowsMinWords' => 2])->validate() && $make(['widowsMinWords' => 20])->validate());
+    sortsEq('page size: defaults to 1,000,000 bytes', 1_000_000, $make([])->maxPageBytes);
+    sortsEq('page size: a numeric string coerces', 2_500_000, $make(['maxPageBytes' => '2500000'])->maxPageBytes);
+    sortsCheck('page size: 0 is refused', !$make(['maxPageBytes' => 0])->validate(['maxPageBytes']));
+    sortsCheck('page size: a non-number is refused, not thrown', !$make(['maxPageBytes' => 'lots'])->validate(['maxPageBytes']));
     sortsCheck('saving invalid settings fails and stores nothing', !Craft::$app->getPlugins()->savePluginSettings(sorts(), ['skipTags' => ['Bad Tag']]));
     sortsConfigure('lite');
 });

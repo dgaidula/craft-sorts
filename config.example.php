@@ -30,6 +30,11 @@ return [
         'pagePass' => true,
         'processHead' => false,
 
+        // The largest page, in bytes, the page pass sets. A larger page is sent as
+        // rendered, with a warning in the log; so is one the pass might not have the
+        // memory for under PHP's memory_limit.
+        'maxPageBytes' => 1000000,
+
         // Rule switches by handle. Omitted handles keep their defaults:
         // on: quotes, apostrophes, primes, dashes, ellipsis, symbols, widows, nbsp, locale-spacing
         // off: ranges, multiplication, fractions, ordinals, hook-amp, hook-caps, hook-quotes

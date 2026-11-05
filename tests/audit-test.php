@@ -26,7 +26,8 @@ sortsTry('setup', function () {
 
 $a = $b = $c = null;
 sortsTry('seed', function () use (&$a, &$b, &$c) {
-    $a = sortsEntry(['title' => 'First "one" -- here', 'sortsPlain' => 'Plain it\'s...', 'sortsBody' => '<p>"Body" text</p>']);
+    // sortsBody is shared with the French site, so the audit leaves it to the page pass; sortsBodySite is per site.
+    $a = sortsEntry(['title' => 'First "one" -- here', 'sortsPlain' => 'Plain it\'s...', 'sortsBody' => '<p>"Shared" text</p>', 'sortsBodySite' => '<p>"Body" text</p>']);
     $b = sortsEntry(['title' => 'Second one', 'sortsPlain' => 'Nothing to fix', 'sortsBody' => '<p>Calm text</p>']);
     $c = sortsEntry(['title' => 'Third "two"', 'sortsCode' => 'code "stays" -- ok']);
 });
@@ -40,7 +41,7 @@ sortsTry('the dry run', function () use (&$a, &$b, &$c, $revisions, $updated, $s
     sortsCheck('scan: does not list the clean one', !in_array($b->id, $ids, true));
     $item = $result['items'][array_search($a->id, $ids, true)];
     $labels = array_column($item['changes'], 'label');
-    sortsEq('scan: names each changed value (title, plain text, CKEditor)', ['Title', 'Sorts Plain', 'Sorts Body'], $labels);
+    sortsEq('scan: names each changed value (title, plain text, CKEditor); not the field shared with French', ['Title', 'Sorts Plain', 'Sorts Body Site'], $labels);
     sortsEq('scan: the title preview shows before and after', ['before' => 'First "one" -- here', 'after' => 'First “one” — here'], $item['changes'][0]['excerpts'][0]);
     sortsCheck('scan: the code field is not offered', !in_array('Sorts Code', array_column($result['items'][array_search($c->id, $ids, true)]['changes'], 'label'), true));
     foreach ([$a, $c] as $e) {
@@ -93,7 +94,8 @@ sortsTry('the fix is quiet', function () use (&$a, &$b, &$c, $revisions, $update
     $fa = sortsFresh($a->id);
     sortsEq('fix: title fixed', 'First “one” — here', $fa->title);
     sortsEq('fix: plain text fixed', 'Plain it’s…', sortsRaw($fa, 'sortsPlain'));
-    sortsEq('fix: CKEditor fixed', '<p>“Body” text</p>', sortsRaw($fa, 'sortsBody'));
+    sortsEq('fix: CKEditor fixed', '<p>“Body” text</p>', sortsRaw($fa, 'sortsBodySite'));
+    sortsEq('fix: a CKEditor field shared with the French site is left as typed', '<p>"Shared" text</p>', sortsRaw($fa, 'sortsBody'));
     sortsEq('fix: the second entry was not ticked, so is as it was', 'Second one', sortsFresh($b->id)->title);
     sortsEq('fix: a code field is as it was', 'code "stays" -- ok', sortsRaw(sortsFresh($c->id), 'sortsCode'));
     foreach ([$a, $b, $c] as $e) {
@@ -140,15 +142,66 @@ sortsTry('gate on enqueue, not on run', function () use (&$a, $revisions, $updat
     sortsConfigure('pro');
 });
 
-sortsTry('a job skips what is gone or stale', function () use ($primary) {
+/** A fix job as the utility queues it (options resolved now, the admin as the user), without the queue. */
+$job = static function (array $entries): \iceboxind\sorts\jobs\FixEntriesJob {
+    $before = (int) (new \craft\db\Query())->from(\craft\db\Table::QUEUE)->max('id');
+    \iceboxind\sorts\jobs\FixEntriesJob::enqueue($entries, false, 1);
+    $row = (new \craft\db\Query())->from(\craft\db\Table::QUEUE)->where(['>', 'id', $before])->one();
+    Craft::$app->getDb()->createCommand()->delete(\craft\db\Table::QUEUE, ['id' => $row['id']])->execute();
+    return unserialize(is_resource($row['job']) ? stream_get_contents($row['job']) : $row['job']);
+};
+
+sortsTry('a job skips what is gone or stale', function () use ($primary, $job) {
     sortsConfigure('pro');
-    $job = new \iceboxind\sorts\jobs\FixEntriesJob(['entries' => [[999999, $primary()]], 'createRevisions' => false]);
-    $job->execute(Craft::$app->getQueue());
+    $job([[999999, $primary()]])->execute(Craft::$app->getQueue());
     sortsCheck('a deleted entry is skipped without an error', true);
     $e = sortsEntry(['title' => 'Clean title']);
-    $job = new \iceboxind\sorts\jobs\FixEntriesJob(['entries' => [[$e->id, $primary()]], 'createRevisions' => false]);
-    $job->execute(Craft::$app->getQueue());
+    $job([[$e->id, $primary()]])->execute(Craft::$app->getQueue());
     sortsEq('an entry with nothing to fix is left alone', 'Clean title', sortsFresh($e->id)->title);
+    $f = sortsEntry(['title' => 'No "user" here']);
+    $nobody = new \iceboxind\sorts\jobs\FixEntriesJob(['entries' => [[$f->id, $primary()]]] + array_intersect_key(get_object_vars($job([[$f->id, $primary()]])), ['options' => 1]));
+    $nobody->execute(Craft::$app->getQueue());
+    sortsEq('a job that does not say who queued it saves nothing', 'No "user" here', sortsFresh($f->id)->title);
+});
+
+// FU7: the job saves only what the user who queued it may save. Craft Solo lets every user do
+// everything (elements/User.php:1870-1877 in 5.12.0.1), so the refusal comes through Craft's own
+// EVENT_AUTHORIZE_SAVE, which Elements::canSave() asks (services/Elements.php:4994-5007, :5159-5172).
+sortsTry('a job skips an entry the user may not save', function () use ($primary, $job) {
+    sortsConfigure('pro');
+    $denied = sortsEntry(['title' => 'Denied "one"']);
+    $allowed = sortsEntry(['title' => 'Allowed "two"']);
+    $fixJob = $job([[$denied->id, $primary()], [$allowed->id, $primary()]]);
+    sortsEq('the job carries the user who queued it', 1, $fixJob->userId);
+    $refuse = static function (\craft\events\AuthorizationCheckEvent $event) use ($denied): void {
+        if ((int) $event->element->id === (int) $denied->id) {
+            $event->authorized = false;
+        }
+    };
+    \yii\base\Event::on(\craft\services\Elements::class, \craft\services\Elements::EVENT_AUTHORIZE_SAVE, $refuse);
+    try {
+        $fixJob->execute(Craft::$app->getQueue());
+    } finally {
+        \yii\base\Event::off(\craft\services\Elements::class, \craft\services\Elements::EVENT_AUTHORIZE_SAVE, $refuse);
+    }
+    sortsEq('permission refused: that entry is left alone', 'Denied "one"', sortsFresh($denied->id)->title);
+    sortsEq('permission given: the other entry is fixed', 'Allowed “two”', sortsFresh($allowed->id)->title);
+});
+
+// FU9: a job carries the options it was queued with, so a downgrade cannot turn French quotes English.
+sortsTry('a job queued under Pro keeps a French entry French after a downgrade', function () use ($job) {
+    sortsConfigure('pro');
+    $frId = Craft::$app->getSites()->getSiteByHandle('testbedFr')->id;
+    $e = sortsEntry(['title' => 'x']);
+    $fr = sortsFresh($e->id, $frId);
+    $fr->title = '"Bonjour" -- toi';
+    Craft::$app->getElements()->saveElement($fr);
+    $fixJob = $job([[$e->id, $frId]]);
+    sortsEq('the job carries the French locale', 'fr', $fixJob->options[$frId]['text']['locale'] ?? null);
+    sortsConfigure('lite');
+    $fixJob->execute(Craft::$app->getQueue());
+    sortsEq('after the downgrade, the French title is fixed in French', '«Bonjour» – toi', sortsFresh($e->id, $frId)->title);
+    sortsConfigure('pro');
 });
 
 sortsClean();

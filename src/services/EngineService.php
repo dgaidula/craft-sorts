@@ -21,8 +21,9 @@ use Throwable;
  * the same result for the same text.
  *
  * Lite gets the English quotes, apostrophes, primes, dashes and ellipsis, in
- * English only. Pro gets every rule and locale, the settings, and the rules
- * other code registers.
+ * English only, and the engine is told that those are the only rules allowed, so
+ * no `data-sorts-rules` scope or rule named in a call can run another one. Pro gets
+ * every rule and locale, the settings, and the rules other code registers.
  */
 class EngineService extends Component
 {
@@ -41,6 +42,8 @@ class EngineService extends Component
 
     private ?Engine $engine = null;
 
+    private ?Engine $storedEngine = null;
+
     /**
      * The engine, with the edition’s locales and any rules other code registered.
      */
@@ -50,7 +53,7 @@ class EngineService extends Component
             return $this->engine;
         }
         $isPro = Plugin::getInstance()->isPro();
-        $engine = new Engine(new Options(), $isPro ? null : $this->liteLocales());
+        $engine = new Engine(new Options(allowed: $isPro ? null : self::LITE_RULES), $isPro ? null : $this->liteLocales());
         if ($isPro) {
             $this->registerOtherRules($engine);
         }
@@ -61,6 +64,7 @@ class EngineService extends Component
     public function reset(): void
     {
         $this->engine = null;
+        $this->storedEngine = null;
     }
 
     /**
@@ -106,6 +110,7 @@ class EngineService extends Component
                 locale: str_starts_with(strtolower($language), 'en') ? $language : 'en-US',
                 mode: $mode,
                 rules: $rules,
+                allowed: self::LITE_RULES,
             );
         }
         $settings = $plugin->getSettings();
@@ -122,7 +127,8 @@ class EngineService extends Component
 
     /**
      * Options that run only the rules that belong in stored content ({@see STORED_RULES}),
-     * as the settings have them.
+     * as the settings have them. They are also the only rules allowed, so markup in the
+     * content (a `data-sorts-rules` scope) cannot add another.
      */
     public function storedOptions(?string $language, string $mode): Options
     {
@@ -132,7 +138,20 @@ class EngineService extends Component
             $handle = $rule->handle();
             $rules[$handle] = in_array($handle, self::STORED_RULES, true) && ($options->rules[$handle] ?? $rule->defaultEnabled());
         }
-        return $options->with(rules: $rules);
+        $allowed = array_values(array_intersect(self::STORED_RULES, $options->allowed ?? self::STORED_RULES));
+        return $options->with(rules: $rules, allowed: $allowed);
+    }
+
+    /**
+     * Fix stored content with options resolved earlier ({@see storedOptions()}), on an
+     * engine with every built-in rule and locale whatever the edition is now. An audit
+     * fix queued under Pro carries the options it was queued with, so a downgrade
+     * before it runs cannot turn its French quotes into English ones.
+     */
+    public function applyStored(string $input, Options $options): string
+    {
+        $this->storedEngine ??= new Engine(new Options(allowed: self::STORED_RULES));
+        return $this->storedEngine->apply($input, [], $options->with(allowed: array_values(array_intersect(self::STORED_RULES, $options->allowed ?? self::STORED_RULES))));
     }
 
     /** The language of the site this request is for. */

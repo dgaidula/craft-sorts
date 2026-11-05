@@ -1,13 +1,16 @@
 // ddev craft shell < tests/fix-on-save-test.php
 // Fix-on-save (Pro, off by default): what it changes, what it never touches, and the saves it skips
-// (resaves, propagation, provisional drafts, revisions, migrations) unless a setting asks.
+// (resaves, propagation, provisional drafts, revisions, migrations) unless a setting asks. On the
+// testbed's English and French sites a value is converted only when every site it reaches is in
+// the saving site's language: a new entry reaches both, and so does the shared sortsBody field;
+// the title, sortsPlain and sortsBodySite are translated per site.
 // (No opening PHP tag: the shell reads statements, not a file.)
 require_once '/var/www/html/plugins/craft-sorts/tests/support.php';
 
 const FIX_STRAIGHT_TITLE = 'The "Title" -- it\'s here...';
 const FIX_FIXED_TITLE = 'The “Title” — it’s here…';
-const FIX_STRAIGHT_PLAIN = "Line one \"a\" -- b\nLine two it's...";
-const FIX_FIXED_PLAIN = "Line one “a” — b\nLine two it’s…";
+const FIX_STRAIGHT_PLAIN = "Line one \"a\" -- b\nLine two it's... 10 kg for Dr. Smith";
+const FIX_FIXED_PLAIN = "Line one “a” — b\nLine two it’s… 10 kg for Dr. Smith";
 const FIX_STRAIGHT_BODY = '<p>"Quoted" -- <a href="/x?a=\'b\'">link</a> it\'s...</p>';
 const FIX_FIXED_BODY = '<p>“Quoted” — <a href="/x?a=\'b\'">link</a> it’s…</p>';
 
@@ -16,7 +19,27 @@ $straight = static fn (array $extra = []): array => $extra + [
     'sortsPlain' => FIX_STRAIGHT_PLAIN,
     'sortsCode' => FIX_STRAIGHT_PLAIN,
     'sortsBody' => FIX_STRAIGHT_BODY,
+    'sortsBodySite' => FIX_STRAIGHT_BODY,
 ];
+
+/**
+ * A sortsTest entry as fix-on-save leaves it after an edit on the English site: created (a new
+ * entry reaches the French site too, so it goes in as typed), then saved again with the same values.
+ */
+$edited = static function (array $values): \craft\elements\Entry {
+    $entry = sortsEntry($values);
+    $en = sortsFresh($entry->id);
+    unset($values['slug']);
+    if (isset($values['title'])) {
+        $en->title = $values['title'];
+        unset($values['title']);
+    }
+    $en->setFieldValues($values);
+    if (!Craft::$app->getElements()->saveElement($en)) {
+        throw new \RuntimeException('The edit did not save: ' . json_encode($en->getErrors()));
+    }
+    return $en;
+};
 
 sortsTry('off by default', function () use ($straight) {
     sortsClean();
@@ -32,6 +55,10 @@ sortsTry('off by default', function () use ($straight) {
 sortsTry('on, one save', function () use ($straight) {
     sortsClean();
     sortsConfigure('pro', ['fixOnSave' => true]);
+    $e = sortsEntry($straight());
+    $en = sortsFresh($e->id);
+    $en->title = FIX_STRAIGHT_TITLE;
+    $en->setFieldValues(array_diff_key($straight(), ['title' => 1]));
     $saves = 0;
     $count = static function (\craft\events\ElementEvent $ev) use (&$saves) {
         if ($ev->element instanceof \craft\elements\Entry && !$ev->element->propagating && !$ev->element->getIsRevision()) {
@@ -39,40 +66,40 @@ sortsTry('on, one save', function () use ($straight) {
         }
     };
     \yii\base\Event::on(\craft\services\Elements::class, \craft\services\Elements::EVENT_AFTER_SAVE_ELEMENT, $count);
-    $e = sortsEntry($straight());
+    Craft::$app->getElements()->saveElement($en);
     \yii\base\Event::off(\craft\services\Elements::class, \craft\services\Elements::EVENT_AFTER_SAVE_ELEMENT, $count);
     $f = sortsFresh($e->id);
     sortsEq('on: title fixed', FIX_FIXED_TITLE, $f->title);
     sortsEq('on: plain text fixed', FIX_FIXED_PLAIN, sortsRaw($f, 'sortsPlain'));
-    sortsEq('on: CKEditor fixed, attributes untouched', FIX_FIXED_BODY, sortsRaw($f, 'sortsBody'));
+    sortsEq('on: CKEditor fixed, attributes untouched', FIX_FIXED_BODY, sortsRaw($f, 'sortsBodySite'));
     sortsEq('on: a code field is never touched', FIX_STRAIGHT_PLAIN, sortsRaw($f, 'sortsCode'));
     sortsEq('on: the fix rides the one save (no second save)', 1, $saves);
-    sortsCheck('on: no spacing rules in stored text (no no-break spaces in plain text)', !str_contains(sortsRaw($f, 'sortsPlain'), "\u{00A0}"));
+    sortsCheck('on: no spacing rules in stored text (10 kg and Dr. Smith keep plain spaces)', !str_contains(sortsRaw($f, 'sortsPlain'), "\u{00A0}") && str_contains(sortsRaw($f, 'sortsPlain'), '10 kg for Dr. Smith'), sortsRaw($f, 'sortsPlain'));
 });
 
-sortsTry('toggles per type', function () use ($straight) {
+sortsTry('toggles per type', function () use ($straight, $edited) {
     sortsClean();
     sortsConfigure('pro', ['fixOnSave' => true, 'fixTitles' => false]);
-    $f = sortsFresh(sortsEntry($straight())->id);
+    $f = sortsFresh($edited($straight())->id);
     sortsEq('titles off: title untouched', FIX_STRAIGHT_TITLE, $f->title);
     sortsEq('titles off: plain text still fixed', FIX_FIXED_PLAIN, sortsRaw($f, 'sortsPlain'));
     sortsClean();
     sortsConfigure('pro', ['fixOnSave' => true, 'fixPlainText' => false]);
-    $f = sortsFresh(sortsEntry($straight())->id);
+    $f = sortsFresh($edited($straight())->id);
     sortsEq('plain text off: plain text untouched', FIX_STRAIGHT_PLAIN, sortsRaw($f, 'sortsPlain'));
-    sortsEq('plain text off: CKEditor still fixed', FIX_FIXED_BODY, sortsRaw($f, 'sortsBody'));
+    sortsEq('plain text off: CKEditor still fixed', FIX_FIXED_BODY, sortsRaw($f, 'sortsBodySite'));
     sortsClean();
     sortsConfigure('pro', ['fixOnSave' => true, 'fixCkeditor' => false]);
-    $f = sortsFresh(sortsEntry($straight())->id);
-    sortsEq('CKEditor off: CKEditor untouched', FIX_STRAIGHT_BODY, sortsRaw($f, 'sortsBody'));
+    $f = sortsFresh($edited($straight())->id);
+    sortsEq('CKEditor off: CKEditor untouched', FIX_STRAIGHT_BODY, sortsRaw($f, 'sortsBodySite'));
     sortsEq('CKEditor off: title still fixed', FIX_FIXED_TITLE, $f->title);
     sortsClean();
 });
 
-sortsTry('rules follow the settings', function () use ($straight) {
+sortsTry('rules follow the settings', function () use ($edited) {
     sortsClean();
     sortsConfigure('pro', ['fixOnSave' => true, 'rules' => ['quotes' => false, 'dashes' => false, 'fractions' => true]]);
-    $f = sortsFresh(sortsEntry(['title' => 'Use 1/2 cup "now" -- ok'])->id);
+    $f = sortsFresh($edited(['title' => 'Use 1/2 cup "now" -- ok'])->id);
     sortsEq('rules: only the rules switched on', "Use ½ cup \"now\" -- ok", $f->title);
     sortsClean();
 });
@@ -187,6 +214,65 @@ sortsTry('propagation', function () use ($straight) {
     sortsEq('propagation: the saved site is fixed', FIX_FIXED_TITLE, sortsFresh($e->id)->title);
     sortsEq('propagation: the other site’s own title is left to its own save', FIX_STRAIGHT_TITLE, sortsFresh($e->id, $frId)->title);
     sortsEq('propagation: its translatable text is untouched too', FIX_STRAIGHT_PLAIN, sortsRaw(sortsFresh($e->id, $frId), 'sortsPlain'));
+    sortsClean();
+});
+
+sortsTry('reach: a new entry goes in as typed on every site', function () {
+    sortsClean();
+    sortsConfigure('pro', ['fixOnSave' => true]);
+    $frId = Craft::$app->getSites()->getSiteByHandle('testbedFr')->id;
+    $e = null;
+    $logged = sortsLogged(function () use (&$e) {
+        $e = sortsEntry(['title' => '"Bonjour" -- toi', 'slug' => 'reach-new', 'sortsPlain' => '"Bonjour" toi', 'sortsBody' => '<p>"Bonjour" toi</p>', 'sortsBodySite' => '<p>"Bonjour" toi</p>']);
+    }, ['info']);
+    foreach (['en' => null, 'fr' => $frId] as $site => $siteId) {
+        $f = sortsFresh($e->id, $siteId);
+        sortsEq("new entry, $site: title as typed", '"Bonjour" -- toi', $f->title);
+        sortsEq("new entry, $site: translatable plain text as typed", '"Bonjour" toi', sortsRaw($f, 'sortsPlain'));
+        sortsEq("new entry, $site: shared CKEditor as typed", '<p>"Bonjour" toi</p>', sortsRaw($f, 'sortsBody'));
+        sortsEq("new entry, $site: per-site CKEditor as typed", '<p>"Bonjour" toi</p>', sortsRaw($f, 'sortsBodySite'));
+    }
+    sortsCheck('new entry: each value left as typed is logged at info, naming the French site', count(array_filter($logged, static fn (string $m): bool => str_contains($m, 'as typed') && str_contains($m, 'testbedFr'))) >= 4, json_encode($logged, JSON_UNESCAPED_UNICODE));
+    // The page pass then sets each page in its own language.
+    $fr = (string) sortsHttp()->get('/fr/sorts-test/reach-new')->getBody();
+    $en = (string) sortsHttp()->get('/sorts-test/reach-new')->getBody();
+    sortsCheck('new entry: the French page shows French quotes', str_contains($fr, "<h1>«\u{202F}Bonjour\u{202F}» –\u{00A0}toi</h1>") && !str_contains($fr, '“Bonjour”'), substr($fr, 0, 500));
+    sortsCheck('new entry: the English page shows English quotes', str_contains($en, '<h1>“Bonjour” —&nbsp;toi</h1>') || str_contains($en, "<h1>“Bonjour” —\u{00A0}toi</h1>"), substr($en, 0, 500));
+    sortsClean();
+});
+
+sortsTry('reach: a shared CKEditor field', function () {
+    sortsClean();
+    sortsConfigure('pro');
+    $frId = Craft::$app->getSites()->getSiteByHandle('testbedFr')->id;
+    $e = sortsEntry(['title' => 'Shared', 'slug' => 'reach-shared']);
+    sortsConfigure('pro', ['fixOnSave' => true]);
+    $en = sortsFresh($e->id);
+    $en->setFieldValues(['sortsBody' => '<p>"Shared" edit</p>', 'sortsBodySite' => '<p>"Own" edit</p>']);
+    $logged = sortsLogged(static fn () => Craft::$app->getElements()->saveElement($en), ['info']);
+    sortsEq('shared edit on en: the shared field is left as typed', '<p>"Shared" edit</p>', sortsRaw(sortsFresh($e->id), 'sortsBody'));
+    sortsEq('shared edit on en: ...and reaches fr as typed', '<p>"Shared" edit</p>', sortsRaw(sortsFresh($e->id, $frId), 'sortsBody'));
+    sortsEq('shared edit on en: a per-site field in the same save is fixed', '<p>“Own” edit</p>', sortsRaw(sortsFresh($e->id), 'sortsBodySite'));
+    sortsCheck('shared edit on en: logged at info', (bool) array_filter($logged, static fn (string $m): bool => str_contains($m, 'sortsBody of element') && str_contains($m, 'testbedFr')), json_encode($logged, JSON_UNESCAPED_UNICODE));
+    $fr = (string) sortsHttp()->get('/fr/sorts-test/reach-shared')->getBody();
+    sortsCheck('shared edit on en: the French page shows French quotes', str_contains($fr, "<p>«\u{202F}Shared\u{202F}» edit</p>"), substr($fr, 0, 600));
+    sortsClean();
+});
+
+sortsTry('reach: a translatable Plain Text field', function () {
+    sortsClean();
+    sortsConfigure('pro');
+    $frId = Craft::$app->getSites()->getSiteByHandle('testbedFr')->id;
+    $e = sortsEntry(['title' => 'Translated', 'sortsPlain' => 'x']);
+    sortsConfigure('pro', ['fixOnSave' => true]);
+    $en = sortsFresh($e->id);
+    $en->setFieldValue('sortsPlain', '"Hello" -- you');
+    Craft::$app->getElements()->saveElement($en);
+    $fr = sortsFresh($e->id, $frId);
+    $fr->setFieldValue('sortsPlain', '"Bonjour" -- toi');
+    Craft::$app->getElements()->saveElement($fr);
+    sortsEq('translatable, en: fixed in English', '“Hello” — you', sortsRaw(sortsFresh($e->id), 'sortsPlain'));
+    sortsEq('translatable, fr: fixed in French (quotes and dash; spacing belongs to the page)', '«Bonjour» – toi', sortsRaw(sortsFresh($e->id, $frId), 'sortsPlain'));
     sortsClean();
 });
 

@@ -52,7 +52,7 @@ class AuditController extends Controller
         }
 
         $createRevisions = $request->getBodyParam('createRevisions') === '1';
-        FixEntriesJob::enqueue($entries, $createRevisions);
+        FixEntriesJob::enqueue($entries, $createRevisions, (int) Craft::$app->getUser()->getId());
         $this->setSuccessFlash(Craft::t('sorts', 'Queued a fix for {count, number} {count, plural, =1{entry} other{entries}}.', ['count' => count($entries)]));
         return $this->redirectToPostedUrl();
     }

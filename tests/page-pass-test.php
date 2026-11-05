@@ -175,6 +175,80 @@ sortsTry('fail safe', function () use ($body, $has, $straight) {
     sortsCheck('and the next page is typeset again', $has($body(sortsHttp()->get('/sorts-lab')), '“Hello”'));
 });
 
+sortsTry('pro, a CP-mode page on a site request', function () use ($body, $has) {
+    sortsConfigure('pro');
+    $r = sortsHttp()->get('/sorts-cp-mode');
+    sortsEq('cp mode: the page is served', 200, $r->getStatusCode());
+    sortsCheck('cp mode: the page pass leaves a control panel template alone', $has($body($r), '<p id="cp">"Control" -- the panel\'s page</p>'), substr($body($r), 0, 400));
+});
+
+sortsTry('pro, a skip pattern across slashes', function () use ($body, $has, $straight) {
+    sortsConfigure('pro', ['skipUris' => ['/sorts-*']]);
+    sortsCheck('uri skip: /sorts-* skips /sorts-api/lab (* matches slashes)', $has($body(sortsHttp()->get('/sorts-api/lab')), $straight));
+    sortsCheck('uri skip: ...and /sorts-lab', $has($body(sortsHttp()->get('/sorts-lab')), $straight));
+});
+
+sortsTry('pro, the head is text only', function () use ($body, $has) {
+    sortsConfigure('pro', ['processHead' => true, 'rules' => ['hook-quotes' => true, 'hook-caps' => true, 'hook-amp' => true, 'ordinals' => true]]);
+    $html = $body(sortsHttp()->get('/sorts-lab'));
+    sortsCheck('head, markup rules on: the title gets no markup', $has($html, '<title>“Lab” — it’s a test</title>'), substr($html, 0, 600));
+    sortsCheck('head, markup rules on: nor does a meta description', $has($html, 'content="She said “hi” — it’s fine…"'), substr($html, 0, 600));
+    sortsCheck('head, markup rules on: the body still gets them', $has($html, '<span class="dquo">“</span>Hello”'), $html);
+});
+
+$warnings = static fn (callable $fn): array => sortsLogged($fn, ['warning']);
+
+sortsTry('pro, page size and memory', function () use ($warnings) {
+    sortsConfigure('pro');
+    $row = '<tr><td><a href="/p/123">Product "Name" 12</a></td><td>$9.99</td><td><span class="b">In stock</span></td><td>it\'s ok</td></tr>';
+    $page = '<!DOCTYPE html><html><body><table>' . str_repeat($row, (int) ceil(6 * 1048576 / strlen($row))) . '</table></body></html>';
+    $limit = ini_get('memory_limit');
+    $out = null;
+    ini_set('memory_limit', '256M');
+    try {
+        $seen = $warnings(function () use ($page, &$out) {
+            $out = sorts()->pagePass->fix($page);
+        });
+    } finally {
+        ini_set('memory_limit', $limit);
+    }
+    sortsCheck('6 MB page at 256M: sent as rendered', $out === $page);
+    sortsCheck('6 MB page: one warning, naming the size and the setting', count($seen) === 1 && str_contains($seen[0], 'maxPageBytes') && str_contains($seen[0], number_format(strlen($page))), json_encode($seen));
+
+    sortsConfigure('pro', ['maxPageBytes' => 10_000_000]);
+    $out = null;
+    ini_set('memory_limit', '256M');
+    try {
+        $seen = $warnings(function () use ($page, &$out) {
+            $out = sorts()->pagePass->fix($page);
+        });
+    } finally {
+        ini_set('memory_limit', $limit);
+    }
+    sortsCheck('6 MB page under a 10 MB cap, at 256M: sent as rendered, no fatal', $out === $page);
+    sortsCheck('...with one warning about memory_limit', count($seen) === 1 && str_contains($seen[0], 'memory_limit'), json_encode($seen));
+
+    $small = '<p>"Small" -- page</p>';
+    sortsEq('a page within both limits is typeset', '<p>“Small” — page</p>', sorts()->pagePass->fix($small));
+});
+
+sortsTry('pro, a pattern failure is logged', function () use ($warnings) {
+    sortsConfigure('pro');
+    $page = '<p>"x" -- y</p>';
+    $out = null;
+    $backtrack = ini_get('pcre.backtrack_limit');
+    $seen = $warnings(function () use ($page, &$out, $backtrack) {
+        ini_set('pcre.backtrack_limit', '2');
+        try {
+            $out = sorts()->pagePass->fix($page);
+        } finally {
+            ini_set('pcre.backtrack_limit', $backtrack);
+        }
+    });
+    sortsCheck('pattern failure: the page is sent as rendered', $out === $page, (string) $out);
+    sortsCheck('pattern failure: one warning naming the page and the PCRE error', count($seen) === 1 && str_contains($seen[0], 'Sorts left the page') && str_contains($seen[0], 'limit'), json_encode($seen));
+});
+
 sortsEverywhere(false);
 sortsThrowing(false);
 sortsDefaults();
