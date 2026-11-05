@@ -563,7 +563,7 @@
 
 @ h-option-with-empty-value
 < <select><option value>"x"</option><option value="">'y'</option></select>
-> <select><option value>“x”</option><option value="">“y”</option></select>
+> <select><option value>“x”</option><option value="">‘y’</option></select>
 
 @ h-option-implied-end-then-text
 < <select><option value=1>"a"<option>"b"</select><p>"c"</p>

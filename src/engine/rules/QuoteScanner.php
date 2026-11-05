@@ -19,6 +19,11 @@ use iceboxind\sorts\engine\Run;
  * cases, how many straight quotes are still to come. It changes only straight
  * quotes and their entity forms. Curly quotes are left as they are, though an
  * unambiguous one still counts as open or closed for the ones that follow.
+ *
+ * Which glyph a quotation gets is a separate choice from what it is (see
+ * {@see Options::$quoteNesting}): by default the mark typed picks the locale’s
+ * primary pair (`"`) or its secondary pair (`'`); in `depth` mode the nesting
+ * depth does. Apostrophes and primes do not depend on it.
  */
 final class QuoteScanner
 {
@@ -74,6 +79,7 @@ final class QuoteScanner
         $wantQuotes = $context->isActive('quotes');
         $wantApostrophes = $context->isActive('apostrophes');
         $wantPrimes = $context->isActive('primes');
+        $typed = $context->quoteNesting === Options::NESTING_TYPED;
 
         $state = $context->flowState('quotes', ['stack' => [], 'd' => 0, 's' => 0]);
         $stack = $state['stack'];
@@ -159,8 +165,8 @@ final class QuoteScanner
             $glyph = null;
             switch ($decision) {
                 case self::D_OPEN:
-                    $level = count($stack);
-                    $pair = $level % 2 === 0 ? [$q0, $q1] : [$n0, $n1];
+                    // Typed: the mark the author typed picks the pair. Depth: how deep the quotation is.
+                    $pair = ($typed ? $kind === 'd' : count($stack) % 2 === 0) ? [$q0, $q1] : [$n0, $n1];
                     $glyph = $wantQuotes ? $pair[0] : null;
                     $stack[] = $kind;
                     $kind === 'd' ? $openD++ : $openS++;
@@ -168,7 +174,7 @@ final class QuoteScanner
                     break;
                 case self::D_CLOSE:
                     self::pop($stack, $kind, $openD, $openS);
-                    $pair = count($stack) % 2 === 0 ? [$q0, $q1] : [$n0, $n1];
+                    $pair = ($typed ? $kind === 'd' : count($stack) % 2 === 0) ? [$q0, $q1] : [$n0, $n1];
                     $glyph = $wantQuotes ? $pair[1] : null;
                     $lastClass = self::CLOSE;
                     break;

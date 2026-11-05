@@ -11,6 +11,12 @@ namespace iceboxind\sorts\engine;
  * maps a locale id to the name of a variant to use for it (`['en-GB' => 'single-outer']`);
  * a name the locale does not have means the CLDR default.
  *
+ * `quoteNesting` says which glyph a recognised quotation gets. `typed` (the default) keeps the
+ * type the author typed: a straight `"` pair becomes the locale’s primary pair and a straight `'`
+ * pair its secondary pair, at any depth, as CKEditor does while typing. `depth` normalises every
+ * quotation by how deeply it is nested: the primary pair outermost, the secondary inside it, then
+ * alternating, whichever mark was typed. Any other value means `typed`.
+ *
  * `allowed`, when set, lists the only rules that may run at all: a rule outside it
  * stays off whatever turns it on (`rules`, a `data-sorts-rules` scope or a rule
  * named in the call). Null allows every registered rule.
@@ -19,6 +25,9 @@ final class Options
 {
     public const HTML = 'html';
     public const TEXT = 'text';
+
+    public const NESTING_TYPED = 'typed';
+    public const NESTING_DEPTH = 'depth';
 
     /**
      * @param array<string, bool> $rules
@@ -37,6 +46,7 @@ final class Options
         public readonly array $skipClasses = [],
         public readonly array $variants = [],
         public readonly ?array $allowed = null,
+        public readonly string $quoteNesting = self::NESTING_TYPED,
     ) {
     }
 

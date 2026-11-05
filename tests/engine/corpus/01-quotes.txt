@@ -31,7 +31,7 @@
 
 @ q-nested-double-in-single only=quotes,apostrophes,primes
 < 'She said "no"'
-> “She said ‘no’”
+> ‘She said “no”’
 
 @ q-nested-three-deep only=quotes,apostrophes,primes
 < "He said 'she said "no"'"
@@ -47,11 +47,11 @@
 
 @ q-single-quoted-phrase only=quotes,apostrophes,primes
 < the 'best' option
-> the “best” option
+> the ‘best’ option
 
 @ q-single-quotes-with-apostrophe-inside only=quotes,apostrophes,primes
 < 'I don't know,' she said.
-> “I don’t know,” she said.
+> ‘I don’t know,’ she said.
 
 @ q-empty-pair only=quotes,apostrophes,primes
 < Say "" now
@@ -149,7 +149,7 @@
 
 @ q-quote-pair-resets-per-block only=quotes,apostrophes,primes
 < <p>He said "go</p><p>and 'stay' now</p>
-> <p>He said “go</p><p>and “stay” now</p>
+> <p>He said “go</p><p>and ‘stay’ now</p>
 
 # Quotes beside inline tags: the tags are transparent.
 @ q-tag-italic-inside only=quotes,apostrophes,primes
@@ -227,7 +227,7 @@
 
 @ q-boundary-headings only=quotes,apostrophes,primes
 < <h1>"Title"</h1><h2>'Sub'</h2>
-> <h1>“Title”</h1><h2>“Sub”</h2>
+> <h1>“Title”</h1><h2>‘Sub’</h2>
 
 @ q-boundary-unclosed-p only=quotes,apostrophes,primes
 < <p>"a<p>"b"
@@ -256,19 +256,19 @@
 
 @ q-entity-039 only=quotes,apostrophes,primes
 < &#039;x&#039;
-> “x”
+> ‘x’
 
 @ q-entity-39 only=quotes,apostrophes,primes
 < &#39;x&#39;
-> “x”
+> ‘x’
 
 @ q-entity-x27 only=quotes,apostrophes,primes
 < &#x27;x&#x27;
-> “x”
+> ‘x’
 
 @ q-entity-apos only=quotes,apostrophes,primes
 < &apos;x&apos;
-> “x”
+> ‘x’
 
 @ q-entity-twig-escaped-title only=quotes,apostrophes,primes
 < Don&#039;t say &quot;never&quot;
@@ -315,7 +315,7 @@
 
 @ q-entity-upper-quot-is-a-quote
 < <p>&QUOT;z&QUOT; and &#X22;y&#x22; and &#X27;w&#x27;</p>
-> <p>“z” and “y” and “w”</p>
+> <p>“z” and “y” and ‘w’</p>
 
 @ q-entity-wrong-case-is-not-a-prime
 < <p>5&APOS;10&Quot; tall</p>
@@ -324,12 +324,12 @@
 
 @ q-entity-nbsp-before-quote-opens
 < <p>"He said&nbsp;"no" today"</p>
-> <p>“He said&nbsp;‘no’ today”</p>
+> <p>“He said&nbsp;“no” today”</p>
 
 @ q-entity-mdash-before-quote-opens
 < <p>"It was&mdash;"no"&mdash;then"</p>
-> <p>“It was&mdash;‘no’&mdash;then”</p>
+> <p>“It was&mdash;“no”&mdash;then”</p>
 
 @ q-entity-nbsp-before-single-quote-opens
 < <p>'He said&nbsp;'no' today'</p>
-> <p>“He said&nbsp;‘no’ today”</p>
+> <p>‘He said&nbsp;‘no’ today’</p>

@@ -193,7 +193,7 @@
 
 @ d-mixed-curly-and-straight 
 < <p>“Hello” she said, 'it's fine'</p>
-> <p>“Hello” she said, “it’s fine”</p>
+> <p>“Hello” she said, ‘it’s fine’</p>
 
 @ d-mixed-curly-outer-straight-inner 
 < <p>“She said 'no'”</p>

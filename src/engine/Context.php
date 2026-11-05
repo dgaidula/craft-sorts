@@ -11,6 +11,9 @@ final class Context
 {
     public readonly string $mode;
 
+    /** {@see Options::NESTING_TYPED} or {@see Options::NESTING_DEPTH}: how a quotation’s marks are chosen. */
+    public readonly string $quoteNesting;
+
     /**
      * @param array<string, true> $active handles of the rules running on this run
      * @internal built by the engine
@@ -24,6 +27,7 @@ final class Context
         private readonly array $active,
     ) {
         $this->mode = $options->mode;
+        $this->quoteNesting = $options->quoteNesting === Options::NESTING_DEPTH ? Options::NESTING_DEPTH : Options::NESTING_TYPED;
     }
 
     /** Tag names of the enclosing elements, outermost first. */

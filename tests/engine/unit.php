@@ -221,6 +221,22 @@ check('variants: the locale itself is untouched', [['“', '”'], ['‘', '’'
 check('variants: an unknown name returns the locale itself', true, $gb->withVariant('nonsense') === $gb);
 throws('variants: a variant with one mark in a pair is refused', InvalidArgumentException::class, static fn () => DataLocale::fromArray(['id' => 'q', 'quotes' => ['a', 'b'], 'nested' => ['a', 'b'], 'apostrophe' => 'x', 'dash' => [], 'variants' => ['v' => ['quotes' => ['a']]]]));
 check('variants: Options keeps them', ['en-GB' => 'single-outer'], (new Options(variants: ['en-GB' => 'single-outer']))->with(locale: 'de')->variants);
+check('variants: de-CH offers guillemets, es offers guillemets-outer', [['guillemets'], ['guillemets-outer']], [$registry->resolve('de-CH')->variants(), $registry->resolve('es')->variants()]);
+check('variants: de-CH guillemets swap the pairs', [['«', '»'], ['‹', '›']], [$registry->resolve('de-CH')->withVariant('guillemets')->quotes(), $registry->resolve('de-CH')->withVariant('guillemets')->nestedQuotes()]);
+check('variants: es guillemets-outer swap the pairs', [['«', '»'], ['“', '”']], [$registry->resolve('es')->withVariant('guillemets-outer')->quotes(), $registry->resolve('es')->withVariant('guillemets-outer')->nestedQuotes()]);
+
+// quoteNesting: typed by default, depth on request, anything else means typed
+check('quoteNesting: typed is the default', 'typed', (new Options())->quoteNesting);
+check('quoteNesting: with() keeps it and changes it', ['depth', 'depth', 'typed'], [
+    (new Options(quoteNesting: 'depth'))->with(locale: 'de')->quoteNesting,
+    (new Options())->with(quoteNesting: 'depth')->quoteNesting,
+    (new Options(quoteNesting: 'depth'))->with(quoteNesting: 'typed')->quoteNesting,
+]);
+$nesting = new Engine();
+$typedOpts = new Options(rules: ['primes' => false]);
+check('quoteNesting: typed keeps a typed single as the secondary pair', '‘x’ “y”', $nesting->apply("'x' \"y\"", [], $typedOpts));
+check('quoteNesting: depth sets the outermost quotation as primary', '“x” “y”', $nesting->apply("'x' \"y\"", [], $typedOpts->with(quoteNesting: 'depth')));
+check('quoteNesting: an unknown value means typed', '‘x’', $nesting->apply("'x'", [], $typedOpts->with(quoteNesting: 'sideways')));
 
 // adding a locale is adding data
 $dir = sys_get_temp_dir() . '/sorts-locale-test-' . bin2hex(random_bytes(4));

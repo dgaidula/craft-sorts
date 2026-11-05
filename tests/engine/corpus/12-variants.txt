@@ -11,7 +11,7 @@
 
 @ v-en-GB-default-typed-single-outer only=quotes,apostrophes,primes locale=en-GB
 < 'Hello,' she said.
-> “Hello,” she said.
+> ‘Hello,’ she said.
 
 @ v-en-GB-default-three-deep only=quotes,apostrophes,primes locale=en-GB
 < "A 'B "C"'"
@@ -31,7 +31,7 @@
 
 @ v-en-GB-single-outer-typed-single only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < 'Don't go,' she said.
-> ‘Don’t go,’ she said.
+> “Don’t go,” she said.
 
 @ v-en-GB-single-outer-three-deep only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < "A 'B "C"'"
@@ -39,7 +39,7 @@
 
 @ v-en-GB-single-outer-possessive-plural only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < 'The dogs' bowls are empty'
-> ‘The dogs’ bowls are empty’
+> “The dogs’ bowls are empty”
 
 @ v-en-GB-single-outer-leading-apostrophes only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < "I loved the '90s and 'tis the season"
@@ -58,7 +58,7 @@
 
 @ v-en-GB-single-outer-curly-outer-straight-inner only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < ‘She said "no"’
-> ‘She said “no”’
+> ‘She said ‘no’’
 
 @ v-en-GB-single-outer-curly-inner-straight-outer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < "She said “no”"

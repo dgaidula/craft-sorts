@@ -106,15 +106,15 @@
 
 @ a-apostrophe-inside-single-quotes only=quotes,apostrophes,primes
 < 'Don't go,' she said
-> “Don’t go,” she said
+> ‘Don’t go,’ she said
 
 @ a-single-quotes-around-word-sentence-end only=quotes,apostrophes,primes
 < He called it 'home'.
-> He called it “home”.
+> He called it ‘home’.
 
 @ a-single-quotes-possessive-inside only=quotes,apostrophes,primes
 < 'The dogs' bowls are empty'
-> “The dogs’ bowls are empty”
+> ‘The dogs’ bowls are empty’
 
 @ a-french-elision only=quotes,apostrophes,primes locale=fr
 < l'homme d'affaires
@@ -146,7 +146,7 @@
 
 @ a-german-apostrophe-differs-from-closing-quote only=quotes,apostrophes,primes locale=de
 < 'geht's nicht'
-> „geht’s nicht“
+> ‚geht’s nicht‘
 
 @ a-german-quote-and-apostrophe only=quotes,apostrophes,primes locale=de
 < "Er sagte 'nein', weil's regnet"

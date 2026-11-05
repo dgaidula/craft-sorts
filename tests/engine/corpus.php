@@ -9,7 +9,8 @@
  *   < input line (repeat for more lines; joined with \n)
  *   > expected line (repeat likewise; leave out when the input must come back unchanged)
  * `\u{A0}` style escapes work in input and expected. `#` starts a comment line.
- * config= is JSON: ruleOptions, skipTags, skipClasses, variants (locale id => variant name).
+ * config= is JSON: ruleOptions, skipTags, skipClasses, variants (locale id => variant name),
+ * quoteNesting ("typed", the default, or "depth").
  * only= turns every rule off except those listed; on= and off= adjust the defaults.
  * idem=no skips the idempotence check, only for cases that prove settled characters are
  * protected: protection lasts for one call, so a second call may change what the first spared.
@@ -89,6 +90,7 @@ function caseOptions(Engine $engine, array $attrs): array
         skipTags: $config['skipTags'] ?? [],
         skipClasses: $config['skipClasses'] ?? [],
         variants: $config['variants'] ?? [],
+        quoteNesting: $config['quoteNesting'] ?? Options::NESTING_TYPED,
     );
     $named = array_values(array_filter(explode(',', $attrs['named'] ?? '')));
     return [$options, $named];

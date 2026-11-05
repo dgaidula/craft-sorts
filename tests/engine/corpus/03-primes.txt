@@ -78,15 +78,15 @@
 
 @ p-single-quoted-number only=quotes,apostrophes,primes
 < '5'
-> “5”
+> ‘5’
 
 @ p-single-quoted-two-digit-number only=quotes,apostrophes,primes
 < '90'
-> “90”
+> ‘90’
 
 @ p-single-quotation-ends-in-number only=quotes,apostrophes,primes
 < He said 'I am 6' and left
-> He said “I am 6” and left
+> He said ‘I am 6’ and left
 
 @ p-hes-six-feet only=quotes,apostrophes,primes
 < He's 6'

@@ -2,7 +2,7 @@
 
 namespace iceboxind\sorts\engine\rules;
 
-/** Straight double and single quotes to the locale’s opening and closing quotes, nested by depth. */
+/** Straight double and single quotes to the locale’s opening and closing quotes: by the mark typed, or by nesting depth (see QuoteScanner). */
 final class QuotesRule extends QuoteFamilyRule
 {
     public function handle(): string
