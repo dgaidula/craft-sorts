@@ -28,6 +28,7 @@ return [
         'guillemets-outer' => [
             'quotes' => ['«', '»'],
             'nested' => ['“', '”'],
+            'third' => ['‘', '’'],
         ],
     ],
 ];

@@ -2,8 +2,9 @@
 # Only the outermost quotation keeps the level its mark asks for (" primary, ' secondary); inside it the
 # levels alternate: primary, secondary, primary. A curly mark already in the text counts as the level its
 # glyph has in the locale and variant (a glyph in both pairs, as in French and Dutch, counts as primary);
-# a glyph that is both an opening and a closing mark (fi and sv ” and ’) cannot be told apart and is not
-# counted, so those two have no curly-parent cases. The depth setting is not affected by any of this.
+# a glyph that is both an opening and a closing mark (fi and sv ” and ’) is told by what is on either side
+# of it (15-curly-marks-by-role.txt has those cases). The depth setting is not affected by any of this.
+# es guillemets-outer has a third pair (‘ ’, the RAE order): three deep takes it (FU8).
 # Expected output is written from the locale’s pairs, not copied from the engine.
 
 @ n-cs-same-type-double only=quotes,apostrophes,primes locale=cs
@@ -256,11 +257,11 @@
 
 @ n-es-guillemets-outer-three-deep-double-first only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
 < "a 'b "c" b' a"
-> «a “b «c» b” a»
+> «a “b ‘c’ b” a»
 
 @ n-es-guillemets-outer-three-deep-single-first only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
 < 'a "b 'c' b" a'
-> “a «b “c” b» a”
+> “a «b ‘c’ b» a”
 
 @ n-es-guillemets-outer-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
 < «She said "no" today»

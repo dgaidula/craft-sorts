@@ -1,0 +1,964 @@
+# A curly mark already in the text is classed by its role in the active locale and variant, not by
+# its shape (F1): in German, Czech and de-CH „ and ‚ open and “ and ‘ close; in the German book style
+# » and › open and « and ‹ close. That holds in the same run and across an inline tag, where the mark
+# is the scan’s own output from the run before. In fi and sv, where ” and ’ both open and close, a
+# curly mark is told by what is on either side of it, as a straight one is (F2).
+# Then: in depth mode a closer takes the level of the quotation it closes (FU4); inside a curly
+# quotation an inch mark or a plural possessive is not its closer when the curly closer still
+# follows (FU5, FU6); es guillemets-outer has a third level, the RAE order « “ ‘ (FU8); and cases
+# that pin the scanner’s level bookkeeping (FU1).
+# Expected output is written from the locale’s pairs, not copied from the engine.
+
+# ---- FU1 ----
+
+@ r-fu1-depth-three-deep-en-US only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< "a 'b "c" b' a"
+> “a ‘b “c” b’ a”
+
+@ r-fu1-depth-three-deep-de only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< "a 'b "c" b' a"
+> „a ‚b „c“ b‘ a“
+
+@ r-fu1-depth-four-deep-same-kind only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< "a "b "c "d" c" b" a"
+> “a ‘b “c ‘d’ c” b’ a”
+
+@ r-fu1-nl-glyph-in-both-pairs-is-primary only=quotes,apostrophes,primes locale=nl
+< ‘Hij kwam om 5' over.’
+> ‘Hij kwam om 5′ over.’
+
+@ r-fu1-de-curly-nested-opener-is-not-a-double only=quotes,apostrophes,primes locale=de
+< ‚Er ist 6" groß‘
+> ‚Er ist 6″ groß‘
+
+@ r-fu1-de-curly-nested-closer-leaves-the-double-open only=quotes,apostrophes,primes locale=de
+< „Er sagte ‚ja‘ und "nein"“
+> „Er sagte ‚ja‘ und ‚nein‘“
+
+@ r-fu1-de-curly-nested-closer-leaves-the-double-open-depth only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „Er sagte ‚ja‘ und "nein"“
+> „Er sagte ‚ja‘ und ‚nein‘“
+
+@ r-fu1-de-curly-nested-then-straight-primary-closer only=quotes,apostrophes,primes locale=de
+< „Er sagte ‚ja‘".
+> „Er sagte ‚ja‘“.
+
+@ r-fu1-crossed-curly-quotations-close-their-levels only=quotes,apostrophes,primes
+< “a ‘b” 'c "d" c'
+> “a ‘b” ‘c “d” c’
+
+# ---- FU4: in depth mode a closer takes the level of the quotation it closes ----
+
+@ r-fu4-depth-curly-single-straight-closer only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< ‘He said no,' she said.
+> ‘He said no,’ she said.
+
+@ r-fu4-typed-curly-single-straight-closer only=quotes,apostrophes,primes
+< ‘He said no,' she said.
+> ‘He said no,’ she said.
+
+@ r-fu4-depth-curly-single-straight-closer-before-word only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< ‘He said no' and left.
+> ‘He said no’ and left.
+
+@ r-fu4-depth-de-curly-nested-straight-closer only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< ‚Er sagte nein,' sagte sie.
+> ‚Er sagte nein,‘ sagte sie.
+
+@ r-fu4-depth-en-GB-single-outer-curly-nested-straight-closer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
+< “He said no," she said.
+> “He said no,” she said.
+
+# ---- FU5, FU6: inside a curly quotation, its curly closer still to come ----
+
+@ r-fu5-inch-inside-curly-double only=quotes,apostrophes,primes
+< “The screen is 27" wide”
+> “The screen is 27″ wide”
+
+@ r-fu5-inch-inside-curly-double-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< “The screen is 27" wide”
+> “The screen is 27″ wide”
+
+@ r-fu5-fr-inch-inside-guillemets only=quotes,apostrophes,primes locale=fr
+< « Il mesure 6" de plus » dit-il.
+> « Il mesure 6″ de plus » dit-il.
+
+@ r-fu5-nl-inch-inside-curly-single only=quotes,apostrophes,primes locale=nl
+< ‘Hij is 1,80 m en 6" lang’
+> ‘Hij is 1,80 m en 6″ lang’
+
+@ r-fu5-digit-closes-when-only-another-quotation-follows only=quotes,apostrophes,primes
+< “He is 6" and left. “Yes,” she said.
+> “He is 6” and left. “Yes,” she said.
+
+@ r-fu5-straight-inner-quotation-still-counts-straight-marks only=quotes,apostrophes,primes
+< “He said "6" twice”
+> “He said ‘6’ twice”
+
+@ r-fu5-nl-apostrophe-in-a-word-is-not-the-closer only=quotes,apostrophes,primes locale=nl
+< ‘Hij is 6" en zo’n man
+> ‘Hij is 6’ en zo’n man
+
+@ r-fu5-nl-apostrophe-in-a-word-after-a-tag-is-not-the-closer only=quotes,apostrophes,primes locale=nl
+< <p>‘Hij is 6" <i>en zo’n man</i></p>
+> <p>‘Hij is 6’ <i>en zo’n man</i></p>
+
+@ r-fu5-nl-closer-after-a-tag only=quotes,apostrophes,primes locale=nl
+< <p>‘Hij is 6" <i>lang</i>’</p>
+> <p>‘Hij is 6″ <i>lang</i>’</p>
+
+@ r-fu5-possessive-inside-curly-single-apostrophes-off only=quotes,primes
+< ‘The dogs' bowls are empty,’ she said.
+> ‘The dogs' bowls are empty,’ she said.
+
+@ r-fu5-possessive-inside-curly-single-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< ‘The dogs' bowls are empty,’ she said.
+> ‘The dogs’ bowls are empty,’ she said.
+
+@ r-fu6-en-GB-single-outer-possessive-apostrophes-off only=quotes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< 'The dogs' bowls are empty'
+> “The dogs' bowls are empty”
+
+@ r-fu6-en-GB-single-outer-possessive only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< 'The dogs' bowls are empty'
+> “The dogs’ bowls are empty”
+
+# ---- FU8: es guillemets-outer, « then “ then ‘, deeper alternating “ and ‘ ----
+
+@ r-fu8-es-guillemets-outer-three-deep-depth only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
+< "a 'b "c" b' a"
+> «a “b ‘c’ b” a»
+
+@ r-fu8-es-guillemets-outer-three-deep-same-kind only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< "a "b "c" b" a"
+> «a “b ‘c’ b” a»
+
+@ r-fu8-es-guillemets-outer-four-deep only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< "a 'b "c 'd' c" b' a"
+> «a “b ‘c “d” c’ b” a»
+
+@ r-fu8-es-guillemets-outer-five-deep only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< "a 'b "c 'd "e" d' c" b' a"
+> «a “b ‘c “d ‘e’ d” c’ b” a»
+
+@ r-fu8-es-guillemets-outer-five-deep-depth only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
+< 'a "b 'c "d 'e' d" c' b" a'
+> «a “b ‘c “d ‘e’ d” c’ b” a»
+
+@ r-fu8-es-guillemets-outer-curly-third-parent only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< «a “b ‘c "d" c’ b” a»
+> «a “b ‘c “d” c’ b” a»
+
+@ r-fu8-es-guillemets-outer-straight-third-in-curly-parents only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< «a “b 'c' b” a»
+> «a “b ‘c’ b” a»
+
+@ r-fu8-es-guillemets-outer-three-deep-across-tags only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< <p>"a <i>'b <b>"c"</b> b'</i> a"</p>
+> <p>«a <i>“b <b>‘c’</b> b”</i> a»</p>
+
+@ r-fu8-es-guillemets-outer-apostrophe-at-the-third-level only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< "a 'b "it's" b' a"
+> «a “b ‘it’s’ b” a»
+
+@ r-fu8-es-default-has-no-third-level only=quotes,apostrophes,primes locale=es config={"quoteNesting":"depth"}
+< "a 'b "c 'd' c" b' a"
+> “a ‘b “c ‘d’ c” b’ a”
+
+# ---- F1 on the page: the lang attribute chooses the locale ----
+
+@ r-f1-lang-de-across-tag-before-comma only=quotes,apostrophes,primes
+< <p lang="de">"Wir lesen <em>"Faust"</em>", sagte sie.</p>
+> <p lang="de">„Wir lesen <em>‚Faust‘</em>“, sagte sie.</p>
+
+@ r-f1-lang-de-book only=quotes,apostrophes,primes config={"variants":{"de":"book"}}
+< <p lang="de">»"Nein," sagte er«</p>
+> <p lang="de">»›Nein,‹ sagte er«</p>
+
+@ r-f1-lang-de-curly-nested-child-then-comma only=quotes,apostrophes,primes
+< <p lang="de">"Das ist ‚Unsinn‘", sagte er.</p>
+> <p lang="de">„Das ist ‚Unsinn‘“, sagte er.</p>
+
+# ---- F2: fi and sv marks next to apostrophes ----
+
+@ r-f2-sv-leading-apostrophe-is-not-an-opener only=quotes,apostrophes,primes locale=sv
+< ”På ’90-talet sa han "nej."”
+> ”På ’90-talet sa han ’nej.’”
+
+@ r-f2-sv-possessive-apostrophe-is-not-a-closer only=quotes,apostrophes,primes locale=sv
+< ”Lars’ bok, sa han "ja"”
+> ”Lars’ bok, sa han ’ja’”
+
+@ r-f2-fi-curly-nested-closed-then-straight-child only=quotes,apostrophes,primes locale=fi
+< ”Hän sanoi: ’ei’ ja "kyllä"”
+> ”Hän sanoi: ’ei’ ja ’kyllä’”
+
+# ---- F1 and F2: the same shapes in de, de-CH, cs, de book, fi and sv, typed and depth ----
+
+@ r-de-typed-parent-double-child-first only=quotes,apostrophes,primes locale=de
+< „"Nein," sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-typed-parent-double-child-last only=quotes,apostrophes,primes locale=de
+< „Er sagte: "Nein."“
+> „Er sagte: ‚Nein.‘“
+
+@ r-de-typed-parent-double-child-whole only=quotes,apostrophes,primes locale=de
+< „"Ja"“
+> „‚Ja‘“
+
+@ r-de-typed-parent-double-two-children only=quotes,apostrophes,primes locale=de
+< „"Ja", sagte er, "nein"“
+> „‚Ja‘, sagte er, ‚nein‘“
+
+@ r-de-typed-parent-double-single-child only=quotes,apostrophes,primes locale=de
+< „'Nein,' sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-typed-parent-single-double-child-first only=quotes,apostrophes,primes locale=de
+< ‚"Nein," sagte er‘
+> ‚„Nein,“ sagte er‘
+
+@ r-de-typed-parent-single-double-child-last only=quotes,apostrophes,primes locale=de
+< ‚Er sagte: "Nein."‘
+> ‚Er sagte: „Nein.“‘
+
+@ r-de-typed-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=de
+< "Er nannte es „Unsinn“".
+> „Er nannte es „Unsinn““.
+
+@ r-de-typed-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=de
+< "Er nannte es ‚Unsinn‘".
+> „Er nannte es ‚Unsinn‘“.
+
+@ r-de-typed-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=de
+< 'Er nannte es „Unsinn“'.
+> ‚Er nannte es „Unsinn“‘.
+
+@ r-de-typed-curly-middle-of-three only=quotes,apostrophes,primes locale=de
+< „Sie sagte: "Er rief „ja“."“
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-typed-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=de
+< "Sie sagte: ‚Er rief "ja".‘"
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-typed-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=de
+< „Er sagte ‚ja‘".
+> „Er sagte ‚ja‘“.
+
+@ r-de-typed-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=de
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-typed-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=de
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>„<i>‚Ja,‘</i> sagte er.“</p>
+
+@ r-de-typed-across-tag-single-child only=quotes,apostrophes,primes locale=de
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-depth-parent-double-child-first only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „"Nein," sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-depth-parent-double-child-last only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „Er sagte: "Nein."“
+> „Er sagte: ‚Nein.‘“
+
+@ r-de-depth-parent-double-child-whole only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „"Ja"“
+> „‚Ja‘“
+
+@ r-de-depth-parent-double-two-children only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „"Ja", sagte er, "nein"“
+> „‚Ja‘, sagte er, ‚nein‘“
+
+@ r-de-depth-parent-double-single-child only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „'Nein,' sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-depth-parent-single-double-child-first only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< ‚"Nein," sagte er‘
+> ‚‚Nein,‘ sagte er‘
+
+@ r-de-depth-parent-single-double-child-last only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< ‚Er sagte: "Nein."‘
+> ‚Er sagte: ‚Nein.‘‘
+
+@ r-de-depth-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< "Er nannte es „Unsinn“".
+> „Er nannte es „Unsinn““.
+
+@ r-de-depth-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< "Er nannte es ‚Unsinn‘".
+> „Er nannte es ‚Unsinn‘“.
+
+@ r-de-depth-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< 'Er nannte es „Unsinn“'.
+> „Er nannte es „Unsinn““.
+
+@ r-de-depth-curly-middle-of-three only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „Sie sagte: "Er rief „ja“."“
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-depth-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< "Sie sagte: ‚Er rief "ja".‘"
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-depth-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< „Er sagte ‚ja‘".
+> „Er sagte ‚ja‘“.
+
+@ r-de-depth-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-depth-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>„<i>‚Ja,‘</i> sagte er.“</p>
+
+@ r-de-depth-across-tag-single-child only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-CH-typed-parent-double-child-first only=quotes,apostrophes,primes locale=de-CH
+< „"Nein," sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-CH-typed-parent-double-child-last only=quotes,apostrophes,primes locale=de-CH
+< „Er sagte: "Nein."“
+> „Er sagte: ‚Nein.‘“
+
+@ r-de-CH-typed-parent-double-child-whole only=quotes,apostrophes,primes locale=de-CH
+< „"Ja"“
+> „‚Ja‘“
+
+@ r-de-CH-typed-parent-double-two-children only=quotes,apostrophes,primes locale=de-CH
+< „"Ja", sagte er, "nein"“
+> „‚Ja‘, sagte er, ‚nein‘“
+
+@ r-de-CH-typed-parent-double-single-child only=quotes,apostrophes,primes locale=de-CH
+< „'Nein,' sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-CH-typed-parent-single-double-child-first only=quotes,apostrophes,primes locale=de-CH
+< ‚"Nein," sagte er‘
+> ‚„Nein,“ sagte er‘
+
+@ r-de-CH-typed-parent-single-double-child-last only=quotes,apostrophes,primes locale=de-CH
+< ‚Er sagte: "Nein."‘
+> ‚Er sagte: „Nein.“‘
+
+@ r-de-CH-typed-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=de-CH
+< "Er nannte es „Unsinn“".
+> „Er nannte es „Unsinn““.
+
+@ r-de-CH-typed-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=de-CH
+< "Er nannte es ‚Unsinn‘".
+> „Er nannte es ‚Unsinn‘“.
+
+@ r-de-CH-typed-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=de-CH
+< 'Er nannte es „Unsinn“'.
+> ‚Er nannte es „Unsinn“‘.
+
+@ r-de-CH-typed-curly-middle-of-three only=quotes,apostrophes,primes locale=de-CH
+< „Sie sagte: "Er rief „ja“."“
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-CH-typed-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=de-CH
+< "Sie sagte: ‚Er rief "ja".‘"
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-CH-typed-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=de-CH
+< „Er sagte ‚ja‘".
+> „Er sagte ‚ja‘“.
+
+@ r-de-CH-typed-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=de-CH
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-CH-typed-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=de-CH
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>„<i>‚Ja,‘</i> sagte er.“</p>
+
+@ r-de-CH-typed-across-tag-single-child only=quotes,apostrophes,primes locale=de-CH
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-CH-depth-parent-double-child-first only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< „"Nein," sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-CH-depth-parent-double-child-last only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< „Er sagte: "Nein."“
+> „Er sagte: ‚Nein.‘“
+
+@ r-de-CH-depth-parent-double-child-whole only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< „"Ja"“
+> „‚Ja‘“
+
+@ r-de-CH-depth-parent-double-two-children only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< „"Ja", sagte er, "nein"“
+> „‚Ja‘, sagte er, ‚nein‘“
+
+@ r-de-CH-depth-parent-double-single-child only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< „'Nein,' sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-de-CH-depth-parent-single-double-child-first only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< ‚"Nein," sagte er‘
+> ‚‚Nein,‘ sagte er‘
+
+@ r-de-CH-depth-parent-single-double-child-last only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< ‚Er sagte: "Nein."‘
+> ‚Er sagte: ‚Nein.‘‘
+
+@ r-de-CH-depth-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< "Er nannte es „Unsinn“".
+> „Er nannte es „Unsinn““.
+
+@ r-de-CH-depth-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< "Er nannte es ‚Unsinn‘".
+> „Er nannte es ‚Unsinn‘“.
+
+@ r-de-CH-depth-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< 'Er nannte es „Unsinn“'.
+> „Er nannte es „Unsinn““.
+
+@ r-de-CH-depth-curly-middle-of-three only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< „Sie sagte: "Er rief „ja“."“
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-CH-depth-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< "Sie sagte: ‚Er rief "ja".‘"
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-de-CH-depth-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< „Er sagte ‚ja‘".
+> „Er sagte ‚ja‘“.
+
+@ r-de-CH-depth-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-CH-depth-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>„<i>‚Ja,‘</i> sagte er.“</p>
+
+@ r-de-CH-depth-across-tag-single-child only=quotes,apostrophes,primes locale=de-CH config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-cs-typed-parent-double-child-first only=quotes,apostrophes,primes locale=cs
+< „"Nein," sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-cs-typed-parent-double-child-last only=quotes,apostrophes,primes locale=cs
+< „Er sagte: "Nein."“
+> „Er sagte: ‚Nein.‘“
+
+@ r-cs-typed-parent-double-child-whole only=quotes,apostrophes,primes locale=cs
+< „"Ja"“
+> „‚Ja‘“
+
+@ r-cs-typed-parent-double-two-children only=quotes,apostrophes,primes locale=cs
+< „"Ja", sagte er, "nein"“
+> „‚Ja‘, sagte er, ‚nein‘“
+
+@ r-cs-typed-parent-double-single-child only=quotes,apostrophes,primes locale=cs
+< „'Nein,' sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-cs-typed-parent-single-double-child-first only=quotes,apostrophes,primes locale=cs
+< ‚"Nein," sagte er‘
+> ‚„Nein,“ sagte er‘
+
+@ r-cs-typed-parent-single-double-child-last only=quotes,apostrophes,primes locale=cs
+< ‚Er sagte: "Nein."‘
+> ‚Er sagte: „Nein.“‘
+
+@ r-cs-typed-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=cs
+< "Er nannte es „Unsinn“".
+> „Er nannte es „Unsinn““.
+
+@ r-cs-typed-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=cs
+< "Er nannte es ‚Unsinn‘".
+> „Er nannte es ‚Unsinn‘“.
+
+@ r-cs-typed-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=cs
+< 'Er nannte es „Unsinn“'.
+> ‚Er nannte es „Unsinn“‘.
+
+@ r-cs-typed-curly-middle-of-three only=quotes,apostrophes,primes locale=cs
+< „Sie sagte: "Er rief „ja“."“
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-cs-typed-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=cs
+< "Sie sagte: ‚Er rief "ja".‘"
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-cs-typed-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=cs
+< „Er sagte ‚ja‘".
+> „Er sagte ‚ja‘“.
+
+@ r-cs-typed-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=cs
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-cs-typed-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=cs
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>„<i>‚Ja,‘</i> sagte er.“</p>
+
+@ r-cs-typed-across-tag-single-child only=quotes,apostrophes,primes locale=cs
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-cs-depth-parent-double-child-first only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< „"Nein," sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-cs-depth-parent-double-child-last only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< „Er sagte: "Nein."“
+> „Er sagte: ‚Nein.‘“
+
+@ r-cs-depth-parent-double-child-whole only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< „"Ja"“
+> „‚Ja‘“
+
+@ r-cs-depth-parent-double-two-children only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< „"Ja", sagte er, "nein"“
+> „‚Ja‘, sagte er, ‚nein‘“
+
+@ r-cs-depth-parent-double-single-child only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< „'Nein,' sagte er“
+> „‚Nein,‘ sagte er“
+
+@ r-cs-depth-parent-single-double-child-first only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< ‚"Nein," sagte er‘
+> ‚‚Nein,‘ sagte er‘
+
+@ r-cs-depth-parent-single-double-child-last only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< ‚Er sagte: "Nein."‘
+> ‚Er sagte: ‚Nein.‘‘
+
+@ r-cs-depth-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< "Er nannte es „Unsinn“".
+> „Er nannte es „Unsinn““.
+
+@ r-cs-depth-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< "Er nannte es ‚Unsinn‘".
+> „Er nannte es ‚Unsinn‘“.
+
+@ r-cs-depth-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< 'Er nannte es „Unsinn“'.
+> „Er nannte es „Unsinn““.
+
+@ r-cs-depth-curly-middle-of-three only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< „Sie sagte: "Er rief „ja“."“
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-cs-depth-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< "Sie sagte: ‚Er rief "ja".‘"
+> „Sie sagte: ‚Er rief „ja“.‘“
+
+@ r-cs-depth-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< „Er sagte ‚ja‘".
+> „Er sagte ‚ja‘“.
+
+@ r-cs-depth-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-cs-depth-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>„<i>‚Ja,‘</i> sagte er.“</p>
+
+@ r-cs-depth-across-tag-single-child only=quotes,apostrophes,primes locale=cs config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>„Er sagte <i>‚nein‘</i>“.</p>
+
+@ r-de-book-typed-parent-double-child-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »"Nein," sagte er«
+> »›Nein,‹ sagte er«
+
+@ r-de-book-typed-parent-double-child-last only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »Er sagte: "Nein."«
+> »Er sagte: ›Nein.‹«
+
+@ r-de-book-typed-parent-double-child-whole only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »"Ja"«
+> »›Ja‹«
+
+@ r-de-book-typed-parent-double-two-children only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »"Ja", sagte er, "nein"«
+> »›Ja‹, sagte er, ›nein‹«
+
+@ r-de-book-typed-parent-double-single-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »'Nein,' sagte er«
+> »›Nein,‹ sagte er«
+
+@ r-de-book-typed-parent-single-double-child-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< ›"Nein," sagte er‹
+> ›»Nein,« sagte er‹
+
+@ r-de-book-typed-parent-single-double-child-last only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< ›Er sagte: "Nein."‹
+> ›Er sagte: »Nein.«‹
+
+@ r-de-book-typed-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< "Er nannte es »Unsinn«".
+> »Er nannte es »Unsinn««.
+
+@ r-de-book-typed-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< "Er nannte es ›Unsinn‹".
+> »Er nannte es ›Unsinn‹«.
+
+@ r-de-book-typed-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< 'Er nannte es »Unsinn«'.
+> ›Er nannte es »Unsinn«‹.
+
+@ r-de-book-typed-curly-middle-of-three only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »Sie sagte: "Er rief »ja«."«
+> »Sie sagte: ›Er rief »ja«.‹«
+
+@ r-de-book-typed-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< "Sie sagte: ›Er rief "ja".‹"
+> »Sie sagte: ›Er rief »ja«.‹«
+
+@ r-de-book-typed-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »Er sagte ›ja‹".
+> »Er sagte ›ja‹«.
+
+@ r-de-book-typed-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>»Er sagte <i>›nein‹</i>«.</p>
+
+@ r-de-book-typed-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>»<i>›Ja,‹</i> sagte er.«</p>
+
+@ r-de-book-typed-across-tag-single-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>»Er sagte <i>›nein‹</i>«.</p>
+
+@ r-de-book-depth-parent-double-child-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< »"Nein," sagte er«
+> »›Nein,‹ sagte er«
+
+@ r-de-book-depth-parent-double-child-last only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< »Er sagte: "Nein."«
+> »Er sagte: ›Nein.‹«
+
+@ r-de-book-depth-parent-double-child-whole only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< »"Ja"«
+> »›Ja‹«
+
+@ r-de-book-depth-parent-double-two-children only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< »"Ja", sagte er, "nein"«
+> »›Ja‹, sagte er, ›nein‹«
+
+@ r-de-book-depth-parent-double-single-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< »'Nein,' sagte er«
+> »›Nein,‹ sagte er«
+
+@ r-de-book-depth-parent-single-double-child-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< ›"Nein," sagte er‹
+> ››Nein,‹ sagte er‹
+
+@ r-de-book-depth-parent-single-double-child-last only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< ›Er sagte: "Nein."‹
+> ›Er sagte: ›Nein.‹‹
+
+@ r-de-book-depth-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< "Er nannte es »Unsinn«".
+> »Er nannte es »Unsinn««.
+
+@ r-de-book-depth-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< "Er nannte es ›Unsinn‹".
+> »Er nannte es ›Unsinn‹«.
+
+@ r-de-book-depth-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< 'Er nannte es »Unsinn«'.
+> »Er nannte es »Unsinn««.
+
+@ r-de-book-depth-curly-middle-of-three only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< »Sie sagte: "Er rief »ja«."«
+> »Sie sagte: ›Er rief »ja«.‹«
+
+@ r-de-book-depth-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< "Sie sagte: ›Er rief "ja".‹"
+> »Sie sagte: ›Er rief »ja«.‹«
+
+@ r-de-book-depth-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< »Er sagte ›ja‹".
+> »Er sagte ›ja‹«.
+
+@ r-de-book-depth-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>»Er sagte <i>›nein‹</i>«.</p>
+
+@ r-de-book-depth-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>»<i>›Ja,‹</i> sagte er.«</p>
+
+@ r-de-book-depth-across-tag-single-child only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>»Er sagte <i>›nein‹</i>«.</p>
+
+@ r-fi-typed-parent-double-child-first only=quotes,apostrophes,primes locale=fi
+< ”"Nein," sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-fi-typed-parent-double-child-last only=quotes,apostrophes,primes locale=fi
+< ”Er sagte: "Nein."”
+> ”Er sagte: ’Nein.’”
+
+@ r-fi-typed-parent-double-child-whole only=quotes,apostrophes,primes locale=fi
+< ”"Ja"”
+> ”’Ja’”
+
+@ r-fi-typed-parent-double-two-children only=quotes,apostrophes,primes locale=fi
+< ”"Ja", sagte er, "nein"”
+> ”’Ja’, sagte er, ’nein’”
+
+@ r-fi-typed-parent-double-single-child only=quotes,apostrophes,primes locale=fi
+< ”'Nein,' sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-fi-typed-parent-single-double-child-first only=quotes,apostrophes,primes locale=fi
+< ’"Nein," sagte er’
+> ’”Nein,” sagte er’
+
+@ r-fi-typed-parent-single-double-child-last only=quotes,apostrophes,primes locale=fi
+< ’Er sagte: "Nein."’
+> ’Er sagte: ”Nein.”’
+
+@ r-fi-typed-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=fi
+< "Er nannte es ”Unsinn”".
+> ”Er nannte es ”Unsinn””.
+
+@ r-fi-typed-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=fi
+< "Er nannte es ’Unsinn’".
+> ”Er nannte es ’Unsinn’”.
+
+@ r-fi-typed-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=fi
+< 'Er nannte es ”Unsinn”'.
+> ’Er nannte es ”Unsinn”’.
+
+@ r-fi-typed-curly-middle-of-three only=quotes,apostrophes,primes locale=fi
+< ”Sie sagte: "Er rief ”ja”."”
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-fi-typed-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=fi
+< "Sie sagte: ’Er rief "ja".’"
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-fi-typed-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=fi
+< ”Er sagte ’ja’".
+> ”Er sagte ’ja’”.
+
+@ r-fi-typed-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=fi
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>
+
+@ r-fi-typed-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=fi
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>”<i>’Ja,’</i> sagte er.”</p>
+
+@ r-fi-typed-across-tag-single-child only=quotes,apostrophes,primes locale=fi
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>
+
+@ r-fi-depth-parent-double-child-first only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ”"Nein," sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-fi-depth-parent-double-child-last only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ”Er sagte: "Nein."”
+> ”Er sagte: ’Nein.’”
+
+@ r-fi-depth-parent-double-child-whole only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ”"Ja"”
+> ”’Ja’”
+
+@ r-fi-depth-parent-double-two-children only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ”"Ja", sagte er, "nein"”
+> ”’Ja’, sagte er, ’nein’”
+
+@ r-fi-depth-parent-double-single-child only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ”'Nein,' sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-fi-depth-parent-single-double-child-first only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ’"Nein," sagte er’
+> ’’Nein,’ sagte er’
+
+@ r-fi-depth-parent-single-double-child-last only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ’Er sagte: "Nein."’
+> ’Er sagte: ’Nein.’’
+
+@ r-fi-depth-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< "Er nannte es ”Unsinn”".
+> ”Er nannte es ”Unsinn””.
+
+@ r-fi-depth-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< "Er nannte es ’Unsinn’".
+> ”Er nannte es ’Unsinn’”.
+
+@ r-fi-depth-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< 'Er nannte es ”Unsinn”'.
+> ”Er nannte es ”Unsinn””.
+
+@ r-fi-depth-curly-middle-of-three only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ”Sie sagte: "Er rief ”ja”."”
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-fi-depth-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< "Sie sagte: ’Er rief "ja".’"
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-fi-depth-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< ”Er sagte ’ja’".
+> ”Er sagte ’ja’”.
+
+@ r-fi-depth-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>
+
+@ r-fi-depth-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>”<i>’Ja,’</i> sagte er.”</p>
+
+@ r-fi-depth-across-tag-single-child only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>
+
+@ r-sv-typed-parent-double-child-first only=quotes,apostrophes,primes locale=sv
+< ”"Nein," sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-sv-typed-parent-double-child-last only=quotes,apostrophes,primes locale=sv
+< ”Er sagte: "Nein."”
+> ”Er sagte: ’Nein.’”
+
+@ r-sv-typed-parent-double-child-whole only=quotes,apostrophes,primes locale=sv
+< ”"Ja"”
+> ”’Ja’”
+
+@ r-sv-typed-parent-double-two-children only=quotes,apostrophes,primes locale=sv
+< ”"Ja", sagte er, "nein"”
+> ”’Ja’, sagte er, ’nein’”
+
+@ r-sv-typed-parent-double-single-child only=quotes,apostrophes,primes locale=sv
+< ”'Nein,' sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-sv-typed-parent-single-double-child-first only=quotes,apostrophes,primes locale=sv
+< ’"Nein," sagte er’
+> ’”Nein,” sagte er’
+
+@ r-sv-typed-parent-single-double-child-last only=quotes,apostrophes,primes locale=sv
+< ’Er sagte: "Nein."’
+> ’Er sagte: ”Nein.”’
+
+@ r-sv-typed-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=sv
+< "Er nannte es ”Unsinn”".
+> ”Er nannte es ”Unsinn””.
+
+@ r-sv-typed-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=sv
+< "Er nannte es ’Unsinn’".
+> ”Er nannte es ’Unsinn’”.
+
+@ r-sv-typed-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=sv
+< 'Er nannte es ”Unsinn”'.
+> ’Er nannte es ”Unsinn”’.
+
+@ r-sv-typed-curly-middle-of-three only=quotes,apostrophes,primes locale=sv
+< ”Sie sagte: "Er rief ”ja”."”
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-sv-typed-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=sv
+< "Sie sagte: ’Er rief "ja".’"
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-sv-typed-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=sv
+< ”Er sagte ’ja’".
+> ”Er sagte ’ja’”.
+
+@ r-sv-typed-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=sv
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>
+
+@ r-sv-typed-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=sv
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>”<i>’Ja,’</i> sagte er.”</p>
+
+@ r-sv-typed-across-tag-single-child only=quotes,apostrophes,primes locale=sv
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>
+
+@ r-sv-depth-parent-double-child-first only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”"Nein," sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-sv-depth-parent-double-child-last only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”Er sagte: "Nein."”
+> ”Er sagte: ’Nein.’”
+
+@ r-sv-depth-parent-double-child-whole only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”"Ja"”
+> ”’Ja’”
+
+@ r-sv-depth-parent-double-two-children only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”"Ja", sagte er, "nein"”
+> ”’Ja’, sagte er, ’nein’”
+
+@ r-sv-depth-parent-double-single-child only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”'Nein,' sagte er”
+> ”’Nein,’ sagte er”
+
+@ r-sv-depth-parent-single-double-child-first only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ’"Nein," sagte er’
+> ’’Nein,’ sagte er’
+
+@ r-sv-depth-parent-single-double-child-last only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ’Er sagte: "Nein."’
+> ’Er sagte: ’Nein.’’
+
+@ r-sv-depth-straight-parent-curly-primary-child only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< "Er nannte es ”Unsinn”".
+> ”Er nannte es ”Unsinn””.
+
+@ r-sv-depth-straight-parent-curly-nested-child only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< "Er nannte es ’Unsinn’".
+> ”Er nannte es ’Unsinn’”.
+
+@ r-sv-depth-straight-single-parent-curly-primary-child only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< 'Er nannte es ”Unsinn”'.
+> ”Er nannte es ”Unsinn””.
+
+@ r-sv-depth-curly-middle-of-three only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”Sie sagte: "Er rief ”ja”."”
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-sv-depth-curly-nested-middle-of-three only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< "Sie sagte: ’Er rief "ja".’"
+> ”Sie sagte: ’Er rief ”ja”.’”
+
+@ r-sv-depth-curly-nested-then-straight-closer only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”Er sagte ’ja’".
+> ”Er sagte ’ja’”.
+
+@ r-sv-depth-across-tag-straight-only-closer only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>"nein"</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>
+
+@ r-sv-depth-across-tag-straight-only-opener only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>"<i>"Ja,"</i> sagte er."</p>
+> <p>”<i>’Ja,’</i> sagte er.”</p>
+
+@ r-sv-depth-across-tag-single-child only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>"Er sagte <i>'nein'</i>".</p>
+> <p>”Er sagte <i>’nein’</i>”.</p>

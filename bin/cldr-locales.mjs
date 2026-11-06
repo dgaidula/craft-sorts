@@ -121,7 +121,7 @@ const LOCALES = [
   { id: 'es', cldr: 'es', name: 'Spanish', dash: EM,
     variants: {
       'guillemets-outer': {
-        quotes: ['\u00AB', '\u00BB'], nested: ['\u201C', '\u201D'],
+        quotes: ['\u00AB', '\u00BB'], nested: ['\u201C', '\u201D'], third: ['\u2018', '\u2019'],
         source: 'Real Academia Española, Ortografía de la lengua española (2010), chapter III, “Las comillas” (https://www.rae.es/ortografía/las-comillas): in print, the angular marks « » first, then the English marks “ ”, then the single marks ‘ ’ for a quotation inside a quotation. Not read at rae.es (it refused automated fetches): the order is as the Universidad de Piura’s Castellano actual quotes it from the RAE Libro de estilo de la lengua española (2018), p. 120.',
       },
     },
@@ -207,6 +207,8 @@ function renderPhp(loc, r, pairs) {
       `        ${phpString(name)} => [`,
       ...(v.quotes ? [`            'quotes' => [${phpString(v.quotes[0])}, ${phpString(v.quotes[1])}],`] : []),
       ...(v.nested ? [`            'nested' => [${phpString(v.nested[0])}, ${phpString(v.nested[1])}],`] : []),
+      // A third pair, when the authority has one: three deep, then it alternates with the nested pair.
+      ...(v.third ? [`            'third' => [${phpString(v.third[0])}, ${phpString(v.third[1])}],`] : []),
       '        ],',
     ]),
     '    ]',

@@ -23,8 +23,11 @@ final class DataLocale implements LocaleInterface
                 throw new InvalidArgumentException("Locale “{$data['id']}” needs two marks in “{$key}”.");
             }
         }
+        if (isset($data['third']) && (!is_array($data['third']) || count($data['third']) !== 2)) {
+            throw new InvalidArgumentException("Locale “{$data['id']}” needs two marks in “third”.");
+        }
         foreach ($data['variants'] ?? [] as $name => $changes) {
-            foreach (['quotes', 'nested'] as $key) {
+            foreach (['quotes', 'nested', 'third'] as $key) {
                 if (isset($changes[$key]) && (!is_array($changes[$key]) || count($changes[$key]) !== 2)) {
                     throw new InvalidArgumentException("Variant “{$name}” of “{$data['id']}” needs two marks in “{$key}”.");
                 }
@@ -63,7 +66,7 @@ final class DataLocale implements LocaleInterface
         if (!is_array($changes)) {
             return $this;
         }
-        return new self(array_replace($this->data, array_intersect_key($changes, array_flip(['quotes', 'nested', 'apostrophe', 'dash', 'spacing']))));
+        return new self(array_replace($this->data, array_intersect_key($changes, array_flip(['quotes', 'nested', 'third', 'apostrophe', 'dash', 'spacing']))));
     }
 
     public function quotes(): array
@@ -74,6 +77,15 @@ final class DataLocale implements LocaleInterface
     public function nestedQuotes(): array
     {
         return $this->data['nested'];
+    }
+
+    /**
+     * Pair for a third level, [opening, closing], or null when the locale has none. With one,
+     * a quotation three deep takes it, and deeper ones alternate the nested pair and this one.
+     */
+    public function thirdQuotes(): ?array
+    {
+        return $this->data['third'] ?? null;
     }
 
     public function apostrophe(): string

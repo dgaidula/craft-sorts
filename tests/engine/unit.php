@@ -257,6 +257,8 @@ $reg->register($one);
 check('locales: register() adds a locale object', 'zz', $reg->resolve('zz')?->id());
 throws('locales: data missing a key is refused', InvalidArgumentException::class, static fn () => DataLocale::fromArray(['id' => 'q']));
 throws('locales: a pair with one mark is refused', InvalidArgumentException::class, static fn () => DataLocale::fromArray(['id' => 'q', 'quotes' => ['a'], 'nested' => ['a', 'b'], 'apostrophe' => 'x', 'dash' => []]));
+throws('locales: a third pair with one mark is refused', InvalidArgumentException::class, static fn () => DataLocale::fromArray(['id' => 'q', 'quotes' => ['a', 'b'], 'nested' => ['a', 'b'], 'third' => ['c'], 'apostrophe' => 'x', 'dash' => []]));
+check('locales: the third pair is optional, and a variant can add one (es guillemets-outer)', [null, ['‘', '’']], [$registry->resolve('es')->thirdQuotes(), $registry->resolve('es')->withVariant('guillemets-outer')->thirdQuotes()]);
 
 // ---- Scopes: one rule, three ways in, identical output ------------------------
 
@@ -440,6 +442,16 @@ $slower = static function (string $small, string $large, ?Options $options = nul
 $page = static fn (int $n): string => "<p>'" . str_repeat("the dogs' bowls ", $n) . "'</p>";
 [$ratio, $a, $b] = $slower($page(3_200), $page(12_800));
 check(sprintf('perf guard: a possessive paragraph 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+
+// And on nesting: closing a quotation costs the quotations it closes, not the depth (F3).
+$page = static fn (int $n): string => '<p>' . str_repeat('"a \'b ', $n) . str_repeat('c\' d" ', $n) . '</p>';
+[$ratio, $a, $b] = $slower($page(1_000), $page(4_000));
+check(sprintf('perf guard: 4× as many nested quotations in one node take under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+
+// Open quotations across inline tags: a run does not copy the quotations open before it (F3).
+$page = static fn (int $n): string => '<p>' . str_repeat('<b> "a</b>', $n) . '</p>';
+[$ratio, $a, $b] = $slower($page(4_000), $page(16_000));
+check(sprintf('perf guard: open quotations across 4× as many inline tags take under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
 
 // So are the dashes on one: a match does not copy the rest of the run (R2-4).
 $page = static fn (int $n): string => '<p>' . str_repeat('a -- b. ', $n) . '</p>';
