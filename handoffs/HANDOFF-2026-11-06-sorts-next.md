@@ -32,7 +32,18 @@
 - **A release gate at `xhigh` was launched** over `0bb7844..cb57d6a`; its receipt will be `gates/2026-11-06-sorts-d844-d859-gate.json`. Step 1 above becomes: read that receipt, run the fix rounds, then renew the Hardened line and push.
 - **The house preset needs one edit after the gate:** `gaidula-standards/presets/typeset-house.json` sets `de` → `book`, which is now retired. Remove that line (book style is the default), and add `en-US` → `spaced-en-dash` (D855).
 
-## 4. Decisions still Dan’s (the builder’s questions, 2026-11-06)
+## Overnight run sheet (Dan, 2026-11-06: “we have a lot of capacity running into tomorrow's 16:00 reset”)
+
+Dan answered §4 below as **D863–D867** (claude-ops `38545845`): 1 y, 2 y (tonight), 3 y, 4 y, 5 fix overnight if it can be fixed. Run these in order in a fresh `clorchestrate` session in this repo, with fable-mode, release mode throughout:
+
+- **W1.** Read the gate receipt `gates/2026-11-06-sorts-d844-d859-gate.json` (launched at `cb57d6a`; if it is missing, the gate did not finish, so re-run it from the brief recorded in §2 of this update: `0bb7844..cb57d6a`, `xhigh`, mutants). Run fix rounds per the casting rules (at most two; a fix-introduced regression goes to Dan, or past the cap only under `:you`).
+- **W2. D864:** the three-state per-rule setting (on, off, follow the preset), so a site can veto a preset rule. Engine `Options`, the Craft settings screen (Pro, locked in Lite), project config, the README. Cast `dgbuilder`, release mode.
+- **W3. D867:** fix FU2 if it can be fixed without regressions (the R4-1 re-check receipt `gates/2026-11-06-sorts-r4-1-recheck.json` has the repro); otherwise add it to the README’s Known limits with the repro. Cast `fixer` (it is a gate follow-up).
+- **W4.** One release gate at `xhigh` over W2 and W3 (or fold them into W1’s re-check if W1 is still open), with fix rounds. Then renew the Hardened line and push `main`; pushing hardened Sorts is covered by D850.
+- **W5.** Edit `gaidula-standards/presets/typeset-house.json`: remove `de` → `book` (retired; book style is the default) and add `en-US` → `spaced-en-dash` (D855). Run `prose-typeset`’s tests, commit.
+- Bound every load test (memory `bound-load-tests`); check `id-codes next D` before writing any ID; log an EFFORT row per pass.
+
+## 4. Decisions still Dan’s (the builder’s questions, 2026-11-06), answered as D863–D867
 
 1. **B38, a word-initial apostrophe:** it is narrowed to apply only where no quotation is open, so `'hood` inside a quotation stays `‘hood`. The broad rule is one condition away, but it flipped three existing correct cases. Keep the narrow rule? (Recommend yes.)
 2. **The preset against per-rule switches:** a site can't veto ranges, multiplication or fractions while the preset is on, because the settings store a plain on/off where "off" is also their default. Allowing a veto needs a three-state switch (on, off, follow the preset), which is a UI change. Build it? (Recommend later.)
