@@ -1,0 +1,161 @@
+{
+  "tool": "craft-sorts",
+  "run": "sorts-d818-d824-gate-2026-11-05: 98db482..daa8d58 (D818 d4b99bd db758ac cc17a07; D819 81e35a2; D822 41bb461; D823/D824 f626a3f; Craft layer 310db68; docs 853c874; also in range, docs and receipts only: cf4c3ad, d8aff56, b43baf6), HEAD daa8d58, origin/main 322b4f9 (not pushed); testbed craft5-plugin-testbed 91877d5 (Craft 5.12.0.1, PHP 8.4, MySQL 8.4, DDEV craft5-testbed); host PHP 8.5.12 (/opt/homebrew/bin/php), php:8.2-cli in Docker; release mode, xhigh",
+  "suite": {
+    "results": [
+      "composer test-engine (host 8.5.12): RESULT: 3529 passed, 0 failed (corpus 1079); testbed PHP 8.4 the same; php:8.2-cli RESULT: 3129 passed, 0 failed (the 400 Dom\\HTMLDocument comparisons need 8.4+)",
+      "composer check: validate, lint, cs (0 of 62 fixable), PHPStan [OK] No errors",
+      "node tests/run-all.mjs at start and at end: audit 55, ckeditor 35, engine-service 37, extension-api 16, fix-on-save 64, graphql 23, page-pass 77, settings 87, smoke 2, twig 77, “ok  testbed isolation (clean tree, no pending project config, queue 0 → 0)”",
+      "Probes (scratch /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4): matrix.php 60 of 924 mixed rows differ (F1, F2); tags.php straight-only across tags (F1, F2); readme.php every README/CHANGELOG/SPEC/Options example holds; edge.php apostrophes, primes, unbalanced input; idem.php (FU6); xmode.php 0 of 2150 typed↔depth round trips differ; lin.php, big.php, big2.php (F3); gate-probe-test.php and gate-probe2-test.php in the testbed (F1 stored and on the page, FU2, FU3, ContentFixer locale keys en-US|, de|book = de-AT, de-CH|, nl|double-outer = nl-BE)",
+      "bin/cldr-locales.mjs generate on cldr-misc-full 49.0.0 (npm pack) into scratch: 16 files byte-identical to src/engine/locales (diff -r empty); dry run against the repo “nothing would change”. Variant citations match SPEC §9 D819/D823/D824. Unknown or mis-cased variant names fall back to CLDR. A variant set for de or nl reaches de-AT, de-DE and nl-BE by tag and by lang attribute.",
+      "Speed (perf.php 300 runs, opcache on, JIT off, new and 98db482 interleaved): host 8.5.12 dense medians 4.96/4.97/4.97 ms vs 4.91/4.94/4.91 (+1 %), typical 3.55–3.65 vs 3.49–3.55; php:8.2-cli dense 5.56 5.53 5.17 5.58 5.71 vs 5.69 5.61 5.56 5.60 5.39 (median of medians 5.56 vs 5.60), typical 3.69–4.18 vs 3.88–4.15. The delta is neutral on the realistic pages. Neither build met 5 ms on 8.2 today, which is 2026-11-05-sorts-release-recheck-2/R3-5, not new.",
+      "Closed findings of the three prior receipts stay closed: every suite that pins them is green and gate F4/R2-1’s multi-site rule holds for the new variants (locale keys above). R3-1 to R3-7 are not re-reported."
+    ],
+    "mutants": {
+      "engine": "gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/engine-mutants.yaml --jobs 4 --brief: summary ok=17 warn=7 skip=0 refuse=0 fail=0 (baseline green). Killed: M1 M2 M3 M4 M6 M8 M9 M12 M13 M14 M15 M16 M17 M18 M21 (and the baseline item). Survived: M5 (equivalent, 0 differences over 10,043 fuzzed inputs × 8 configurations), M7, M10, M11, M19, M20 (FU1), M22 (FU4). Last item: “ok 119 files + git unchanged  real tree”.",
+      "craft": "node /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/craft-mutants.mjs on the real files, one at a time, each restored and its sha256 compared before the next (3 s pauses for FPM’s opcache revalidate_freq=2): killed C1 (engine-service 36/1), C2 (engine-service 35/2), C6 (settings 86/1), C7 (audit 53/2), C8 (audit 53/2, fix-on-save 63/1), C9 (ckeditor 34/1), C11 (engine-service 32/5); survived C3, C4, C5, C10 (FU2). Every line “restored=true”.",
+      "tally": "33 mutants: 22 engine (15 killed, 1 equivalent, 6 surviving gaps) and 11 Craft (7 killed, 4 surviving gaps)."
+    },
+    "cleanTree": "Repo: sha256 of all 119 tracked files and of the ignored .php-cs-fixer.cache and composer.lock equal at start and end; `git status --short -uall` empty before this receipt; HEAD daa8d58 before the receipt commit. Testbed: `git status --short -uall` empty, “No pending project config YAML changes.”, queue 0 → 0, PHP 8.4, sorts-tests-cp-cookies.json removed by the final run-all."
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "summary": "K1, confirmed and wider than reported: QuoteScanner::classOf() classes a curly mark by its shape, not by its role in the active locale and variant, so a straight quote right beside a German or Czech mark is decided from the wrong class. Where an opening mark is classed CLOSE (de `book` » ›), a straight `\"` right after it closes the quotation instead of opening a nested one. Where a closing mark is classed OPEN (de, de-CH and cs CLDR “ ‘, and de `book` « ‹), a straight closing `\"` or `'` right after it and before punctuation opens a new quotation. Because Context::before() hands classBefore() the already converted text of the previous run, straight-only input across an inline tag is hit too, with no curly mark typed. The page pass and fix-on-save both write it, and a second pass cannot repair it, since no straight mark is left.",
+      "location": "src/engine/rules/QuoteScanner.php:410-441 (classOf: “ ‘ „ ‚ « ‹ → OPEN, ” ’ » › → CLOSE, whatever the locale), :359-383 (classBefore), :262-265 and :306 (decideDouble/decideSingle branch on OPEN vs CLOSE); src/engine/Context.php:85-92 (before() returns flow->done, the converted text of earlier runs); tests/engine/corpus/14-same-type-nesting.txt (every curly-parent case puts the straight child after a space, never next to the mark)",
+      "cause": "classOf() hard-codes the English/French shapes of quotation marks. In German (default „…“ ‚…‘, and Czech and de-CH the same) the closing marks “ ‘ have the shape of English openers. In the German book style »…« ›…‹ both pairs point the opposite way to French. A straight quote decided next to one of these is given the opposite context, and across a tag boundary the mark in the context is the scan’s own output.",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/k1.php prints `de/book typed »\"Nein,\" sagte er« => »«Nein,« sagte er«` (also depth). /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/matrix.php (22 mixed curly/straight templates × 21 locales and variants × typed/depth): \"60 of 924 differ\"; cs, de, de-CH: T7 T8 T13 (`\"Er nannte es „Unsinn“\".` → `„Er nannte es „Unsinn“‚.`; `'Er nannte es „Unsinn“'.` → `‚Er nannte es „Unsinn“„.`); de/book: T0 T2 T3 T7 T8 T13 (`»\"Ja\"«` → `»«Ja««`, `\"Er nannte es ›Unsinn‹\".` → `»Er nannte es ›Unsinn‹›.`); the sv/fi rows are F2. /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/tags.php (straight input only, across inline tags): de, de-CH, cs T3 `<p>\"Er sagte <i>\"nein\"</i>\".</p>` → `<p>„Er sagte <i>‚nein‘</i>‚.</p>`; de/book T0 `<p>\"<i>\"Ja,\"</i> sagte er.\"</p>` → `<p>»<i>«Ja,«</i> sagte er.«</p>`. The de/de-CH/cs rows give the same output at 98db482 (/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/matrix-old.php, /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/tags-old.php); the de/book rows are new with D823. Testbed (ddev craft shell < /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/gate-probe-test.php, Pro, fixOnSave): sortsBodySite `<p lang=\"de\">»\"Nein,\" sagte er«</p>` with de=book is stored as `»«Nein,« sagte er«`; `<p lang=\"de\">\"<i>\"Ja,\"</i> sagte er.\"</p>` as `»<i>«Ja,«</i> sagte er.«`; default de `<p lang=\"de\">\"Wir lesen <em>\"Faust\"</em>\", sagte sie.</p>` as `„Wir lesen <em>‚Faust‘</em>‚, sagte sie.`. Page pass (/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/gate-probe2-test.php): `<p lang=\"de\">\"Das ist ‚Unsinn‘\", sagte er.</p>` is served as `„Das ist ‚Unsinn‘‚, sagte er.`. Unaffected: en-US, en-GB (both), da, es (both), it, pt, nl (both), nb, pl, fr, fr-CH, de-CH guillemets.",
+      "acceptance": "The class of a quotation mark next to a straight quote comes from its role in the active locale and variant: the locale’s opening marks (quotes[0], nested[0]) are OPEN and its closing marks (quotes[1], nested[1]) CLOSE, other glyphs as today, both in the same run and for a mark that came from an earlier run’s output. Corpus cases in typed and depth for de, de-CH, cs and de book cover each shape above, mixed and straight-only across a tag: `»\"Nein,\" sagte er«` → `»›Nein,‹ sagte er«`, `»\"Ja\"«` → `»›Ja‹«`, `\"Er nannte es „Unsinn“\".` → `„Er nannte es „Unsinn““.`, `'Er nannte es „Unsinn“'.` → `‚Er nannte es „Unsinn“‘.`, `<p>\"Er sagte <i>\"nein\"</i>\".</p>` → `<p>„Er sagte <i>‚nein‘</i>“.</p>`, `<p>\"<i>\"Ja,\"</i> sagte er.\"</p>` (book) → `<p>»<i>›Ja,‹</i> sagte er.«</p>`. matrix.php and tags.php show no differing de, de-CH, cs or de/book rows (tags.php T17 differs in every locale because the probe’s own expectation is wrong there: a `'` before a word opens a quotation; ignore it). The suites stay green and perf.php is unchanged.",
+      "blocking": true,
+      "severity": "high",
+      "likelihood": "possible",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "F2",
+      "summary": "K2, confirmed: in fi and sv the marks ” and ’ both open and close, so the scanner counts neither as a parent, and a straight quotation inside a curly one gets the primary marks again (`”Han sa: \"nej.\"”` → `”Han sa: ”nej.””`; ’…’ is expected inside). The same happens with straight input only, across an inline tag, because the converted ” before the tag is classed CLOSE (`<p>\"<i>\"Ja,\"</i> sagte er.\"</p>` → `”<i>”Ja,”</i> sagte er.”`). The README promises with no exception that a quotation set in curly marks counts as its level. Only DEVELOPMENT.md states the exception. The behaviour is the same at 98db482; D822 added the promise it breaks.",
+      "location": "src/engine/rules/QuoteScanner.php:111-131 (`$opens && !$closes` / `$closes && !$opens`: a glyph in both roles is skipped); README.md:79 (“A quotation already set in curly marks counts as the level its marks have in the language”); docs/DEVELOPMENT.md:195 (the exception, dev docs only)",
+      "cause": "A glyph that is both the opening and the closing mark cannot be told apart by identity, and the scanner does not try context. Across a tag, classOf(”) is CLOSE even when the scan itself just wrote it as an opener.",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/matrix.php: fi and sv differ in T0–T6, T14 and T15, both modes (`”Er sagte: \"Nein.\"”` → `”Er sagte: ”Nein.””`; `’\"Nein,\" sagte er’` depth → `’”Nein,” sagte er’`; `\"Sie sagte: ’Er rief \"ja\".’\"` → `”Sie sagte: ’Er rief ’ja’.’”`). /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/tags.php: fi, sv T0 `<p>\"<i>\"Ja,\"</i> sagte er.\"</p>` → `<p>”<i>”Ja,”</i> sagte er.”</p>`. The same output at 98db482.",
+      "acceptance": "Either (a) an ambiguous mark is resolved by context: it opens after START, SPACE, OPEN or DASH and before a word, closes after a word or punctuation when a quotation at its level is open, and a mark the scan wrote at the end of a run carries its decided class into the next run. That comes with fi and sv corpus cases for T0–T6, T14, T15 and the inline-tag T0 (for example `”Er sagte: \"Nein.\"”` → `”Er sagte: ’Nein.’”`). Or (b), at least: the README’s Known limits says that in fi and sv a quotation already in curly ” or ’ is not counted, and corpus cases pin today’s output. (a) is preferred, since (b) leaves wrong marks in stored Swedish and Finnish content.",
+      "blocking": true,
+      "severity": "medium",
+      "likelihood": "possible",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "F3",
+      "summary": "The quote scan is quadratic in nesting depth, and D822’s parallel `$levels` array doubled the cost. In one text node, pop() rebuilds the stack, and now the levels as well, with array_splice() on every close. Across inline tags, both arrays are copied once per run. An adversarial paragraph of unclosed nested quotation marks (a comment or form submission the template prints, under the 1,000,000-byte maxPageBytes) takes 20.5 s at 480 KB (10.4 s at 98db482). So at about 580 KB (about 820 KB before) the page pass runs past a 30 s max_execution_time. That fatal cannot be caught, which breaks “It never breaks a page”. tests/engine/unit.php says “The quote scan is linear on a long text node”, but no guard covers nesting.",
+      "location": "src/engine/rules/QuoteScanner.php:224-237 (pop(): array_splice($levels, $i) and array_splice($stack, $i), each O(array size)); :87-93 and :213 (flow state stack and levels copied on write per run); tests/engine/unit.php:439-442 (the only quote-scan speed guard, a possessive paragraph); README.md:104",
+      "cause": "array_splice() reindexes the whole array even when it removes only the last element, so each close costs O(depth); D822 added a second array to splice and to copy per run.",
+      "repro": "/opt/homebrew/bin/php -d memory_limit=1G /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/lin.php <root> (best of 3, 4× apart): 'nested openers then closers' (<p> + \"a 'b ×n + c' d\" ×n, one node): HEAD 24 KB 50.8 ms → 96 KB 733 ms (14.4×), 98db482 29.0 → 382 ms (13.2×); 'openers in inline tags' (<b> \"a</b> ×n): HEAD 15.9 → 142 ms (9.0×), 98db482 12.4 → 89 ms (7.2×). /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/big.php n=40000 (480 KB): HEAD 20.52 s, 98db482 10.37 s. /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/big2.php n=50000 (500 KB across tags): HEAD 5.04 s, 98db482 2.26 s. Experiment (scratch copy only, /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/exp, pop() with array_pop loops): one node 96 KB in 26.4 ms (4.0×), and run.php is still \"RESULT: 3529 passed, 0 failed\". The across-tags shape is unchanged by that alone (148 ms, 8.9×).",
+      "acceptance": "pop() costs O(quotations closed) (array_pop, not array_splice), and the quote flow state is not copied per run (one object in the flow state, or the level packed into each stack entry). Two new unit ratio guards fail on today’s code and pass after the fix: nested openers then closers in one node, and open quotations across 4× as many inline tags, each 4× the input in under 8× the time. lin.php shows about 4× for every shape, and perf.php is unchanged.",
+      "blocking": true,
+      "severity": "medium",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "needsDesign": false
+    }
+  ],
+  "notBlocking": [
+    {
+      "id": "FU1",
+      "summary": "Test gaps in the engine (surviving mutants): M10 (depth stops alternating after two levels) survives because no depth case nests three deep. M7 (a glyph in both pairs counts as secondary) survives, yet it changes fr and nl output (`« Il mesure 1,80 m et 6\" » dit-il.`, `‘Hij kwam om 5' over.’`). M20 (a curly secondary closer pops a double) survives, yet `„Er sagte ‚ja‘\"` would give `„Er sagte ‚ja‘„`. M19 (a curly opener counts as double whatever its level) survives. M11 (pop() leaves closed levels) differs only on crossed curly quotations. M22 belongs with FU4. M5 is equivalent: a single-quote D_CLOSE always has one open, and 10,043 fuzzed inputs × 8 configurations showed 0 differences.",
+      "location": "tests/engine/corpus/13-quote-nesting.txt, 14-same-type-nesting.txt",
+      "repro": "cd /Users/dgaidula/sw/github-public/craft-sorts && gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/engine-mutants.yaml --jobs 4 --brief → \"warn survived … M5\", \"… M7\", \"… M10\", \"… M11\", \"… M19\", \"… M20\", \"… M22\"; summary ok=17 warn=7. Distinguishing inputs: node /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/mutdiff.mjs <repo> /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/mut M7 M10 M11 M19 M20 M22 and the candidate list /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/cand.json.",
+      "acceptance": "Corpus cases that kill M7, M10, M19 and M20: depth `\"a 'b \"c\" b' a\"` → `“a ‘b “c” b’ a”` (and de); `„Er sagte ‚ja‘\"` → `„Er sagte ‚ja‘“` (de, typed and depth); an nl or fr case where a curly ‘ or « opening counts as a double (for example `‘Hij kwam om 5' over.’` → `‘Hij kwam om 5′ over.’` in nl); a de case where a curly ‚ opener is followed by a straight `\"` decision. A crossed-quotation case for M11 is optional.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "FU2",
+      "summary": "Test gaps in the Craft layer (surviving mutants on the real files): C4 (CKEditor’s config ignores the quote mode) and C3 (Lite options read the stored normalizeQuotes, which reaches CKEditor on Lite) survive, because the CP page check never stores normalizeQuotes. C10 (the switch is not locked on Lite) survives. C5 (normalizeQuotes not coerced) survives because the default is false, so “keeps the default” and “false” cannot be told apart. My probe confirms that the current code is right end to end: Pro + normalizeQuotes → include […\"quotesPrimary\"] without quotesSecondary; Lite with it stored → both.",
+      "location": "tests/ckeditor-test.php:41-63 (control panel page); tests/settings-test.php (Lite page); src/ckeditor/CkeditorSupport.php:93; src/templates/settings.twig:171",
+      "repro": "node /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/craft-mutants.mjs → \"SURVIVED C3 … ckeditor: 35 passed, 0 failed\", \"SURVIVED C4 … ckeditor: 35 passed, 0 failed\", \"SURVIVED C5 … settings: 87 passed, 0 failed\", \"SURVIVED C10 … settings: 87 passed, 0 failed\" (each file restored, sha256 equal). Probe: ddev craft shell < /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/gate-probe-test.php prints the CP page’s typing config, Pro + normalizeQuotes: include [copyright, registeredTrademark, trademark, horizontalEllipsis, emDash, quotesPrimary]; Lite with normalizeQuotes stored: include [horizontalEllipsis, emDash, quotesPrimary, quotesSecondary].",
+      "acceptance": "ckeditor-test’s CP page asserts quotesPrimary without quotesSecondary under Pro + normalizeQuotes, and both keys on Lite with normalizeQuotes stored true (kills C3 and C4). settings-test’s Lite page asserts the normalizeQuotes switch is disabled and marked Pro (kills C10). Optionally, a coercion case starting from true for C5.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "FU3",
+      "summary": "Lite through the PHP API: applyWith() forces `typed` on Lite (D818) but not `variants` or `allowed`, and engine()->apply() forces nothing. On Lite, a caller who passes Pro options gets the Pro output. This is related to 2026-11-05-sorts-release-gate/F1, which closed the markup-scope door; this door is caller-supplied Options. It needs PHP code, and any PHP can `new Engine()` anyway, so the PHP API is not an edition boundary. No setting, scope, filter, @sorts or job path reaches it (all probed).",
+      "location": "src/services/EngineService.php:88-96 (applyWith), :50-61 (the Lite engine registers every built-in rule; the allow-list lives only in Options)",
+      "repro": "ddev craft shell < /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/gate-probe-test.php (Lite): applyWith('\"She said \\'no\\'\"', options('en-GB')->with(variants: ['en-GB' => 'single-outer'])) → ‘She said “no”’; ->with(rules: ['fractions' => true], allowed: null) on '\"a\" 1/2' → “a” ½; engine()->apply(\"the 'best' one\", [], new Options(quoteNesting: 'depth')) → the “best” one. The same probe: the Lite filter, a data-sorts-rules scope and the twig filter stay typed and CLDR with normalizeQuotes and variants stored.",
+      "acceptance": "Either applyWith() on Lite also resets variants to [] and allowed to LITE_RULES (and a test asserts both), or DEVELOPMENT.md’s edition table says the PHP API is not an edition gate.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "FU4",
+      "summary": "In depth mode, a quotation opened with a curly mark and closed with a straight one gets the closing mark of its depth, not of its opener, so the pair does not match: `‘He said no,' she said.` → `‘He said no,” she said.`. The same goes for a mark decided as that closer: `‘The dogs' bowls are empty,’ she said.` → `‘The dogs” bowls…` and `‘He came at 5' past.’` → `‘He came at 5” past.’`. Typed mode closes at the opener’s level and gives ’. This is the same as at 98db482 (depth was the only mode), so in this delta it affects only Pro with normalizeQuotes on.",
+      "location": "src/engine/rules/QuoteScanner.php:190 (depth: `count($stack) % 2` after pop, ignoring the closed quotation’s level)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/misc.php /Users/dgaidula/sw/github-public/craft-sorts → \"en-US depth ‘He said no,' she said. => ‘He said no,” she said.\"; /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/fu.php … → \"en-US depth ‘The dogs' bowls are empty,’ she said. => ‘The dogs” bowls are empty,’ she said.\"; the same with /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/old. Mutant M22 (the closer takes the closed level in depth too) survives the suite.",
+      "acceptance": "In depth mode a closing mark takes the level its quotation was opened at (as M22 does); depth corpus cases `‘He said no,' she said.` → `‘He said no,’ she said.` kill M22.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "FU5",
+      "summary": "Inside a quotation already in curly marks, an inch mark or a plural possessive that only the count of quotes still to come can tell from the closer is taken as the closer, because remaining() counts straight marks only: `“The screen is 27\" wide”` → `“The screen is 27” wide”`; fr `« Il mesure 6\" de plus » dit-il.` → `« Il mesure 6 » de plus » dit-il.`; nl `‘Hij is 1,80 m en 6\" lang’` → `…6’ lang’`. Pre-existing (98db482 gives the same). It matters more now that fix-on-save and CKEditor make mixed curly and straight content the normal state.",
+      "location": "src/engine/rules/QuoteScanner.php:239-271 (decideDouble digit branch), :273-333 (possessive branch), :345-357 (remaining(): straight marks only)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/fu.php /Users/dgaidula/sw/github-public/craft-sorts and /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/fu.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/old 0 → identical lines for the inch and the French cases; /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/cand.json rows 3–4 through /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/emit.php.",
+      "acceptance": "A curly closer of the open curly quotation that is still to come in the flow counts in remaining() (or a curly-opened quotation is taken as closed by its curly closer when one follows), with corpus cases for the three inputs above giving ″ and ’.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "FU6",
+      "summary": "With the apostrophes rule switched off (Pro), typed mode makes a plural possessive inside an outermost single quotation non-idempotent: en-GB single-outer `'The dogs' bowls are empty'` → 1st `“The dogs' bowls are empty”`, 2nd `“The dogs” bowls are empty”`. In en-US the second pass gives ’, the same glyph. In depth (and at 98db482) the outer is primary, so the curly mark’s kind does not match the possessive test and the case is stable. Sweep: 10 of 6,474 runs with apostrophes or primes off are not idempotent now, against 3 of 2,217 at 98db482 (the three old ones remain).",
+      "location": "src/engine/rules/QuoteScanner.php:322-331 (possessive test: `remaining(ANY_SINGLE) > 0` sees the closing mark only while it is straight)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/idem.php /Users/dgaidula/sw/github-public/craft-sorts 1 → \"10 of 6474 not idempotent\" (a-single-quotes-possessive-inside, v-en-GB-single-outer-possessive-plural, …); /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/idem.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/old 0 → \"3 of 2217 not idempotent\".",
+      "acceptance": "The possessive test also counts the closing curly mark of the open quotation still to come (the FU5 change would do), and idem.php shows no new non-idempotent case against 98db482.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "needsDesign": false
+    },
+    {
+      "id": "FU7",
+      "summary": "CKEditor documentation and behaviour. (a) README says “German, French and the rest … are left straight as typed”, but nb and nl (default) get quotesSecondary for `'`, and da, es and pt get both keys, like English. (b) Simulated from ckeditor5.js 5.9.0’s own quote pattern `(^|\\s)(\")([^\"]*)(\")$`, typed and pasted text still disagree on the default en-US page in two shapes. `rock 'n' roll` typed gives `rock ‘n’ roll` (CKEditor pairs the two marks) where pasted gives `rock ’n’ roll`. Same-kind nesting typed straight, `\"She said \"no\" today\"`, gives `“She said ”no\" today\"`, because CKEditor closes at the second `\"`. The page then shows `“She said ”no” today”`, where pasted gives `“She said ‘no’ today”`. The README’s nesting bullet covers only a `\"` typed inside an already curly “. Both CKEditor keys were on for en-US at 98db482.",
+      "location": "README.md:203 and :205; src/ckeditor/CkeditorSupport.php:28-45",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/cke.php (transformations per locale and variant: \"nb typed quotesSecondary\", \"nl typed quotesSecondary\", \"da typed quotesPrimary,quotesSecondary\", …); node /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/cke-sim.mjs prints `rock 'n' roll => rock ‘n’ roll` and `\"She said \"no\" today\" => “She said ”no\" today\"`; /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/probe.php on `<p>“She said ”no\" today\"</p>` → `<p>“She said ”no” today”</p>`. Not driven in a real browser.",
+      "acceptance": "README lists which languages get which keys (or says “languages whose pairs CKEditor has by name”), and its CKEditor bullets name the `'n'` and straight same-kind nesting cases; a browser check in the testbed confirms the two typed results.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "medium",
+      "needsDesign": false
+    },
+    {
+      "id": "FU8",
+      "summary": "es guillemets-outer, three deep: `\"a 'b \"c\" b' a\"` gives `«a “b «c» b” a»`. The RAE order the variant cites is « », then “ ”, then ‘ ’, and the two-pair model cannot give the third level. The README’s variant table and “Three deep, the levels go primary, secondary, primary” do not say that this departs from the cited authority.",
+      "location": "src/engine/locales/es.php:27-31; README.md:79, :189",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/probe.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/fu8.json (input `\"a 'b \"c\" b' a\"`, es, guillemets-outer) → `«a “b «c» b” a»` in typed and depth.",
+      "acceptance": "README (variant table or Known limits) says the third level repeats « » rather than RAE’s ‘ ’, or the locale data gains a third pair.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "needsDesign": true
+    }
+  ],
+  "verdict": "FAIL"
+}
