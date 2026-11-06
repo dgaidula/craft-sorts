@@ -1,0 +1,527 @@
+# A quotation inside another takes the other level from its parent, whatever mark was typed (D822).
+# Only the outermost quotation keeps the level its mark asks for (" primary, ' secondary); inside it the
+# levels alternate: primary, secondary, primary. A curly mark already in the text counts as the level its
+# glyph has in the locale and variant (a glyph in both pairs, as in French and Dutch, counts as primary);
+# a glyph that is both an opening and a closing mark (fi and sv ” and ’) cannot be told apart and is not
+# counted, so those two have no curly-parent cases. The depth setting is not affected by any of this.
+# Expected output is written from the locale’s pairs, not copied from the engine.
+
+@ n-cs-same-type-double only=quotes,apostrophes,primes locale=cs
+< "She said "no" today"
+> „She said ‚no‘ today“
+
+@ n-cs-same-type-single only=quotes,apostrophes,primes locale=cs
+< 'She said 'no' today'
+> ‚She said „no“ today‘
+
+@ n-cs-three-deep-double-first only=quotes,apostrophes,primes locale=cs
+< "a 'b "c" b' a"
+> „a ‚b „c“ b‘ a“
+
+@ n-cs-three-deep-single-first only=quotes,apostrophes,primes locale=cs
+< 'a "b 'c' b" a'
+> ‚a „b ‚c‘ b“ a‘
+
+@ n-cs-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=cs
+< „She said "no" today“
+> „She said ‚no‘ today“
+
+@ n-cs-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=cs
+< ‚She said 'no' today‘
+> ‚She said „no“ today‘
+
+@ n-da-same-type-double only=quotes,apostrophes,primes locale=da
+< "She said "no" today"
+> “She said ‘no’ today”
+
+@ n-da-same-type-single only=quotes,apostrophes,primes locale=da
+< 'She said 'no' today'
+> ‘She said “no” today’
+
+@ n-da-three-deep-double-first only=quotes,apostrophes,primes locale=da
+< "a 'b "c" b' a"
+> “a ‘b “c” b’ a”
+
+@ n-da-three-deep-single-first only=quotes,apostrophes,primes locale=da
+< 'a "b 'c' b" a'
+> ‘a “b ‘c’ b” a’
+
+@ n-da-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=da
+< “She said "no" today”
+> “She said ‘no’ today”
+
+@ n-da-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=da
+< ‘She said 'no' today’
+> ‘She said “no” today’
+
+@ n-de-same-type-double only=quotes,apostrophes,primes locale=de
+< "She said "no" today"
+> „She said ‚no‘ today“
+
+@ n-de-same-type-single only=quotes,apostrophes,primes locale=de
+< 'She said 'no' today'
+> ‚She said „no“ today‘
+
+@ n-de-three-deep-double-first only=quotes,apostrophes,primes locale=de
+< "a 'b "c" b' a"
+> „a ‚b „c“ b‘ a“
+
+@ n-de-three-deep-single-first only=quotes,apostrophes,primes locale=de
+< 'a "b 'c' b" a'
+> ‚a „b ‚c‘ b“ a‘
+
+@ n-de-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de
+< „She said "no" today“
+> „She said ‚no‘ today“
+
+@ n-de-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de
+< ‚She said 'no' today‘
+> ‚She said „no“ today‘
+
+@ n-de-book-same-type-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< "She said "no" today"
+> »She said ›no‹ today«
+
+@ n-de-book-same-type-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< 'She said 'no' today'
+> ›She said »no« today‹
+
+@ n-de-book-three-deep-double-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< "a 'b "c" b' a"
+> »a ›b »c« b‹ a«
+
+@ n-de-book-three-deep-single-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< 'a "b 'c' b" a'
+> ›a »b ›c‹ b« a‹
+
+@ n-de-book-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< »She said "no" today«
+> »She said ›no‹ today«
+
+@ n-de-book-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< ›She said 'no' today‹
+> ›She said »no« today‹
+
+@ n-de-CH-same-type-double only=quotes,apostrophes,primes locale=de-CH
+< "She said "no" today"
+> „She said ‚no‘ today“
+
+@ n-de-CH-same-type-single only=quotes,apostrophes,primes locale=de-CH
+< 'She said 'no' today'
+> ‚She said „no“ today‘
+
+@ n-de-CH-three-deep-double-first only=quotes,apostrophes,primes locale=de-CH
+< "a 'b "c" b' a"
+> „a ‚b „c“ b‘ a“
+
+@ n-de-CH-three-deep-single-first only=quotes,apostrophes,primes locale=de-CH
+< 'a "b 'c' b" a'
+> ‚a „b ‚c‘ b“ a‘
+
+@ n-de-CH-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de-CH
+< „She said "no" today“
+> „She said ‚no‘ today“
+
+@ n-de-CH-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de-CH
+< ‚She said 'no' today‘
+> ‚She said „no“ today‘
+
+@ n-de-CH-guillemets-same-type-double only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< "She said "no" today"
+> «She said ‹no› today»
+
+@ n-de-CH-guillemets-same-type-single only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< 'She said 'no' today'
+> ‹She said «no» today›
+
+@ n-de-CH-guillemets-three-deep-double-first only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< "a 'b "c" b' a"
+> «a ‹b «c» b› a»
+
+@ n-de-CH-guillemets-three-deep-single-first only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< 'a "b 'c' b" a'
+> ‹a «b ‹c› b» a›
+
+@ n-de-CH-guillemets-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< «She said "no" today»
+> «She said ‹no› today»
+
+@ n-de-CH-guillemets-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< ‹She said 'no' today›
+> ‹She said «no» today›
+
+@ n-en-GB-same-type-double only=quotes,apostrophes,primes locale=en-GB
+< "She said "no" today"
+> “She said ‘no’ today”
+
+@ n-en-GB-same-type-single only=quotes,apostrophes,primes locale=en-GB
+< 'She said 'no' today'
+> ‘She said “no” today’
+
+@ n-en-GB-three-deep-double-first only=quotes,apostrophes,primes locale=en-GB
+< "a 'b "c" b' a"
+> “a ‘b “c” b’ a”
+
+@ n-en-GB-three-deep-single-first only=quotes,apostrophes,primes locale=en-GB
+< 'a "b 'c' b" a'
+> ‘a “b ‘c’ b” a’
+
+@ n-en-GB-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=en-GB
+< “She said "no" today”
+> “She said ‘no’ today”
+
+@ n-en-GB-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=en-GB
+< ‘She said 'no' today’
+> ‘She said “no” today’
+
+@ n-en-GB-single-outer-same-type-double only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "She said "no" today"
+> ‘She said “no” today’
+
+@ n-en-GB-single-outer-same-type-single only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< 'She said 'no' today'
+> “She said ‘no’ today”
+
+@ n-en-GB-single-outer-three-deep-double-first only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< "a 'b "c" b' a"
+> ‘a “b ‘c’ b” a’
+
+@ n-en-GB-single-outer-three-deep-single-first only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< 'a "b 'c' b" a'
+> “a ‘b “c” b’ a”
+
+@ n-en-GB-single-outer-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< ‘She said "no" today’
+> ‘She said “no” today’
+
+@ n-en-GB-single-outer-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< “She said 'no' today”
+> “She said ‘no’ today”
+
+@ n-en-US-same-type-double only=quotes,apostrophes,primes locale=en-US
+< "She said "no" today"
+> “She said ‘no’ today”
+
+@ n-en-US-same-type-single only=quotes,apostrophes,primes locale=en-US
+< 'She said 'no' today'
+> ‘She said “no” today’
+
+@ n-en-US-three-deep-double-first only=quotes,apostrophes,primes locale=en-US
+< "a 'b "c" b' a"
+> “a ‘b “c” b’ a”
+
+@ n-en-US-three-deep-single-first only=quotes,apostrophes,primes locale=en-US
+< 'a "b 'c' b" a'
+> ‘a “b ‘c’ b” a’
+
+@ n-en-US-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=en-US
+< “She said "no" today”
+> “She said ‘no’ today”
+
+@ n-en-US-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=en-US
+< ‘She said 'no' today’
+> ‘She said “no” today’
+
+@ n-es-same-type-double only=quotes,apostrophes,primes locale=es
+< "She said "no" today"
+> “She said ‘no’ today”
+
+@ n-es-same-type-single only=quotes,apostrophes,primes locale=es
+< 'She said 'no' today'
+> ‘She said “no” today’
+
+@ n-es-three-deep-double-first only=quotes,apostrophes,primes locale=es
+< "a 'b "c" b' a"
+> “a ‘b “c” b’ a”
+
+@ n-es-three-deep-single-first only=quotes,apostrophes,primes locale=es
+< 'a "b 'c' b" a'
+> ‘a “b ‘c’ b” a’
+
+@ n-es-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=es
+< “She said "no" today”
+> “She said ‘no’ today”
+
+@ n-es-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=es
+< ‘She said 'no' today’
+> ‘She said “no” today’
+
+@ n-es-guillemets-outer-same-type-double only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< "She said "no" today"
+> «She said “no” today»
+
+@ n-es-guillemets-outer-same-type-single only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< 'She said 'no' today'
+> “She said «no» today”
+
+@ n-es-guillemets-outer-three-deep-double-first only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< "a 'b "c" b' a"
+> «a “b «c» b” a»
+
+@ n-es-guillemets-outer-three-deep-single-first only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< 'a "b 'c' b" a'
+> “a «b “c” b» a”
+
+@ n-es-guillemets-outer-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< «She said "no" today»
+> «She said “no” today»
+
+@ n-es-guillemets-outer-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< “She said 'no' today”
+> “She said «no» today”
+
+@ n-fi-same-type-double only=quotes,apostrophes,primes locale=fi
+< "She said "no" today"
+> ”She said ’no’ today”
+
+@ n-fi-same-type-single only=quotes,apostrophes,primes locale=fi
+< 'She said 'no' today'
+> ’She said ”no” today’
+
+@ n-fi-three-deep-double-first only=quotes,apostrophes,primes locale=fi
+< "a 'b "c" b' a"
+> ”a ’b ”c” b’ a”
+
+@ n-fi-three-deep-single-first only=quotes,apostrophes,primes locale=fi
+< 'a "b 'c' b" a'
+> ’a ”b ’c’ b” a’
+
+@ n-fr-same-type-double only=quotes,apostrophes,primes locale=fr
+< "She said "no" today"
+> «She said «no» today»
+
+@ n-fr-same-type-single only=quotes,apostrophes,primes locale=fr
+< 'She said 'no' today'
+> «She said «no» today»
+
+@ n-fr-three-deep-double-first only=quotes,apostrophes,primes locale=fr
+< "a 'b "c" b' a"
+> «a «b «c» b» a»
+
+@ n-fr-three-deep-single-first only=quotes,apostrophes,primes locale=fr
+< 'a "b 'c' b" a'
+> «a «b «c» b» a»
+
+@ n-fr-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=fr
+< «She said "no" today»
+> «She said «no» today»
+
+@ n-fr-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=fr
+< «She said 'no' today»
+> «She said «no» today»
+
+@ n-fr-CH-same-type-double only=quotes,apostrophes,primes locale=fr-CH
+< "She said "no" today"
+> «She said ‹no› today»
+
+@ n-fr-CH-same-type-single only=quotes,apostrophes,primes locale=fr-CH
+< 'She said 'no' today'
+> ‹She said «no» today›
+
+@ n-fr-CH-three-deep-double-first only=quotes,apostrophes,primes locale=fr-CH
+< "a 'b "c" b' a"
+> «a ‹b «c» b› a»
+
+@ n-fr-CH-three-deep-single-first only=quotes,apostrophes,primes locale=fr-CH
+< 'a "b 'c' b" a'
+> ‹a «b ‹c› b» a›
+
+@ n-fr-CH-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=fr-CH
+< «She said "no" today»
+> «She said ‹no› today»
+
+@ n-fr-CH-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=fr-CH
+< ‹She said 'no' today›
+> ‹She said «no» today›
+
+@ n-it-same-type-double only=quotes,apostrophes,primes locale=it
+< "She said "no" today"
+> «She said “no” today»
+
+@ n-it-same-type-single only=quotes,apostrophes,primes locale=it
+< 'She said 'no' today'
+> “She said «no» today”
+
+@ n-it-three-deep-double-first only=quotes,apostrophes,primes locale=it
+< "a 'b "c" b' a"
+> «a “b «c» b” a»
+
+@ n-it-three-deep-single-first only=quotes,apostrophes,primes locale=it
+< 'a "b 'c' b" a'
+> “a «b “c” b» a”
+
+@ n-it-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=it
+< «She said "no" today»
+> «She said “no” today»
+
+@ n-it-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=it
+< “She said 'no' today”
+> “She said «no» today”
+
+@ n-nb-same-type-double only=quotes,apostrophes,primes locale=nb
+< "She said "no" today"
+> «She said ‘no’ today»
+
+@ n-nb-same-type-single only=quotes,apostrophes,primes locale=nb
+< 'She said 'no' today'
+> ‘She said «no» today’
+
+@ n-nb-three-deep-double-first only=quotes,apostrophes,primes locale=nb
+< "a 'b "c" b' a"
+> «a ‘b «c» b’ a»
+
+@ n-nb-three-deep-single-first only=quotes,apostrophes,primes locale=nb
+< 'a "b 'c' b" a'
+> ‘a «b ‘c’ b» a’
+
+@ n-nb-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=nb
+< «She said "no" today»
+> «She said ‘no’ today»
+
+@ n-nb-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=nb
+< ‘She said 'no' today’
+> ‘She said «no» today’
+
+@ n-nl-same-type-double only=quotes,apostrophes,primes locale=nl
+< "She said "no" today"
+> ‘She said ‘no’ today’
+
+@ n-nl-same-type-single only=quotes,apostrophes,primes locale=nl
+< 'She said 'no' today'
+> ‘She said ‘no’ today’
+
+@ n-nl-three-deep-double-first only=quotes,apostrophes,primes locale=nl
+< "a 'b "c" b' a"
+> ‘a ‘b ‘c’ b’ a’
+
+@ n-nl-three-deep-single-first only=quotes,apostrophes,primes locale=nl
+< 'a "b 'c' b" a'
+> ‘a ‘b ‘c’ b’ a’
+
+@ n-nl-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=nl
+< ‘She said "no" today’
+> ‘She said ‘no’ today’
+
+@ n-nl-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=nl
+< ‘She said 'no' today’
+> ‘She said ‘no’ today’
+
+@ n-nl-double-outer-same-type-double only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< "She said "no" today"
+> “She said ‘no’ today”
+
+@ n-nl-double-outer-same-type-single only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< 'She said 'no' today'
+> ‘She said “no” today’
+
+@ n-nl-double-outer-three-deep-double-first only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< "a 'b "c" b' a"
+> “a ‘b “c” b’ a”
+
+@ n-nl-double-outer-three-deep-single-first only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< 'a "b 'c' b" a'
+> ‘a “b ‘c’ b” a’
+
+@ n-nl-double-outer-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< “She said "no" today”
+> “She said ‘no’ today”
+
+@ n-nl-double-outer-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< ‘She said 'no' today’
+> ‘She said “no” today’
+
+@ n-pl-same-type-double only=quotes,apostrophes,primes locale=pl
+< "She said "no" today"
+> „She said «no» today”
+
+@ n-pl-same-type-single only=quotes,apostrophes,primes locale=pl
+< 'She said 'no' today'
+> «She said „no” today»
+
+@ n-pl-three-deep-double-first only=quotes,apostrophes,primes locale=pl
+< "a 'b "c" b' a"
+> „a «b „c” b» a”
+
+@ n-pl-three-deep-single-first only=quotes,apostrophes,primes locale=pl
+< 'a "b 'c' b" a'
+> «a „b «c» b” a»
+
+@ n-pl-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=pl
+< „She said "no" today”
+> „She said «no» today”
+
+@ n-pl-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=pl
+< «She said 'no' today»
+> «She said „no” today»
+
+@ n-pt-same-type-double only=quotes,apostrophes,primes locale=pt
+< "She said "no" today"
+> “She said ‘no’ today”
+
+@ n-pt-same-type-single only=quotes,apostrophes,primes locale=pt
+< 'She said 'no' today'
+> ‘She said “no” today’
+
+@ n-pt-three-deep-double-first only=quotes,apostrophes,primes locale=pt
+< "a 'b "c" b' a"
+> “a ‘b “c” b’ a”
+
+@ n-pt-three-deep-single-first only=quotes,apostrophes,primes locale=pt
+< 'a "b 'c' b" a'
+> ‘a “b ‘c’ b” a’
+
+@ n-pt-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=pt
+< “She said "no" today”
+> “She said ‘no’ today”
+
+@ n-pt-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=pt
+< ‘She said 'no' today’
+> ‘She said “no” today’
+
+@ n-sv-same-type-double only=quotes,apostrophes,primes locale=sv
+< "She said "no" today"
+> ”She said ’no’ today”
+
+@ n-sv-same-type-single only=quotes,apostrophes,primes locale=sv
+< 'She said 'no' today'
+> ’She said ”no” today’
+
+@ n-sv-three-deep-double-first only=quotes,apostrophes,primes locale=sv
+< "a 'b "c" b' a"
+> ”a ’b ”c” b’ a”
+
+@ n-sv-three-deep-single-first only=quotes,apostrophes,primes locale=sv
+< 'a "b 'c' b" a'
+> ’a ”b ’c’ b” a’
+
+# The same holds across inline tags, in entity form and in text mode, and a new block starts from nothing.
+
+@ n-same-type-across-tags only=quotes,apostrophes,primes
+< <p>"She said <i>"no"</i> today"</p>
+> <p>“She said <i>‘no’</i> today”</p>
+
+@ n-same-type-entities only=quotes,apostrophes,primes
+< <p>&quot;She said &quot;no&quot; today&quot;</p>
+> <p>“She said ‘no’ today”</p>
+
+@ n-same-type-text-mode only=quotes,apostrophes,primes mode=text
+< "She said "no" today"
+> “She said ‘no’ today”
+
+@ n-same-type-resets-per-block only=quotes,apostrophes,primes
+< <p>"She said "no</p><p>"yes"</p>
+> <p>“She said ‘no</p><p>“yes”</p>
+
+@ n-same-type-after-a-closed-pair only=quotes,apostrophes,primes
+< "a "b" c" and "d "e" f"
+> “a ‘b’ c” and “d ‘e’ f”
+
+# A regional language uses its base language’s variant (de-AT and de-DE take the de setting, nl-BE the nl one).
+
+@ n-de-AT-takes-the-de-book-variant only=quotes,apostrophes,primes locale=de-AT config={"variants":{"de":"book"}}
+< "Er sagte "nein" und ging."
+> »Er sagte ›nein‹ und ging.«
+
+@ n-nl-BE-takes-the-nl-double-outer-variant only=quotes,apostrophes,primes locale=nl-BE config={"variants":{"nl":"double-outer"}}
+< "Hij zei "nee" en ging."
+> “Hij zei ‘nee’ en ging.”

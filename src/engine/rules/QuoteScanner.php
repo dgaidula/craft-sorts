@@ -21,9 +21,12 @@ use iceboxind\sorts\engine\Run;
  * unambiguous one still counts as open or closed for the ones that follow.
  *
  * Which glyph a quotation gets is a separate choice from what it is (see
- * {@see Options::$quoteNesting}): by default the mark typed picks the locale’s
- * primary pair (`"`) or its secondary pair (`'`); in `depth` mode the nesting
- * depth does. Apostrophes and primes do not depend on it.
+ * {@see Options::$quoteNesting}): by default the mark typed picks the level of an
+ * outermost quotation (`"` the locale’s primary pair, `'` its secondary pair) and
+ * a quotation inside another takes the other level from its parent, whatever was
+ * typed; in `depth` mode the nesting depth alone does. A curly mark already in the
+ * text counts as the level its glyph has in the locale (a glyph that is in both
+ * pairs, as in French, counts as primary). Apostrophes and primes do not depend on it.
  */
 final class QuoteScanner
 {
@@ -81,8 +84,9 @@ final class QuoteScanner
         $wantPrimes = $context->isActive('primes');
         $typed = $context->quoteNesting === Options::NESTING_TYPED;
 
-        $state = $context->flowState('quotes', ['stack' => [], 'd' => 0, 's' => 0]);
+        $state = $context->flowState('quotes', ['stack' => [], 'levels' => [], 'd' => 0, 's' => 0]);
         $stack = $state['stack'];
+        $levels = $state['levels'];
         $openD = $state['d'];
         $openS = $state['s'];
 
@@ -109,8 +113,11 @@ final class QuoteScanner
                 $opens = $raw === $q0 || $raw === $n0;
                 $closes = $raw === $q1 || $raw === $n1;
                 if ($opens && !$closes) {
-                    $stack[] = $raw === $q0 ? 'd' : 's';
-                    $stack[count($stack) - 1] === 'd' ? $openD++ : $openS++;
+                    // The glyph says which pair it is; a glyph in both pairs is the primary one.
+                    $isPrimary = $raw === $q0;
+                    $stack[] = $isPrimary ? 'd' : 's';
+                    $levels[] = $isPrimary ? 0 : 1;
+                    $isPrimary ? $openD++ : $openS++;
                 } elseif ($closes && !$opens) {
                     $closeKind = $raw === $q1 ? 'd' : 's';
                     $open = $closeKind === 'd' ? $openD : $openS;
@@ -118,7 +125,7 @@ final class QuoteScanner
                         && in_array(self::classBefore($text, $offset, $context, $html)[0], [self::WORD, self::PUNCT], true)
                         && in_array(self::classAfter($text, $end, $context, $html)[0], [self::START, self::SPACE, self::PUNCT, self::CLOSE], true));
                     if ($mayClose) {
-                        self::pop($stack, $closeKind, $openD, $openS);
+                        self::pop($stack, $levels, $closeKind, $openD, $openS);
                     }
                 }
                 continue;
@@ -165,17 +172,23 @@ final class QuoteScanner
             $glyph = null;
             switch ($decision) {
                 case self::D_OPEN:
-                    // Typed: the mark the author typed picks the pair. Depth: how deep the quotation is.
-                    $pair = ($typed ? $kind === 'd' : count($stack) % 2 === 0) ? [$q0, $q1] : [$n0, $n1];
-                    $glyph = $wantQuotes ? $pair[0] : null;
+                    // Typed: an outermost quotation takes the level its mark asks for (" primary, ' secondary),
+                    // one inside another the other level from its parent. Depth: how deep the quotation is.
+                    $level = $typed
+                        ? ($stack ? 1 - $levels[count($levels) - 1] : ($kind === 'd' ? 0 : 1))
+                        : count($stack) % 2;
+                    $glyph = $wantQuotes ? ($level === 0 ? $q0 : $n0) : null;
                     $stack[] = $kind;
+                    $levels[] = $level;
                     $kind === 'd' ? $openD++ : $openS++;
                     $lastClass = self::OPEN;
                     break;
                 case self::D_CLOSE:
-                    self::pop($stack, $kind, $openD, $openS);
-                    $pair = ($typed ? $kind === 'd' : count($stack) % 2 === 0) ? [$q0, $q1] : [$n0, $n1];
-                    $glyph = $wantQuotes ? $pair[1] : null;
+                    // The closing mark matches the level the quotation was opened at; one that closes
+                    // nothing open takes the level its mark asks for.
+                    $closed = self::pop($stack, $levels, $kind, $openD, $openS);
+                    $level = $typed ? ($closed ?? ($kind === 'd' ? 0 : 1)) : count($stack) % 2;
+                    $glyph = $wantQuotes ? ($level === 0 ? $q1 : $n1) : null;
                     $lastClass = self::CLOSE;
                     break;
                 case self::D_APOSTROPHE:
@@ -197,23 +210,30 @@ final class QuoteScanner
             }
         }
 
-        $context->setFlowState('quotes', ['stack' => $stack, 'd' => $openD, 's' => $openS]);
+        $context->setFlowState('quotes', ['stack' => $stack, 'levels' => $levels, 'd' => $openD, 's' => $openS]);
         if ($edits) {
             $run->edit($edits);
         }
     }
 
-    /** Close the nearest open quotation of this kind, and any opened inside it. */
-    private static function pop(array &$stack, string $kind, int &$openD, int &$openS): void
+    /**
+     * Close the nearest open quotation of this kind, and any opened inside it.
+     *
+     * @return int|null the level (0 primary, 1 secondary) the closed quotation was opened at; null if none was open
+     */
+    private static function pop(array &$stack, array &$levels, string $kind, int &$openD, int &$openS): ?int
     {
         for ($i = count($stack) - 1; $i >= 0; $i--) {
             if ($stack[$i] === $kind) {
+                $level = $levels[$i];
+                array_splice($levels, $i);
                 foreach (array_splice($stack, $i) as $closed) {
                     $closed === 'd' ? $openD-- : $openS--;
                 }
-                return;
+                return $level;
             }
         }
+        return null;
     }
 
     private static function decideDouble(

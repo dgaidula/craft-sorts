@@ -725,7 +725,7 @@
 
 @ n-curly-outer-typed-double-inside only=quotes,apostrophes,primes
 < “She said "no"”
-> “She said “no””
+> “She said ‘no’”
 
 @ n-curly-outer-typed-double-inside-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
 < “She said "no"”

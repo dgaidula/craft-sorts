@@ -58,7 +58,7 @@
 
 @ v-en-GB-single-outer-curly-outer-straight-inner only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < ‘She said "no"’
-> ‘She said ‘no’’
+> ‘She said “no”’
 
 @ v-en-GB-single-outer-curly-inner-straight-outer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < "She said “no”"

@@ -324,12 +324,12 @@
 
 @ q-entity-nbsp-before-quote-opens
 < <p>"He said&nbsp;"no" today"</p>
-> <p>“He said&nbsp;“no” today”</p>
+> <p>“He said&nbsp;‘no’ today”</p>
 
 @ q-entity-mdash-before-quote-opens
 < <p>"It was&mdash;"no"&mdash;then"</p>
-> <p>“It was&mdash;“no”&mdash;then”</p>
+> <p>“It was&mdash;‘no’&mdash;then”</p>
 
 @ q-entity-nbsp-before-single-quote-opens
 < <p>'He said&nbsp;'no' today'</p>
-> <p>‘He said&nbsp;‘no’ today’</p>
+> <p>‘He said&nbsp;“no” today’</p>

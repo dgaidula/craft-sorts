@@ -12,10 +12,12 @@ namespace iceboxind\sorts\engine;
  * a name the locale does not have means the CLDR default.
  *
  * `quoteNesting` says which glyph a recognised quotation gets. `typed` (the default) keeps the
- * type the author typed: a straight `"` pair becomes the locale’s primary pair and a straight `'`
- * pair its secondary pair, at any depth, as CKEditor does while typing. `depth` normalises every
- * quotation by how deeply it is nested: the primary pair outermost, the secondary inside it, then
- * alternating, whichever mark was typed. Any other value means `typed`.
+ * type the author typed for the outermost quotation: a straight `"` pair becomes the locale’s
+ * primary pair and a straight `'` pair its secondary pair, as CKEditor does while typing. A
+ * quotation inside another takes the other level from its parent whatever was typed, so the levels
+ * alternate (`"She said "no""` is “She said ‘no’”). `depth` normalises every quotation by how
+ * deeply it is nested: the primary pair outermost, the secondary inside it, then alternating,
+ * whichever mark was typed, even for an outermost `'`. Any other value means `typed`.
  *
  * `allowed`, when set, lists the only rules that may run at all: a rule outside it
  * stays off whatever turns it on (`rules`, a `data-sorts-rules` scope or a rule
