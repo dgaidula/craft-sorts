@@ -100,12 +100,14 @@ final class QuoteScanner
         // One object for the whole flow, changed in place, so a run does not copy the open quotations.
         $state = $context->flowState('quotes');
         if ($state === null) {
-            $state = (object) ['stack' => [], 'levels' => [], 'curly' => [], 'd' => 0, 's' => 0];
+            $state = (object) ['stack' => [], 'levels' => [], 'curly' => [], 'at' => ['d' => [], 's' => []], 'd' => 0, 's' => 0];
             $context->setFlowState('quotes', $state);
         }
         $stack = &$state->stack;
         $levels = &$state->levels;
         $curly = &$state->curly;
+        // Where in the stack the open quotations of each kind are, so the nearest one is found at once.
+        $at = &$state->at;
         $openD = &$state->d;
         $openS = &$state->s;
 
@@ -159,12 +161,13 @@ final class QuoteScanner
                         $role = null;
                     }
                     if ($role === self::OPEN) {
+                        $at[$markKind][] = count($stack);
                         $stack[] = $markKind;
                         $levels[] = $level;
                         $curly[] = true;
                         $markKind === 'd' ? $openD++ : $openS++;
                     } elseif ($role === self::CLOSE) {
-                        self::pop($stack, $levels, $curly, $markKind, $openD, $openS);
+                        self::pop($stack, $levels, $curly, $at, $markKind, $openD, $openS);
                     }
                 }
                 $lastEnd = $end;
@@ -188,11 +191,14 @@ final class QuoteScanner
             [$nextClass, $nextChar] = self::classAfter($text, $end, $context, $html, $roles);
             $digitBefore = $offset !== $lastEnd && $prevChar !== ''
                 && (isset($prevChar[1]) ? preg_match('/^\p{N}$/u', $prevChar) === 1 : ctype_digit($prevChar));
-            // The innermost quotation, when it is of this mark's kind and was opened with a curly mark:
+            // The quotation this mark would close (see D_CLOSE), when it was opened with a curly mark:
             // its closing mark still to come tells an inch mark or a possessive from its end.
             $top = count($stack) - 1;
-            $curlyPair = $top >= 0 && $curly[$top] && $stack[$top] === $kind
-                ? [$opening[$levels[$top]], $closing[$levels[$top]], $apostrophe, $html, $roles]
+            $target = $top >= 0 && !$curly[$top] && $stack[$top] !== $kind
+                ? ($at[$kind] === [] ? -1 : $at[$kind][array_key_last($at[$kind])])
+                : $top;
+            $curlyPair = $target >= 0 && $curly[$target]
+                ? [$opening[$levels[$target]], $closing[$levels[$target]], $apostrophe, $html, $roles]
                 : null;
 
             if ($kind === 'd') {
@@ -237,6 +243,7 @@ final class QuoteScanner
                         $level = $third && $depth >= 2 ? 2 - $depth % 2 : $depth % 2;
                     }
                     $glyph = $wantQuotes ? $opening[$level] : null;
+                    $at[$kind][] = $depth;
                     $stack[] = $kind;
                     $levels[] = $level;
                     $curly[] = false;
@@ -244,9 +251,11 @@ final class QuoteScanner
                     $lastClass = self::OPEN;
                     break;
                 case self::D_CLOSE:
-                    // The closing mark matches the level the quotation was opened at; one that closes
-                    // nothing open takes the level its mark asks for (typed) or its depth (depth).
-                    $closed = self::pop($stack, $levels, $curly, $kind, $openD, $openS);
+                    // It closes the innermost quotation when that was opened with a curly mark, whatever
+                    // the shape of either (D829), else the nearest one of its own kind. The closing mark
+                    // matches the level the quotation was opened at; one that closes nothing open takes
+                    // the level its mark asks for (typed) or its depth (depth).
+                    $closed = self::pop($stack, $levels, $curly, $at, $top >= 0 && $curly[$top] ? $stack[$top] : $kind, $openD, $openS);
                     $depth = count($stack);
                     $level = $closed ?? ($typed ? ($kind === 'd' ? 0 : 1) : ($third && $depth >= 2 ? 2 - $depth % 2 : $depth % 2));
                     $glyph = $wantQuotes ? $closing[$level] : null;
@@ -282,7 +291,7 @@ final class QuoteScanner
      *
      * @return int|null the level (0 primary, 1 secondary, 2 third) the closed quotation was opened at; null if none was open
      */
-    private static function pop(array &$stack, array &$levels, array &$curly, string $kind, int &$openD, int &$openS): ?int
+    private static function pop(array &$stack, array &$levels, array &$curly, array &$at, string $kind, int &$openD, int &$openS): ?int
     {
         if (($kind === 'd' ? $openD : $openS) === 0) {
             return null;
@@ -291,16 +300,18 @@ final class QuoteScanner
             $closed = array_pop($stack);
             $level = array_pop($levels);
             array_pop($curly);
+            array_pop($at[$closed]);
             $closed === 'd' ? $openD-- : $openS--;
         } while ($closed !== $kind && $stack !== []);
         return $level;
     }
 
     /**
-     * Whether the closing mark of the innermost quotation, opened with a curly mark, is still to
-     * come in the flow after token $k: more of its closing marks than its opening ones. A closing
-     * mark that is also the apostrophe counts only where it is not followed by a letter or digit.
-     * A pair whose marks are the same glyph (fi, sv) cannot be counted.
+     * Whether the closing mark of a quotation opened with a curly mark is still to come in the
+     * flow after token $k: more of its closing marks than its opening ones. A closing mark that
+     * is also the apostrophe counts only where it is not followed by a letter or digit. A pair
+     * whose marks are the same glyph (fi, sv) cannot tell its openers from its closers, so any of
+     * its marks still to come counts.
      *
      * @param array{string, string, string, bool, array<string, int>} $pair opening and closing mark, apostrophe, html, roles
      * @param array<string, array<int, int>> $suffix
@@ -308,9 +319,6 @@ final class QuoteScanner
     private static function closerAhead(array $pair, string $text, array $tokens, int $k, Context $context, array &$suffix): bool
     {
         [$open, $close, $apostrophe, $html, $roles] = $pair;
-        if ($open === $close) {
-            return false;
-        }
         $key = 'closer:' . $close . $open;
         if (!isset($suffix[$key])) {
             $count = count($tokens);
@@ -318,7 +326,7 @@ final class QuoteScanner
             for ($i = $count - 1; $i >= 0; $i--) {
                 [$raw, $at] = $tokens[$i];
                 $step = 0;
-                if ($raw === $open) {
+                if ($raw === $open && $open !== $close) {
                     $step = -1;
                 } elseif ($raw === $close && ($close !== $apostrophe
                     || self::classAfter($text, $at + strlen($raw), $context, $html, $roles)[0] !== self::WORD)) {
@@ -329,7 +337,8 @@ final class QuoteScanner
             $suffix[$key] = $sums;
         }
         $closePattern = '/' . preg_quote($close, '/') . ($close === $apostrophe ? '(?![\p{L}\p{N}])/u' : '/');
-        return $suffix[$key][$k + 1] + $context->countAfter($closePattern) - $context->countAfter('/' . preg_quote($open, '/') . '/') > 0;
+        $opensAfter = $open === $close ? 0 : $context->countAfter('/' . preg_quote($open, '/') . '/');
+        return $suffix[$key][$k + 1] + $context->countAfter($closePattern) - $opensAfter > 0;
     }
 
     private static function decideDouble(
@@ -402,7 +411,12 @@ final class QuoteScanner
             return self::D_APOSTROPHE;
         }
         if ($digitBefore) {
-            return $openS ? self::D_CLOSE : self::D_PRIME;
+            // 6' is a foot mark unless this is the quotation’s end; before a space or a word it is
+            // not when the quotation was opened curly and its own closing mark still follows.
+            return $openS && !(($nextClass === self::SPACE || $nextClass === self::WORD)
+                && $curlyPair !== null && self::closerAhead($curlyPair, $text, $tokens, $k, $context, $suffix))
+                ? self::D_CLOSE
+                : self::D_PRIME;
         }
         $opening = in_array($prevClass, [self::START, self::SPACE, self::OPEN, self::DASH], true);
         if ($nextClass === self::WORD) {
@@ -425,9 +439,10 @@ final class QuoteScanner
             if (!$openS) {
                 return self::D_APOSTROPHE;
             }
+            // The eight bytes after it may end inside a character (dogs' bowls”), which /u refuses: drop that part.
             $possessive = preg_match('/[sS]$/', substr($text, max(0, $offset - 1), 1))
                 && $nextClass === self::SPACE
-                && preg_match('/^\s+\p{Ll}/u', substr($text, $end, 8))
+                && preg_match('/^\s+\p{Ll}/u', preg_replace('/(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]?|[\xF0-\xF7][\x80-\xBF]{0,2})$/', '', substr($text, $end, 8)))
                 && (self::remaining(self::ANY_SINGLE, $tokens, $k, $context, $suffix) > 0
                     || ($curlyPair !== null && self::closerAhead($curlyPair, $text, $tokens, $k, $context, $suffix)));
             return $possessive ? self::D_APOSTROPHE : self::D_CLOSE;
@@ -508,30 +523,37 @@ final class QuoteScanner
         }
         if ($html && $tail[-1] === ';' && preg_match('/&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});$/', $tail, $m)) {
             $char = html_entity_decode($m[0], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            return [$char === $m[0] ? self::PUNCT : self::markClass($char, $roles, substr($tail, 0, -strlen($m[0]))), $char];
+            return [$char === $m[0] ? self::PUNCT : self::markClass($char, $roles, substr($tail, 0, -strlen($m[0])), $html), $char];
         }
         $i = strlen($tail) - 1;
         while ($i > 0 && (ord($tail[$i]) & 0xC0) === 0x80) {
             $i--;
         }
         $char = substr($tail, $i);
-        return [self::markClass($char, $roles, substr($tail, 0, $i)), $char];
+        return [self::markClass($char, $roles, substr($tail, 0, $i), $html), $char];
     }
 
     /**
      * classOf() for a character with the text before it, so that a mark that both opens and
      * closes (fi, sv) is told by its own left side, as the scan decided it: after a space, an
-     * opening bracket, a dash or the start it opened; after anything else it closed.
+     * opening bracket, a dash or the start it opened; after anything else it closed. A character
+     * entity there is read as the character it stands for, as in classBefore().
      *
      * @param array<string, int> $roles
      */
-    private static function markClass(string $char, array $roles, string $before): int
+    private static function markClass(string $char, array $roles, string $before, bool $html): int
     {
         if (($roles[$char] ?? null) !== self::BOTH) {
             return self::classOf($char, $roles);
         }
         if ($before === '') {
             return self::OPEN;
+        }
+        if ($html && $before[-1] === ';' && preg_match('/&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});$/', $before, $m)) {
+            $decoded = html_entity_decode($m[0], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($decoded !== $m[0]) {
+                return in_array(self::classOf($decoded), [self::SPACE, self::OPEN, self::DASH], true) ? self::OPEN : self::CLOSE;
+            }
         }
         $i = strlen($before) - 1;
         while ($i > 0 && (ord($before[$i]) & 0xC0) === 0x80) {

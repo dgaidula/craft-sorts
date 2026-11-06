@@ -6,7 +6,9 @@
 # Then: in depth mode a closer takes the level of the quotation it closes (FU4); inside a curly
 # quotation an inch mark or a plural possessive is not its closer when the curly closer still
 # follows (FU5, FU6); es guillemets-outer has a third level, the RAE order « “ ‘ (FU8); and cases
-# that pin the scanner’s level bookkeeping (FU1).
+# that pin the scanner’s level bookkeeping (FU1). Fix round 2 (R2-1 to R2-6, at the end): the same
+# test in fi and sv and for the quotation a mark would close, and a straight closer closing the
+# innermost quotation opened curly, whatever its shape.
 # Expected output is written from the locale’s pairs, not copied from the engine.
 
 # ---- FU1 ----
@@ -962,3 +964,265 @@
 @ r-sv-depth-across-tag-single-child only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
 < <p>"Er sagte <i>'nein'</i>".</p>
 > <p>”Er sagte <i>’nein’</i>”.</p>
+
+# ---- Fix round 2 (R2-1 to R2-6) ----
+
+# R2-1: in fi and sv a straight mark after a digit inside a curly ”…” or ’…’ is a prime while a
+# mark of that pair still follows; at the quotation’s end it closes.
+
+@ r2-1-fi-inch-inside-curly only=quotes,apostrophes,primes locale=fi
+< <p>”Näyttö on 27" leveä”, hän sanoi.</p>
+> <p>”Näyttö on 27″ leveä”, hän sanoi.</p>
+
+@ r2-1-fi-inch-inside-curly-depth only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>”Näyttö on 27" leveä”, hän sanoi.</p>
+> <p>”Näyttö on 27″ leveä”, hän sanoi.</p>
+
+@ r2-1-sv-inch-inside-curly only=quotes,apostrophes,primes locale=sv
+< <p>”Skärmen är 27" bred”, sa han.</p>
+> <p>”Skärmen är 27″ bred”, sa han.</p>
+
+@ r2-1-sv-inch-inside-curly-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>”Skärmen är 27" bred”, sa han.</p>
+> <p>”Skärmen är 27″ bred”, sa han.</p>
+
+@ r2-1-sv-inch-in-the-second-of-two only=quotes,apostrophes,primes locale=sv
+< <p>”Skärmen är 27" bred” och ”den är 32" hög”.</p>
+> <p>”Skärmen är 27″ bred” och ”den är 32″ hög”.</p>
+
+@ r2-1-sv-inch-in-the-second-of-two-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>”Skärmen är 27" bred” och ”den är 32" hög”.</p>
+> <p>”Skärmen är 27″ bred” och ”den är 32″ hög”.</p>
+
+@ r2-1-sv-foot-inside-curly-single only=quotes,apostrophes,primes locale=sv
+< <p>’Han är 6' lång’, sa hon.</p>
+> <p>’Han är 6′ lång’, sa hon.</p>
+
+@ r2-1-sv-foot-inside-curly-single-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>’Han är 6' lång’, sa hon.</p>
+> <p>’Han är 6′ lång’, sa hon.</p>
+
+@ r2-1-fi-foot-inside-curly-single only=quotes,apostrophes,primes locale=fi
+< <p>’Hän on 6' pitkä’</p>
+> <p>’Hän on 6′ pitkä’</p>
+
+@ r2-1-fi-foot-inside-curly-single-depth only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>’Hän on 6' pitkä’</p>
+> <p>’Hän on 6′ pitkä’</p>
+
+@ r2-1-fi-foot-and-inch only=quotes,apostrophes,primes locale=fi
+< <p>”Lauta on 8' pitkä ja 2" paksu”</p>
+> <p>”Lauta on 8′ pitkä ja 2″ paksu”</p>
+
+@ r2-1-fi-foot-and-inch-depth only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>”Lauta on 8' pitkä ja 2" paksu”</p>
+> <p>”Lauta on 8′ pitkä ja 2″ paksu”</p>
+
+@ r2-1-sv-digit-at-the-end-closes only=quotes,apostrophes,primes locale=sv
+< ”Det är 5"
+> ”Det är 5”
+
+@ r2-1-sv-digit-at-the-end-closes-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< ”Det är 5"
+> ”Det är 5”
+
+# R2-3: the test looks at the quotation the mark would close, not only the innermost of its kind.
+
+@ r2-3-inch-in-curly-single-inside-curly-double only=quotes,apostrophes,primes
+< “He said ‘it is 6" long’ today.”
+> “He said ‘it is 6″ long’ today.”
+
+@ r2-3-inch-in-curly-single-inside-curly-double-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< “He said ‘it is 6" long’ today.”
+> “He said ‘it is 6″ long’ today.”
+
+@ r2-3-inch-in-curly-single-before-a-word only=quotes,apostrophes,primes
+< “She said the ‘27" screen’ was too big.”
+> “She said the ‘27″ screen’ was too big.”
+
+@ r2-3-inch-in-curly-single-before-a-word-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< “She said the ‘27" screen’ was too big.”
+> “She said the ‘27″ screen’ was too big.”
+
+@ r2-3-es-guillemets-outer-inch-at-the-nested-level only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< «Dijo “la pantalla mide 27" de ancho” ayer», dijo.
+> «Dijo “la pantalla mide 27″ de ancho” ayer», dijo.
+
+@ r2-3-es-guillemets-outer-inch-at-the-nested-level-depth only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
+< «Dijo “la pantalla mide 27" de ancho” ayer», dijo.
+> «Dijo “la pantalla mide 27″ de ancho” ayer», dijo.
+
+@ r2-3-inch-in-straight-single-inside-curly-double only=quotes,apostrophes,primes
+< “He said 'it is 6" long' today.”
+> “He said ‘it is 6″ long’ today.”
+
+@ r2-3-inch-in-straight-single-inside-curly-double-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< “He said 'it is 6" long' today.”
+> “He said ‘it is 6″ long’ today.”
+
+@ r2-3-straight-quotation-ending-in-a-digit-closes only=quotes,apostrophes,primes
+< “He shouted "Room 101" and ran.”
+> “He shouted ‘Room 101’ and ran.”
+
+@ r2-3-straight-quotation-ending-in-a-digit-closes-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< “He shouted "Room 101" and ran.”
+> “He shouted ‘Room 101’ and ran.”
+
+@ r2-3-curly-single-ending-in-a-digit-closes only=quotes,apostrophes,primes
+< “He said ‘I was 6' then.”
+> “He said ‘I was 6’ then.”
+
+@ r2-3-curly-single-ending-in-a-digit-closes-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< “He said ‘I was 6' then.”
+> “He said ‘I was 6’ then.”
+
+@ r2-3-possessive-in-curly-double-inside-curly-single only=quotes,apostrophes,primes
+< ‘He said “the dogs' bowls” are empty.’
+> ‘He said “the dogs’ bowls” are empty.’
+
+@ r2-3-possessive-in-curly-double-inside-curly-single-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< ‘He said “the dogs' bowls” are empty.’
+> ‘He said “the dogs’ bowls” are empty.’
+
+# R2-4: a foot mark inside a curly single quotation, its closer still to come.
+
+@ r2-4-foot-inside-curly-single only=quotes,apostrophes,primes
+< ‘He is 6' tall,’ she said.
+> ‘He is 6′ tall,’ she said.
+
+@ r2-4-foot-inside-curly-single-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< ‘He is 6' tall,’ she said.
+> ‘He is 6′ tall,’ she said.
+
+@ r2-4-de-foot-inside-curly-nested only=quotes,apostrophes,primes locale=de
+< ‚Er ist 6' groß‘, sagte sie.
+> ‚Er ist 6′ groß‘, sagte sie.
+
+@ r2-4-de-foot-inside-curly-nested-depth only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< ‚Er ist 6' groß‘, sagte sie.
+> ‚Er ist 6′ groß‘, sagte sie.
+
+# R2-2: a straight closer closes the innermost quotation opened curly and takes its closing mark,
+# whatever its shape (D829): every locale and variant whose nested pair is not the shape of its level.
+
+@ r2-2-it-curly-nested-straight-closer only=quotes,apostrophes,primes locale=it
+< «Disse “sì" e se ne andò», raccontò.
+> «Disse “sì” e se ne andò», raccontò.
+
+@ r2-2-it-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=it config={"quoteNesting":"depth"}
+< «Disse “sì" e se ne andò», raccontò.
+> «Disse “sì” e se ne andò», raccontò.
+
+@ r2-2-es-guillemets-outer-curly-nested-straight-closer only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
+< «Dijo “hola" y se fue», contó.
+> «Dijo “hola” y se fue», contó.
+
+@ r2-2-es-guillemets-outer-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
+< «Dijo “hola" y se fue», contó.
+> «Dijo “hola” y se fue», contó.
+
+@ r2-2-en-GB-single-outer-curly-nested-straight-closer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< ‘He said “no" and left,’ she said.
+> ‘He said “no” and left,’ she said.
+
+@ r2-2-en-GB-single-outer-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
+< ‘He said “no" and left,’ she said.
+> ‘He said “no” and left,’ she said.
+
+@ r2-2-pl-curly-nested-straight-closer only=quotes,apostrophes,primes locale=pl
+< „Powiedział «nie" i wyszedł”.
+> „Powiedział «nie» i wyszedł”.
+
+@ r2-2-pl-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=pl config={"quoteNesting":"depth"}
+< „Powiedział «nie" i wyszedł”.
+> „Powiedział «nie» i wyszedł”.
+
+@ r2-2-en-GB-single-outer-curly-outer-straight-closer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< ‘He said no,' she said.
+> ‘He said no,’ she said.
+
+@ r2-2-en-GB-single-outer-curly-outer-straight-closer-depth only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
+< ‘He said no,' she said.
+> ‘He said no,’ she said.
+
+@ r2-2-nl-curly-outer-straight-closer only=quotes,apostrophes,primes locale=nl
+< ‘Hij zei nee' en ging.
+> ‘Hij zei nee’ en ging.
+
+@ r2-2-nl-curly-outer-straight-closer-depth only=quotes,apostrophes,primes locale=nl config={"quoteNesting":"depth"}
+< ‘Hij zei nee' en ging.
+> ‘Hij zei nee’ en ging.
+
+@ r2-2-en-US-curly-single-closed-by-a-straight-double only=quotes,apostrophes,primes
+< “He said ‘no" today.”
+> “He said ‘no’ today.”
+
+@ r2-2-en-US-curly-single-closed-by-a-straight-double-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< “He said ‘no" today.”
+> “He said ‘no’ today.”
+
+@ r2-2-straight-opened-quotation-keeps-its-kind only=quotes,apostrophes,primes
+< "He's from the 'hood," she said. "Yes," he said.
+> “He’s from the ‘hood,” she said. “Yes,” he said.
+
+@ r2-2-straight-opened-quotation-keeps-its-kind-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< "He's from the 'hood," she said. "Yes," he said.
+> “He’s from the ‘hood,” she said. “Yes,” he said.
+
+# R2-5: an entity before a fi/sv ” that ends an earlier run reads as the character it stands for.
+
+@ r2-5-sv-nbsp-before-the-mark-across-a-tag only=quotes,apostrophes,primes locale=sv
+< <p>Han sa:&nbsp;"<i>"ja"</i>"</p>
+> <p>Han sa:&nbsp;”<i>’ja’</i>”</p>
+
+@ r2-5-sv-nbsp-before-the-mark-across-a-tag-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>Han sa:&nbsp;"<i>"ja"</i>"</p>
+> <p>Han sa:&nbsp;”<i>’ja’</i>”</p>
+
+@ r2-5-fi-mdash-before-the-mark-across-a-tag only=quotes,apostrophes,primes locale=fi
+< <p>Hän sanoi:&mdash;"<i>"ei"</i>"</p>
+> <p>Hän sanoi:&mdash;”<i>’ei’</i>”</p>
+
+@ r2-5-fi-mdash-before-the-mark-across-a-tag-depth only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>Hän sanoi:&mdash;"<i>"ei"</i>"</p>
+> <p>Hän sanoi:&mdash;”<i>’ei’</i>”</p>
+
+# R2-6: a fi/sv ” between spaces opens nothing (M4); a curly closer ahead does not make an inch mark of
+# the end of a quotation opened straight (M9); in depth, a closer with nothing of its kind open takes
+# the level of its depth, the third pair included (M17).
+
+@ r2-6-fi-mark-between-spaces-opens-nothing only=quotes,apostrophes,primes locale=fi
+< <p>Tämä ” on "lainaus" tässä.</p>
+> <p>Tämä ” on ”lainaus” tässä.</p>
+
+@ r2-6-fi-mark-between-spaces-opens-nothing-depth only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>Tämä ” on "lainaus" tässä.</p>
+> <p>Tämä ” on ”lainaus” tässä.</p>
+
+@ r2-6-sv-mark-between-spaces-opens-nothing only=quotes,apostrophes,primes locale=sv
+< <p>Ordet ” och "citat" här.</p>
+> <p>Ordet ” och ”citat” här.</p>
+
+@ r2-6-sv-mark-between-spaces-opens-nothing-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>Ordet ” och "citat" här.</p>
+> <p>Ordet ” och ”citat” här.</p>
+
+@ r2-6-sv-straight-quotation-ending-in-a-digit-before-a-curly-one only=quotes,apostrophes,primes locale=sv
+< <p>"Rum 101" och ”Rum 102”.</p>
+> <p>”Rum 101” och ”Rum 102”.</p>
+
+@ r2-6-sv-straight-quotation-ending-in-a-digit-before-a-curly-one-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>"Rum 101" och ”Rum 102”.</p>
+> <p>”Rum 101” och ”Rum 102”.</p>
+
+@ r2-6-straight-quotation-ending-in-a-digit-before-a-curly-apostrophe only=quotes,apostrophes,primes
+< <p>“He shouted "Room 101" at the dogs’ owner.”</p>
+> <p>“He shouted ‘Room 101’ at the dogs’ owner.”</p>
+
+@ r2-6-straight-quotation-ending-in-a-digit-before-a-curly-apostrophe-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< <p>“He shouted "Room 101" at the dogs’ owner.”</p>
+> <p>“He shouted ‘Room 101’ at the dogs’ owner.”</p>
+
+@ r2-6-es-guillemets-outer-depth-closer-with-nothing-of-its-kind-open only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
+< <p>'Dijo 'ven acá" y se fue.</p>
+> <p>«Dijo “ven acá’ y se fue.</p>
