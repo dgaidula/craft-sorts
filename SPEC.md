@@ -212,8 +212,14 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
     was opened with a curly mark** (`«Disse “sì" …»` → `“sì”`); a quotation opened with a straight mark still closes
     by kind. Applied literally, the rule changed 1,209 generated rows in every locale and broke ordinary dialogue
     (`"He's from the 'hood," she said. "Yes," he said.` pushed every later quotation down a level).
-  - **An inch mark, foot mark or possessive** is judged against the quotation the mark would close, not every open
-    one; checking all of them turned real closing marks into primes (`“He said ‘I was 6' then.”`).
+    **Backed out under D843 (fix round 3, 2026-11-06):** a straight closing mark closes by kind again, as at
+    `9822af0`. The narrowed rule brought the same failure back whenever the stray mark was curly: a word processor’s
+    wrong-way apostrophe (`‘90s`, `‘til`, `‘s avonds`, `‚n`) inside straight-quoted dialogue opened a curly
+    quotation that took the closing mark, and every later quotation dropped a level (re-check 2, R3-1). The mixed
+    case it fixed (`«Disse “sì" e partì»` → `«Disse “sì» e partì»`) is a README Known limit instead.
+  - **An inch mark, foot mark or possessive** is judged against one quotation, not every open one: the innermost,
+    or past one opened straight of the other kind the nearest of the mark’s kind; checking all of them turned real
+    closing marks into primes (`“He said ‘I was 6' then.”`).
 - **D814 — editions and price: decided 2026-11-05 (Dan: y).** Lite free; Pro **$39 + $19/yr** at launch (paid
   installs are flat across price bands, and freemium newcomers out-install paid-only ones; both prices can rise
   later, since Craft honours only the renewal price in the 30-day reminder).
