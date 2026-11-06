@@ -1,0 +1,83 @@
+{
+  "tool": "craft-sorts",
+  "run": "2026-11-06 narrow closure re-check of the R4-1 fix (7823e68..0bb7844: 0bb7844 engine and corpus), release mode, D850 a",
+  "suite": "composer test-engine (RESULT: 3860 passed, 0 failed, PHP 8.5.12); composer check clean (cs 0 of 62, PHPStan no errors); node tests/run-all.mjs exit 0 (audit 55, ckeditor 37, engine-service 40, extension-api 16, fix-on-save 64, graphql 23, page-pass 77, settings 89, smoke 2, twig 77; testbed isolation ok, queue 0 → 0); testbed Craft 5.12.0.1, PHP 8.4.27, MySQL 8.4",
+  "verdict": "CLOSED WITH FOLLOW-UPS",
+  "verdictLine": "CLOSED WITH FOLLOW-UPS: R4-1 is closed. Every row that changed against 7823e68 in five mulberry32 runs (802,188 rows) is a straight \" after a digit that is now ″, and each equals 03dd4f3 and 7823e68 with R3-3 undone; none is worse. Byte-identical, HTML5, idempotence, linear time, speed and run-all hold. New follow-ups FU1 to FU3 (a cache-key mutant survives the suite; a pre-existing en-GB single-outer mixed-mark output; tidy-ups). R4-2 to R4-6 carry forward.",
+  "closure": {
+    "R4-1": {
+      "status": "closed",
+      "evidence": "The three prose repros (gate-x5n4/prose-own.tsv rows 31, 32 and 76) give 27″ at 0bb7844, typed and depth, where 7823e68 gives 27’. Of the 210 prose rows, 6 differ from 7823e68 (exactly those three rows in two modes), 8 differ from 9822af0 (the receipt’s 14 less these 6), and 0 are unstable on a second pass. The 28 generated rows the receipt names (own atoms, mulberry32 seed 31, N 600, MAXLEN 11, 158,634 rows) are the same 28 rows, by config and input, that now change; each gives 9822af0’s output, its only change is ’ to ″, and the fix’s total against 9822af0 drops from 182 to 154. nl double-outer was not affected by R4-1 (7823e68 already gives 27″ there; its corpus case passes on the old code), and gives 27″. Through Craft (the testbed’s mounted plugin, gate-x5n4/craft-probe.txt): nl → 27″, en-GB single-outer → 27″. The R3-3 cases stay green (the suite passes 3860), and undoing the fix (M1) fails exactly three r4-1 cases. R4-1 reached further than the receipt said: any locale where a curly ‘…’ is the innermost quotation inside an open double quotation. en-US <p>“We waited ‘til 6 and saw a 27\" set in the fans’ lounge.</p> gave 27” at 7823e68 (and at 9822af0) and now gives 27″, as 03dd4f3 did. The fix covers it, and the targeted runs below found it in en-US, en-GB, da, es, es guillemets-outer, nb, nl double-outer and pt as well."
+    }
+  },
+  "findings": [],
+  "notBlocking": [
+    {
+      "id": "FU1",
+      "summary": "The new suffix-cache key is not pinned. Mutant M2 drops the flag from the key ($key = 'closer:' . $close . $open;), so the single-quote and double-quote paths share whichever sum was built first. The engine suite still passes (3860 passed), and none of the 802,188 differential rows notices. Yet it brings R4-1 back when an earlier straight ' in the same paragraph read the same curly pair first: en-GB single-outer <p>“He said ‘the dogs' bowls are full,” she said. “And ‘the set is 27\" wide in the players’ lounge.</p> gives 27″ at 0bb7844 and 27’ under M2 (typed and depth). It also changes <p>“He said ‘I own a 27\" telly and I am 6' tall in the players’ lounge.</p> (6” at 0bb7844, 6′ under M2).",
+      "location": "src/engine/rules/QuoteScanner.php:323 (the key); no corpus case has both paths consult the same curly pair in one paragraph",
+      "repro": "cd /Users/dgaidula/sw/github-public/craft-sorts && gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r41c/mutants.yaml --only M2 --brief -- /opt/homebrew/bin/php tests/engine/run.php → “warn survived, exit 0”; /opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/cmp3.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r41c/m2probe4.tsv all new=/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r41c/fix M2=/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r41c/M2 (row 1: new 27″, M2 27’)",
+      "acceptance": "A corpus case in which a single-quote decision and a later double-quote decision read the same curly pair in one paragraph, so that M2 fails it. Its expected output is written from the locale’s pairs. The dogs' shape above also hits FU2 (dogs”), so either pin a shape without that or settle FU2 first.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "test gap: the key was added with the flag, but no case builds both sums in one paragraph",
+      "needsDesign": false
+    },
+    {
+      "id": "FU2",
+      "summary": "Not new in this fix, and not new since 9822af0: in en-GB single-outer, a straight ' inside a curly ‘ quotation that sits inside an open “ quotation can close the “ quotation as ”, whether it is a foot mark or a plural possessive. <p>“He said ‘the dogs' bowls are full,” she said. “And ‘the set is 27\" wide in the players’ lounge.</p> → dogs”; <p>“He said ‘I am 6' tall,” she said. “And ‘the set is 27\" wide in the players’ lounge.</p> → 6”; <p>“He said ‘I own a 27\" telly and I am 6' tall in the players’ lounge.</p> → 6”. 0bb7844, 7823e68 and 9822af0 agree; 03dd4f3 gives dogs’, 6’ or 6′, so these are rows of the round-3 back-out, which re-check 3 accepted as intended. The README Known limit “A straight mark closing a curly quotation of another shape” may cover them, but its example is a real closing mark, not a possessive or a foot mark.",
+      "location": "src/engine/rules/QuoteScanner.php decideSingle() :417-423 (digit branch) and :444-452 (possessive branch), with the pop by kind",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/cmp3.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r41c/m2probe3.tsv all new=/private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-r41c/fix (rows 1–3: 6”; cur = 03dd4f3 gives 6’ or 6′); same with m2probe4.tsv row 1 (dogs”)",
+      "acceptance": "Dan decides whether this is the Known limit (then the README line names a possessive or foot mark, with an example) or a defect for a later round. No action is needed for R4-1.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "medium",
+      "cause": "pre-existing (9822af0); the possessive and foot-mark tests consult the curly ‘’ pair while the straight ' closes by kind the “ quotation below it",
+      "needsDesign": true
+    },
+    {
+      "id": "FU3",
+      "summary": "Two tidy-ups. (a) closerAhead()’s docblock still says, without condition, that a closing apostrophe after an s with a space and a lowercase word does not count; since 0bb7844 that holds only when $skipPossessive is true (the single-quote path), and the parameter is not documented. (b) r4-1-nl-double-outer-inch-before-possessive passes on 7823e68 (it is a guard, not a pin of R4-1); the commit message says three of the four cases fail on the old code, which is accurate.",
+      "location": "src/engine/rules/QuoteScanner.php:308-319; tests/engine/corpus/15-curly-marks-by-role.txt:1365",
+      "repro": "Read the docblock at :308-319. gate-kit mutants …/gate-r41c/mutants.yaml --only M1 --json → FAIL lines 1361, 1369, 1373; 1365 passes.",
+      "acceptance": "The docblock says the possessive skip applies when $skipPossessive (the single-quote path) and names the parameter. Optionally, an en-US inner-pair case (<p>“We waited ‘til 6 and saw a 27\" set in the fans’ lounge.</p> → 27″) pins R4-1’s wider reach.",
+      "blocking": false,
+      "severity": "info",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "comment not updated with the flag",
+      "needsDesign": false
+    }
+  ],
+  "carriedForward": [
+    "R4-2 (recheck-3): R3-2’s parity cannot see the openers of fi and sv’s ’…’ pair; no worse than 9822af0. Open.",
+    "R4-3 (recheck-3): round-3 test gaps, mutants M1 and M4 of that gate survive. Open.",
+    "R4-4 (recheck-3): R3-3 does not reach a plural possessive followed by a tag or an entity, or inside inline markup. Open.",
+    "R4-5 (recheck-3): rig defect, the old LCG generators share one 10,466-state cycle; this re-check used mulberry32 and mt_rand rigs only. Open (rig, not product).",
+    "R4-6 (recheck-3): r3-4-straight-opened-quotation-is-the-nearest-of-its-kind pins an output that reads as copied from the engine. Open."
+  ],
+  "confirmedSound": [
+    "Scope: git diff 7823e68 0bb7844 touches EFFORT.md (one row, 2871dd7 and 79220cb), the re-check 3 receipt (086a758), src/engine/rules/QuoteScanner.php (the three hunks: the flag, the key suffix, the guarded skip, and false at the decideDouble() call) and four r4-1 corpus cases. Nothing else. gate-x5n4/P-single/src is byte-identical to 0bb7844’s src.",
+    "Regression against 7823e68, mulberry32 with re-check 3’s atoms (read verbatim from gate-x5n4/attrib2.mjs) and sizes: base seed 5 (N 600, MAXLEN 10) 133,308 rows, 0 changed, 17 against 9822af0 as before; gate seed 11 (N 667, MAXLEN 10) 162,330 rows, 0 changed, 20 as before; own seed 31 (N 600, MAXLEN 11) 158,634 rows, 28 changed, all ’ → ″ in en-GB single-outer and nl, each equal to 9822af0, 03dd4f3 and U-R33. Extra runs: own seed 47 157,122 rows, 32 changed, the same kind; a targeted R4-1 atom set (gate-r41c/diff2.mjs set r41) seed 7 153,048 rows, 52 changed (36 ’ → ″ equal to all three references; 12 ” → ″ and 4 » → ″ equal to 03dd4f3 and U-R33, where 9822af0 closed the outer quotation on an inch mark), and seed 13 153,972 rows, 52 changed (48 and 4, the same kinds). Every changed row changes one straight \" after a digit to ″ and equals 7823e68 with R3-3 undone; none is worse.",
+    "Byte-identical: gate-r3m8/dif.php, seeds 11, 29 and 53 × 3,000 pages × 7 option sets on 0bb7844: 63,000 rows, each file byte-for-byte equal to gate-x5n4/dif-h98-<seed>.tsv (9822af0), 0 errors.",
+    "HTML5 differential: run.php’s script fuzz agrees with Dom\\HTMLDocument on 400 of 400 pages, and in three reseeded copies of 0bb7844 (20261117/20261211, 20261119/20261213, 20261121/20261215): RESULT 3860 passed, 0 failed each.",
+    "Idempotence with default rules: 0 unstable. recheck-r7v2/idemgen.php seeds 7 and 23 (283,500 rows each) give 527 and 664 unstable, all with apostrophes or primes off, files byte-identical to 7823e68’s. gate-x5n4/idem-own.php seed 61: 322 (7823e68 339, 9822af0 341), all noapos or noprimes; the 17 fewer come from three inputs with primes off, where the fix now reads a 27\" as an inch mark (left straight) instead of a closing mark that a second pass then changed (for example <p>“‘til 6'«&nbsp; she said» 27\" fans’ ab‚n\"</p>).",
+    "Linear time on 0bb7844: recheck-r7v2/lin.php 14 shapes, gate-q8w3/lin3.php 10, gate-x5n4/lin5.php 7, all 3.8× to 4.2× for 4× the input; plus gate-r41c/lin6.php, 3 shapes that build both cache keys in one paragraph (en-GB single-outer, en-US, nl): 3.9× to 4.0×.",
+    "Speed on the host: 5 interleaved rounds × 300 of perf.php, PHP 8.5.12, opcache on, JIT off, medians: typical 3.59 (9822af0) / 3.60 (7823e68) / 3.63 ms (0bb7844), +0.8 % against 7823e68; dense 5.15 / 5.05 / 5.04 ms, −0.2 %. Within 3 %.",
+    "Tree safety: gate-kit’s real-tree item reads “ok 124 files + git unchanged  real tree”. The repo’s git status (ignored files included) and the sha256 of all 124 tracked files match the start; .php-cs-fixer.cache, rewritten by composer check, was restored from my copy, and it and composer.lock match their start hashes. The testbed’s git status matches the start (clean), and it runs PHP 8.4.27."
+  ],
+  "mutants": {
+    "mine": "gate-r41c/mutants.yaml through gate-kit (baseline green): M1 (decideDouble() asks with the skip again, the revert) killed, 3 failed (r4-1 cases at lines 1361, 1369, 1373); M3 (flag default false, decideSingle() loses the skip) killed; M4 (skip always on inside the loop) killed; M2 (key without the flag) survives (FU1)."
+  },
+  "notDone": [
+    "No php:8.2-cli run of the engine suite or the perf rig this round (re-check 3 did both on 7823e68; the change is four lines of plain PHP with no version-specific calls).",
+    "run-all.mjs was run once, not twice.",
+    "R4-1’s wider reach (inner curly ‘…’ inside “…” in en-US and others) was found and checked on generated and hand-written rows, not on a corpus of real sites.",
+    "I did not renew the README’s Hardened line or add an EFFORT.md row: the brief leaves both to the orchestrator and says to commit only this receipt.",
+    "Side effects, all inside the scratchpad’s gate-r41c/ and kept as the evidence the repros name: extracted trees fix (0bb7844), ref7823 (7823e68), h98chk and c03chk (src of 9822af0 and 03dd4f3, used only to verify gate-x5n4/h98 and gate-x5n4/cur); mutant trees M2 and M3; fuzz copies fz-*; the perf/ symlink folder; differential, idempotence, linear-time, perf and run-all outputs; findings.json. In the repo, composer check rewrote the git-ignored .php-cs-fixer.cache, which I restored (sha256 matches the start). The testbed: run-all restores itself, and the Craft probe only read."
+  ],
+  "sources": "Read directly: the diff 7823e68..0bb7844, QuoteScanner.php at 0bb7844 (lines 150–240 and 300–460), the repo CLAUDE.md, tests/README.md, README.md’s Known limits, SPEC.md around the inch-mark rule, and the code of every rig I ran (attrib2.mjs, cmp3.php, emit.php, dif.php, idemgen.php, idem-own.php, perf.sh, perfsum.mjs, craft-probe.txt; lin.php, lin3.php and lin5.php by their headers). I read re-check 3’s receipt for R4-1’s repros, the 28 rows and its acceptance, and its other keys for this receipt’s shape, before my own runs, because the brief defines the closure by them. Every status above rests on my own runs; the earlier receipt’s P-single numbers were reproduced, not taken on trust."
+}
