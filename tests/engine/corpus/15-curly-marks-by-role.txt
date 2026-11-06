@@ -1353,3 +1353,23 @@
 @ r3-4-fi-inch-across-a-tag only=quotes,apostrophes,primes locale=fi
 < <p>”Näyttö on <b>27"</b> leveä”</p>
 > <p>”Näyttö on <b>27″</b> leveä”</p>
+
+# R4-1 (re-check 3): a later plural possessive must not count as the closing mark of a
+# curly-opened quotation when a straight " after a digit is being read (the possessive skip
+# belongs to the single-quote path only). Expected: the inch mark is a double prime.
+
+@ r4-1-nl-inch-inside-curly-single-before-possessive only=quotes,apostrophes,primes locale=nl
+< <p>‘s Avonds keken we naar een 27" tv in Klaas’ kamer.</p>
+> <p>‘s Avonds keken we naar een 27″ tv in Klaas’ kamer.</p>
+
+@ r4-1-nl-double-outer-inch-before-possessive only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< <p>‘s Avonds keken we naar een 27" tv in Klaas’ kamer.</p>
+> <p>‘s Avonds keken we naar een 27″ tv in Klaas’ kamer.</p>
+
+@ r4-1-en-GB-single-outer-inch-before-possessive only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>‘The new set has a 27" screen, and the players’ lounge has two.</p>
+> <p>‘The new set has a 27″ screen, and the players’ lounge has two.</p>
+
+@ r4-1-en-GB-single-outer-inch-before-possessive-depth only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
+< <p>‘The new set has a 27" screen, and the players’ lounge has two.</p>
+> <p>‘The new set has a 27″ screen, and the players’ lounge has two.</p>

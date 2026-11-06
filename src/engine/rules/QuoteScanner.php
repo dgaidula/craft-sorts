@@ -317,10 +317,10 @@ final class QuoteScanner
      * @param array{string, string, string, bool, array<string, int>} $pair opening and closing mark, apostrophe, html, roles
      * @param array<string, array<int, int>> $suffix
      */
-    private static function closerAhead(array $pair, string $text, array $tokens, int $k, Context $context, array &$suffix): bool
+    private static function closerAhead(array $pair, string $text, array $tokens, int $k, Context $context, array &$suffix, bool $skipPossessive = true): bool
     {
         [$open, $close, $apostrophe, $html, $roles] = $pair;
-        $key = 'closer:' . $close . $open;
+        $key = 'closer:' . $close . $open . ($skipPossessive ? 'p' : '');
         if (!isset($suffix[$key])) {
             $count = count($tokens);
             $sums = array_fill(0, $count + 1, 0);
@@ -331,7 +331,7 @@ final class QuoteScanner
                     $step = -1;
                 } elseif ($raw === $close && ($close !== $apostrophe
                     || (self::classAfter($text, $at + strlen($raw), $context, $html, $roles)[0] !== self::WORD
-                        && !(preg_match('/[sS]$/', substr($text, max(0, $at - 1), 1))
+                        && !($skipPossessive && preg_match('/[sS]$/', substr($text, max(0, $at - 1), 1))
                             && preg_match('/^\s+\p{Ll}/u', preg_replace('/(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]?|[\xF0-\xF7][\x80-\xBF]{0,2})$/', '', substr($text, $at + strlen($raw), 8))))))) {
                     $step = 1;
                 }
@@ -366,7 +366,7 @@ final class QuoteScanner
             if (preg_match('/\d' . self::SINGLE_MARK . '\s?\d+(?:[.,]\d+)?$/', $before)
                 || !$openD
                 || self::remaining(self::ANY_DOUBLE, $tokens, $k, $context, $suffix) % 2 === 1
-                || ($curlyPair !== null && self::closerAhead($curlyPair, $text, $tokens, $k, $context, $suffix))) {
+                || ($curlyPair !== null && self::closerAhead($curlyPair, $text, $tokens, $k, $context, $suffix, false))) {
                 return self::D_DOUBLE_PRIME;
             }
             return self::D_CLOSE;
