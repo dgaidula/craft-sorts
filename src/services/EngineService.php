@@ -8,8 +8,10 @@ use iceboxind\sorts\engine\DataLocale;
 use iceboxind\sorts\engine\Engine;
 use iceboxind\sorts\engine\LocaleRegistry;
 use iceboxind\sorts\engine\Options;
+use iceboxind\sorts\engine\Presets;
 use iceboxind\sorts\engine\RuleInterface;
 use iceboxind\sorts\events\RegisterRulesEvent;
+use iceboxind\sorts\models\Settings;
 use iceboxind\sorts\Plugin;
 use Throwable;
 
@@ -39,7 +41,7 @@ class EngineService extends Component
      * Spacing and markup belong to the page, and a site’s own rules are its own
      * to run where it chooses, so none of those are written into the database.
      */
-    public const STORED_RULES = ['symbols', 'ellipsis', 'dashes', 'fractions', 'ranges', 'multiplication', 'primes', 'apostrophes', 'quotes'];
+    public const STORED_RULES = ['symbols', 'ellipsis', 'dashes', 'typed-dashes', 'fractions', 'ranges', 'multiplication', 'primes', 'apostrophes', 'quotes'];
 
     private ?Engine $engine = null;
 
@@ -96,6 +98,7 @@ class EngineService extends Component
                 variants: [],
                 allowed: array_values(array_intersect(self::LITE_RULES, $options->allowed ?? self::LITE_RULES)),
                 quoteNesting: Options::NESTING_TYPED,
+                preset: Options::PRESET_NONE,
             );
         }
         return $this->engine()->apply($input, $rules, $options);
@@ -121,15 +124,23 @@ class EngineService extends Component
             );
         }
         $settings = $plugin->getSettings();
+        $preset = $settings->fineTypography ? Options::PRESET_BRINGHURST : Options::PRESET_NONE;
+        $rules = $settings->rules;
+        if ($preset !== Options::PRESET_NONE) {
+            // The settings hold every switch, so a switch counts as the site’s own word only when it is off its
+            // default; the rest are left to the preset (see Presets).
+            $rules = array_filter($rules, static fn (bool $on, string $handle): bool => $on !== (Settings::RULE_DEFAULTS[$handle] ?? $on), ARRAY_FILTER_USE_BOTH);
+        }
         return new Options(
             locale: $language,
             mode: $mode,
-            rules: $settings->rules,
+            rules: $rules,
             ruleOptions: ['widows' => ['minWords' => $settings->widowsMinWords]],
             skipTags: $settings->skipTags,
             skipClasses: $settings->skipClasses,
             variants: $settings->variants,
             quoteNesting: $settings->normalizeQuotes ? Options::NESTING_DEPTH : Options::NESTING_TYPED,
+            preset: $preset,
         );
     }
 
@@ -144,7 +155,7 @@ class EngineService extends Component
         $rules = [];
         foreach ($this->engine()->rules() as $rule) {
             $handle = $rule->handle();
-            $rules[$handle] = in_array($handle, self::STORED_RULES, true) && ($options->rules[$handle] ?? $rule->defaultEnabled());
+            $rules[$handle] = in_array($handle, self::STORED_RULES, true) && ($options->rules[$handle] ?? Presets::rules($options->preset)[$handle] ?? $rule->defaultEnabled());
         }
         $allowed = array_values(array_intersect(self::STORED_RULES, $options->allowed ?? self::STORED_RULES));
         return $options->with(rules: $rules, allowed: $allowed);

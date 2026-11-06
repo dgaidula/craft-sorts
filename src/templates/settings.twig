@@ -114,6 +114,21 @@
 {% if lockMaxPage %}{{ carry('maxPageBytes', stored.maxPageBytes ?? null) }}{% endif %}
 
 <hr>
+<h2>{{ 'Fine typography'|t('sorts') }} <span class="code">Pro</span></h2>
+
+{% set lockFine = ('fineTypography' in overrides) or not isPro %}
+{{ forms.lightswitchField({
+    label: 'Fine typography (Bringhurst)'|t('sorts'),
+    instructions: 'After Robert Bringhurst, The Elements of Typographic Style, 3rd ed., chapter 5. Off by default. On: a spaced en dash for breaks in American English, also for typed em dashes (5.2.1); an em dash and a thin space to open dialogue (5.2.3); number ranges, including clock times (5.2.2); fractions joined to their whole number (5.2.5); the multiplication sign (5.2.6); a word space either side of an ellipsis in English (5.2.7); thin spaces inside guillemets, except in German (5.4.1). A rule switch below that you have moved off its default still wins, and a quotation style you choose for a language wins over this. Applies to the page pass, the filter, fix on save and the audit.'|t('sorts'),
+    id: 'fineTypography',
+    name: 'fineTypography',
+    on: settings.fineTypography,
+    disabled: lockFine,
+    warning: 'fineTypography' in overrides ? overridden : (not isPro ? proNote),
+}) }}
+{% if lockFine %}{{ carry('fineTypography', stored.fineTypography ?? null) }}{% endif %}
+
+<hr>
 <h2>{{ 'Rules'|t('sorts') }} <span class="code">Pro</span></h2>
 
 {% set lockRules = ('rules' in overrides) or not isPro %}

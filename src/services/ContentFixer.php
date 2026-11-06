@@ -116,6 +116,41 @@ class ContentFixer extends Component
     }
 
     /**
+     * What the engine will not change but a writer may want to look at (numerical plurals with an
+     * apostrophe, D859), in the same values {@see changes()} reads: the title, Plain Text and CKEditor
+     * fields. Read-only, and whatever the language, since a finding does not depend on it.
+     *
+     * @return list<array{label: string, html: bool, value: string, findings: list<\iceboxind\sorts\engine\Finding>}>
+     */
+    public function findings(ElementInterface $element): array
+    {
+        $settings = Plugin::getInstance()->getSettings();
+        $engine = Plugin::getInstance()->engine->engine();
+        $found = [];
+        $look = static function (string $label, string $value, bool $html) use ($engine, &$found): void {
+            $findings = $engine->findings($value, new Options(mode: $html ? Options::HTML : Options::TEXT));
+            if ($findings) {
+                $found[] = ['label' => $label, 'html' => $html, 'value' => $value, 'findings' => $findings];
+            }
+        };
+        if ($settings->fixTitles && $element::hasTitles() && is_string($element->title) && $element->title !== '') {
+            $look(Craft::t('app', 'Title'), $element->title, false);
+        }
+        foreach ($element->getFieldLayout()?->getCustomFields() ?? [] as $field) {
+            $isCkeditor = $this->isCkeditor($field);
+            if ($isCkeditor ? !$settings->fixCkeditor : !($settings->fixPlainText && $field instanceof PlainText && !$field->code)) {
+                continue;
+            }
+            $value = $element->getFieldValue($field->handle);
+            $value = $value instanceof HtmlFieldData ? $value->getRawContent() : $value;
+            if (is_string($value) && $value !== '') {
+                $look((string) $field->name, $value, $isCkeditor);
+            }
+        }
+        return $found;
+    }
+
+    /**
      * Put the fixed values on the element (it still has to be saved). Returns how many changed.
      *
      * @param array{text: Options, html: Options}|null $options see {@see changes()}

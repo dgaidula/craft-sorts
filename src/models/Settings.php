@@ -77,6 +77,13 @@ class Settings extends Model
      */
     public bool $normalizeQuotes = false;
 
+    /**
+     * Pro. Fine typography after Robert Bringhurst, *The Elements of Typographic Style*, 3rd ed., chapter 5
+     * (the engine’s `bringhurst` preset, D817): a coherent set of choices that sits above the rule switches.
+     * A switch moved off its default is the site’s own word and wins. Lite is always off.
+     */
+    public bool $fineTypography = false;
+
     /** Pro. The fewest words a heading needs before the widows rule joins its last two. */
     public int $widowsMinWords = 3;
 
@@ -132,7 +139,7 @@ class Settings extends Model
                 $values[$name] = is_numeric($values[$name]) ? (int) $values[$name] : 0;
             }
         }
-        foreach (['ckeditorAsYouType', 'pagePass', 'processHead', 'normalizeQuotes', 'fixOnSave', 'fixTitles', 'fixPlainText', 'fixCkeditor', 'fixOnSaveBulk'] as $name) {
+        foreach (['ckeditorAsYouType', 'pagePass', 'processHead', 'normalizeQuotes', 'fineTypography', 'fixOnSave', 'fixTitles', 'fixPlainText', 'fixCkeditor', 'fixOnSaveBulk'] as $name) {
             if (array_key_exists($name, $values)) {
                 $values[$name] = self::coerceBool($values[$name], $this->$name);
             }

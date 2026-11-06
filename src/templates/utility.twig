@@ -93,6 +93,40 @@
         </form>
     {% endif %}
 
+    {% if result.flagged %}
+        <h2>{{ 'Flagged, not changed'|t('sorts') }}</h2>
+        <p>{{ 'A number with an apostrophe before the s (1930’s) is a plural that takes none, but Sorts cannot tell it from a possessive (1930’s best film), so it never changes one. Look at these and fix them by hand.'|t('sorts') }}</p>
+        <table class="data fullwidth" id="sorts-flagged">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Entry'|t('sorts') }}</th>
+                    <th scope="col">{{ 'Found'|t('sorts') }}</th>
+                    <th scope="col">{{ 'Perhaps'|t('sorts') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in result.flagged %}
+                    {% set first = true %}
+                    {% for flag in item.flags %}
+                        {% for note in flag.notes %}
+                            <tr>
+                                {% if first %}
+                                    <th rowspan="{{ item.flags|reduce((n, f) => n + f.notes|length, 0) }}" scope="row">
+                                        {% if item.cpEditUrl %}<a href="{{ item.cpEditUrl }}">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
+                                        <div class="light smalltext">{{ item.section }}</div>
+                                    </th>
+                                    {% set first = false %}
+                                {% endif %}
+                                <td><span class="light smalltext">{{ flag.label }}</span><br>{{ note.context }}</td>
+                                <td>{{ note.suggestion }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
     {% if result.more %}
         <p>
             <a class="btn" href="{{ url('utilities/sorts', { scan: 1, section: sectionId, site: siteId, after: result.lastId }) }}">{{ 'Scan the next {count} entries'|t('sorts', { count: batchSize }) }}</a>

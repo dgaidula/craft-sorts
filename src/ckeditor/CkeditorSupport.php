@@ -9,6 +9,7 @@ use craft\ckeditor\helpers\CkeditorConfig;
 use craft\helpers\Cp;
 use iceboxind\sorts\engine\LocaleInterface;
 use iceboxind\sorts\engine\Options;
+use iceboxind\sorts\engine\Presets;
 use iceboxind\sorts\Plugin;
 use Throwable;
 use yii\base\Event;
@@ -31,8 +32,8 @@ use yii\base\Event;
  * language’s pairs are enabled, and the key typed picks the pair as it does in Sorts
  * (typing `"` gives the language’s primary pair, `'` its secondary pair; see
  * `Options::$quoteNesting`), so typing `"` in an English field gives “…” and `'` gives ‘…’,
- * and in a German or French field both are left straight (so are the German book style »…«
- * and the Swiss and Spanish guillemets), to be set by the page pass or fix-on-save, as are the
+ * and in a German or French field both are left straight (German is book style »…« by default,
+ * which CKEditor has no transformation for, and so are the low-high variant „…“ and the Swiss and Spanish guillemets), to be set by the page pass or fix-on-save, as are the
  * keys of an en-GB single-outer field (CKEditor’s en-GB pairs put ‘…’ on `'`, Sorts’ put it
  * on `"`). A Dutch field set to double-outer gets both keys, as English does. CKEditor
  * keeps no memory of nesting: a `"` typed inside an open “…” gives “…” again, where Sorts
@@ -84,13 +85,19 @@ final class CkeditorSupport
         // The editor’s content language is its element’s site: the control panel's requested site (?site=).
         $options = $service->options(Cp::requestedSite()?->language);
         $locale = $service->engine()->locales()->resolveOrFallback($options->locale);
-        $variant = $options->variants[$locale->id()] ?? null;
+        $variant = $options->variants[$locale->id()] ?? Presets::variants($options->preset)[$locale->id()] ?? null;
         if ($variant !== null && in_array($variant, $locale->variants(), true)) {
             $locale = $locale->withVariant($variant);
         }
 
+        // The fine typography preset turns fractions on, joined to the whole number before them (8 1/2 gives 8½); CKEditor’s
+        // would turn the 1/2 alone into ½ and leave 8 ½, so the preset’s fractions are left to the page and the save.
+        $rules = array_replace(Presets::rules($options->preset), $options->rules);
+        if ($options->preset !== Options::PRESET_NONE) {
+            $rules['fractions'] = false;
+        }
         $event->baseConfig['typing'] = ['transformations' => [
-            'include' => self::transformations($locale, $options->rules, $options->quoteNesting === Options::NESTING_DEPTH),
+            'include' => self::transformations($locale, $rules, $options->quoteNesting === Options::NESTING_DEPTH),
         ]];
     }
 
@@ -113,9 +120,13 @@ final class CkeditorSupport
             $include[] = 'horizontalEllipsis';
         }
         if ($on('dashes')) {
-            $include[] = 'emDash';
-            // CKEditor’s `--` is a spaced en dash: right where Sorts’ `--` is one, wrong where it is an em dash.
             $dash = $locale->dash();
+            // CKEditor’s `---` is an em dash. Where every break is one dash (en-US spaced-en-dash: `--`, `---`
+            // and a spaced hyphen all give a spaced en dash) it is left straight for the page pass to set.
+            if (empty($dash['allBreaks'])) {
+                $include[] = 'emDash';
+            }
+            // CKEditor’s `--` is a spaced en dash: right where Sorts’ `--` is one, wrong where it is an em dash.
             if (($dash['mark'] ?? '') === '–' && !empty($dash['spaced'])) {
                 $include[] = 'enDash';
             }

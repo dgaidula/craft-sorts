@@ -4,6 +4,7 @@ namespace iceboxind\sorts\services;
 
 use craft\base\Component;
 use craft\elements\Entry;
+use iceboxind\sorts\engine\Finding;
 use iceboxind\sorts\Plugin;
 
 /**
@@ -27,7 +28,7 @@ class AuditScanner extends Component
      * @param int|null $sectionId only entries of this section, or null for every entry
      * @param int $siteId the site whose entries to read
      * @param int $afterId only entries with an id above this (0 to start)
-     * @return array{items: list<array{id: int, siteId: int, title: string, cpEditUrl: ?string, section: string, changes: list<array{label: string, excerpts: list<array{before: string, after: string}>}>}>, scanned: int, lastId: int, more: bool}
+     * @return array{items: list<array{id: int, siteId: int, title: string, cpEditUrl: ?string, section: string, changes: list<array{label: string, excerpts: list<array{before: string, after: string}>}>}>, flagged: list<array{id: int, siteId: int, title: string, cpEditUrl: ?string, section: string, flags: list<array{label: string, notes: list<array{match: string, suggestion: string, context: string}>}>}>, scanned: int, lastId: int, more: bool}
      */
     public function scan(?int $sectionId, int $siteId, int $afterId = 0, int $limit = self::BATCH_SIZE): array
     {
@@ -50,12 +51,31 @@ class AuditScanner extends Component
         $entries = array_slice($entries, 0, $limit);
 
         $items = [];
+        $flagged = [];
         foreach ($entries as $entry) {
             $changes = [];
             foreach ($fixer->changes($entry) as $change) {
                 $changes[] = [
                     'label' => $change['label'],
                     'excerpts' => self::excerpts($change['before'], $change['after'], $change['html']),
+                ];
+            }
+            // What the fix will not touch but a writer may want to look at (D859), whether or not the entry also changes.
+            $flags = [];
+            foreach ($fixer->findings($entry) as $found) {
+                $flags[] = [
+                    'label' => $found['label'],
+                    'notes' => array_map(fn (Finding $f): array => ['match' => $f->match, 'suggestion' => $f->suggestion, 'context' => self::context($found['value'], $f->offset, strlen($f->match), $found['html'])], array_slice($found['findings'], 0, self::MAX_EXCERPTS)),
+                ];
+            }
+            if ($flags) {
+                $flagged[] = [
+                    'id' => (int) $entry->id,
+                    'siteId' => (int) $entry->siteId,
+                    'title' => (string) $entry->title,
+                    'cpEditUrl' => $entry->getCpEditUrl(),
+                    'section' => (string) $entry->getSection()?->name,
+                    'flags' => $flags,
                 ];
             }
             if ($changes) {
@@ -70,7 +90,18 @@ class AuditScanner extends Component
             }
         }
         $last = $entries ? end($entries) : null;
-        return ['items' => $items, 'scanned' => count($entries), 'lastId' => $last ? (int) $last->id : $afterId, 'more' => $more];
+        return ['items' => $items, 'flagged' => $flagged, 'scanned' => count($entries), 'lastId' => $last ? (int) $last->id : $afterId, 'more' => $more];
+    }
+
+    /** The words around a finding, as plain text: tags dropped and entities decoded. */
+    private static function context(string $value, int $offset, int $length, bool $html): string
+    {
+        $plain = static fn (string $s): string => $html ? html_entity_decode(strip_tags($s), ENT_QUOTES | ENT_HTML5, 'UTF-8') : $s;
+        $before = $plain(mb_strcut($value, max(0, $offset - 40), min($offset, 40)));
+        $after = $plain(mb_strcut($value, $offset + $length, 40));
+        $lead = array_slice(preg_split('/\s+/u', $before, -1, PREG_SPLIT_NO_EMPTY) ?: [], -self::CONTEXT_WORDS);
+        $trail = array_slice(preg_split('/\s+/u', $after, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, self::CONTEXT_WORDS);
+        return implode(' ', $lead) . (preg_match('/\s$/u', $before) ? ' ' : '') . $plain(substr($value, $offset, $length)) . (preg_match('/^\s/u', $after) ? ' ' : '') . implode(' ', $trail);
     }
 
     /**

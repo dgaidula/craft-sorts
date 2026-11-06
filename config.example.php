@@ -46,10 +46,11 @@ return [
         // The fewest words a heading needs before its last two words are joined.
         'widowsMinWords' => 3,
 
-        // Quotation style per language. CLDR is the default. Variants: en-GB
-        // 'single-outer' (New Hart's Rules), de 'book' (Duden, with Dan Gaidula's
-        // preference), de-CH 'guillemets' (Schreibweisungen der Bundeskanzlei),
-        // es 'guillemets-outer' (RAE), nl 'double-outer' (Taalunie).
+        // Style per language. CLDR is the default, except German, which is book style »…«
+        // (Duden). Variants: en-GB 'single-outer' (New Hart's Rules), en-US 'spaced-en-dash'
+        // (Bringhurst, 5.2.1: a spaced en dash for breaks), de 'low-high' (CLDR's „…“),
+        // de-CH 'guillemets' (Schreibweisungen der Bundeskanzlei), es 'guillemets-outer'
+        // (RAE), nl 'double-outer' (Taalunie).
         'variants' => [
             // 'en-GB' => 'single-outer',
         ],
@@ -58,6 +59,14 @@ return [
         // and one typed with ' its inner marks, and a quotation inside another gets the other
         // pair. On: every quotation is set by its nesting depth, whichever mark was typed.
         'normalizeQuotes' => false,
+
+        // Fine typography after Robert Bringhurst, *The Elements of Typographic Style*, 3rd ed.,
+        // chapter 5: a spaced en dash for breaks (5.2.1), a dash and a thin space opening
+        // dialogue (5.2.3), ranges including clock times (5.2.2), fractions joined to their whole
+        // number (5.2.5), the multiplication sign (5.2.6), spaced ellipses in English (5.2.7)
+        // and thin spaces inside guillemets (5.4.1). A rule switch you have moved off its default
+        // still wins; one left at its default follows this setting.
+        'fineTypography' => false,
 
         // Exclusions: tag names, class names, and request paths (`*` matches any run
         // of characters) the page pass leaves alone.
