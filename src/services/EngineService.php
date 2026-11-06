@@ -4,6 +4,7 @@ namespace iceboxind\sorts\services;
 
 use Craft;
 use craft\base\Component;
+use iceboxind\sorts\engine\DataLocale;
 use iceboxind\sorts\engine\Engine;
 use iceboxind\sorts\engine\LocaleRegistry;
 use iceboxind\sorts\engine\Options;
@@ -89,8 +90,13 @@ class EngineService extends Component
     {
         $rules = array_values(array_filter($rules, 'is_string'));
         if (!Plugin::getInstance()->isPro()) {
+            // Lite’s own options, whatever the caller built: quotes as typed, no variants, Lite’s rules only.
             $rules = array_values(array_intersect($rules, self::LITE_RULES));
-            $options = $options->with(quoteNesting: Options::NESTING_TYPED);
+            $options = $options->with(
+                variants: [],
+                allowed: array_values(array_intersect(self::LITE_RULES, $options->allowed ?? self::LITE_RULES)),
+                quoteNesting: Options::NESTING_TYPED,
+            );
         }
         return $this->engine()->apply($input, $rules, $options);
     }
@@ -164,13 +170,13 @@ class EngineService extends Component
 
     private function liteLocales(): LocaleRegistry
     {
-        $all = new LocaleRegistry();
         $lite = new LocaleRegistry('/nonexistent');
         foreach (self::LITE_LOCALES as $id) {
-            $locale = $all->resolve($id);
-            if ($locale !== null) {
-                $lite->register($locale);
-            }
+            // The CLDR pairs only: the variants (quotation styles) are Pro, so a variant
+            // asked for in a call, even on engine()->apply(), finds none on Lite.
+            $data = require dirname(__DIR__) . "/engine/locales/{$id}.php";
+            unset($data['variants']);
+            $lite->register(DataLocale::fromArray($data));
         }
         return $lite;
     }

@@ -41,6 +41,9 @@ sortsTry('coercion', function () use ($make) {
     $s = $make(['fixOnSave' => '1', 'pagePass' => '', 'processHead' => 'true', 'fixTitles' => 0, 'widowsMinWords' => '5', 'pluginName' => "  Typeset \n"]);
     sortsEq('booleans and integers coerce', [true, false, true, false, 5, 'Typeset'], [$s->fixOnSave, $s->pagePass, $s->processHead, $s->fixTitles, $s->widowsMinWords, $s->pluginName]);
     sortsEq('normalizeQuotes: off by default, "1" is on, a word it cannot read keeps the default', [false, true, false], [$make([])->normalizeQuotes, $make(['normalizeQuotes' => '1'])->normalizeQuotes, $make(['normalizeQuotes' => 'maybe'])->normalizeQuotes]);
+    $s = $make(['normalizeQuotes' => true]);
+    $s->setAttributes(['normalizeQuotes' => 'maybe'], false);
+    sortsEq('normalizeQuotes: a word it cannot read keeps the value it had (on)', true, $s->normalizeQuotes);
     $s = $make(['widowsMinWords' => 'lots', 'pluginName' => ['x']]);
     sortsEq('a non-number widow count fails validation instead of throwing', false, $s->validate(['widowsMinWords']));
     sortsEq('a non-string plugin name becomes blank', '', $s->pluginName);
@@ -107,6 +110,7 @@ sortsTry('the settings page, Lite', function () {
     sortsCheck('lite page: marked Pro', substr_count($html, 'Needs Sorts Pro.') >= 5 && str_contains($html, '<span class="code">Pro</span>'));
     sortsCheck('lite page: and locked', (bool) preg_match('/<textarea[^>]*name="settings\[skipTags\]"[^>]*\bdisabled\b/', $html) || (bool) preg_match('/<textarea[^>]*\bdisabled\b[^>]*name="settings\[skipTags\]"/', $html), '');
     sortsCheck('lite page: CKEditor setting is live', (bool) preg_match('/name="settings\[ckeditorAsYouType\]"/', $html) && !preg_match('/<button[^>]*id="settings-ckeditorAsYouType"[^>]*disabled/', $html));
+    sortsCheck('lite page: the normalize quotes switch is locked and marked Pro', (bool) preg_match('/<button[^>]*id="settings-normalizeQuotes"[^>]*\bdisabled\b/', $html) && (bool) preg_match('/id="settings-normalizeQuotes-warning"(?:(?!<\/p>).)*Needs Sorts Pro\./s', $html));
 
     // Save from Lite: the Pro values must survive.
     $fields = sortsFormFields($html, 'plugins/save-plugin-settings');

@@ -23,6 +23,14 @@ sortsTry('lite', function () {
         return sorts()->engine->apply('the \'best\' one');
     })());
     sortsEq('lite: options asked for depth are set to typed', 'the ‘best’ one', sorts()->engine->applyWith('the \'best\' one', sorts()->engine->options()->with(quoteNesting: 'depth')));
+    sortsConfigure('lite');
+    $e = sorts()->engine;
+    sortsEq('lite: a variant asked for in applyWith() is not applied', '“She said ‘no’”', $e->applyWith('"She said \'no\'"', $e->options('en-GB')->with(variants: ['en-GB' => 'single-outer'])));
+    sortsEq('lite: applyWith() keeps Lite’s rules even when the options allow every rule', '“a” 1/2', $e->applyWith('"a" 1/2', $e->options()->with(rules: ['fractions' => true], allowed: null)));
+    sortsEq('lite: the engine’s English has no variants, so engine()->apply() cannot reach one either', ['“She said ‘no’”', []], [
+        $e->engine()->apply('"She said \'no\'"', [], new \iceboxind\sorts\engine\Options(locale: 'en-GB', variants: ['en-GB' => 'single-outer'])),
+        $e->engine()->locales()->resolve('en-GB')->variants(),
+    ]);
 });
 
 sortsTry('pro', function () {

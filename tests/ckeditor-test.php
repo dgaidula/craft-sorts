@@ -52,10 +52,17 @@ sortsTry('the control panel page', function () {
     $fr = $page('?site=testbedFr');
     sortsCheck('page, French site: the editor follows the site’s language (no quotes, a spaced en dash)', str_contains($fr, '"include":["copyright","registeredTrademark","trademark","horizontalEllipsis","emDash","enDash"]'), (string) (preg_match('/"typing":\{[^}]*\}\}/', $fr, $m) ? $m[0] : 'no typing config'));
 
+    sortsConfigure('pro', ['normalizeQuotes' => true]);
+    $depth = $page();
+    sortsCheck('page, normalizing by depth: the double key only (a typed single may be outermost)', str_contains($depth, '"typing":{"transformations":{"include":["copyright","registeredTrademark","trademark","horizontalEllipsis","emDash","quotesPrimary"]}}'), (string) (preg_match('/"typing":\{[^}]*\}\}/', $depth, $m) ? $m[0] : 'no typing config'));
+
     sortsConfigure('lite');
     $lite = $page();
     sortsCheck('lite page: TextTransformation is there too', str_contains($lite, 'TextTransformation'));
     sortsCheck('lite page: with the Lite rules (no symbols)', str_contains($lite, '"include":["horizontalEllipsis","emDash","quotesPrimary","quotesSecondary"]'), (string) (preg_match('/"typing":\{[^}]*\}\}/', $lite, $m) ? $m[0] : 'no typing config'));
+    sortsConfigure('lite', ['normalizeQuotes' => true]);
+    $liteDepth = $page();
+    sortsCheck('lite page, normalizeQuotes stored: both keys still (Lite never reads it)', str_contains($liteDepth, '"include":["horizontalEllipsis","emDash","quotesPrimary","quotesSecondary"]'), (string) (preg_match('/"typing":\{[^}]*\}\}/', $liteDepth, $m) ? $m[0] : 'no typing config'));
 
     sortsConfigure('pro', ['ckeditorAsYouType' => false]);
     $off = $page();
