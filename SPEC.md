@@ -197,10 +197,13 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
   `“…” ‘…’` (Taalunie). **Built (`81e35a2`):** `de-CH` `guillemets` (Swiss Federal Chancellery, *Schreibweisungen*
   2013/2015, rules 202–203, read at source) and `es` `guillemets-outer` (RAE *Ortografía* 2010; rae.es refused
   automated reads, so built on consistent secondary sources quoting the RAE). **Dropped:** `fr`/`fr-CH` nested `“…”`
-  (the *Lexique* itself, 3rd ed. 1990, nests by repeating « », as CLDR does). **Open:** `de` book style (D823) and
-  `nl` double-outer (D824), whose authorities could not be confirmed at source.
-- **D822 — nested quotes of the same kind: open, proposed 2026-11-05.** A quotation inside another takes the other
-  level, whatever was typed; only the outermost keeps the typed type (D818). Blocks the gate on the D818 build.
+  (the *Lexique* itself, 3rd ed. 1990, nests by repeating « », as CLDR does). The other two became D823 and D824.
+- **D822 — nested quotes of the same kind: decided 2026-11-05 (Dan: y).** A quotation inside another takes the other
+  level, whatever was typed; only the outermost keeps the typed type (D818), so `"She said "no" today"` gives
+  `“She said ‘no’ today”`.
+- **D823 — `de` book style: decided 2026-11-05 (Dan: y, “I prefer german book style”).** Variant `»…« ›…‹`, citing
+  Dan (typographer) and *Duden Band 9* (5th ed., 2001); per D816 CLDR’s „…“ stays `de`’s default.
+- **D824 — `nl` double-outer: decided 2026-11-05 (Dan: y).** Variant `“…” ‘…’`, citing taaladvies.net (Taalunie, 2021).
 - **D814 — editions and price: decided 2026-11-05 (Dan: y).** Lite free; Pro **$39 + $19/yr** at launch (paid
   installs are flat across price bands, and freemium newcomers out-install paid-only ones; both prices can rise
   later, since Craft honours only the renewal price in the 30-day reminder).
