@@ -1,0 +1,177 @@
+{
+  "tool": "craft-sorts",
+  "run": "2026-11-05 closure re-check of fix round 1 for D818–D824 (c3b3b49..9822af0: 4411307 engine, d801bd5 Craft layer, 46da0fc docs), release mode",
+  "suite": "composer test-engine (RESULT: 3768 passed, 0 failed, PHP 8.5.12); composer check clean; node tests/run-all.mjs twice, exit 0 (audit 55, ckeditor 37, engine-service 40, extension-api 16, fix-on-save 64, graphql 23, page-pass 77, settings 89, smoke 2, twig 77; testbed isolation ok, queue 0 → 0); testbed Craft 5.12.0.1, PHP 8.4.27, MySQL 8.4",
+  "verdict": "NOT CLOSED",
+  "closure": {
+    "F1": {
+      "status": "closed",
+      "evidence": "gate-d8q4/k1.php: de/book »\"Nein,\" sagte er« → »›Nein,‹ sagte er« (typed and depth). gate-d8q4/matrix.php: \"2 of 924 differ\", only es/guillemets-outer T15 (the old two-level expectation, superseded by FU8: got «Sie sagte: “Er rief ‘ja’.”»). gate-d8q4/tags.php: 44 of 756 differ, all T17 (probe’s own wrong expectation, as the receipt says) or es/guillemets-outer T13–T15, which match the FU8 three-level order (typed T15 '…' outermost gives “A «b ‘c’ d» e”). Every acceptance string reproduced (recheck-r7v2/acc.tsv): „Er nannte es „Unsinn““., ‚Er nannte es „Unsinn“‘., <p>„Er sagte <i>‚nein‘</i>“.</p> in de, de-CH and cs, <p>»<i>›Ja,‹</i> sagte er.«</p> in de/book, <p lang=\"de\">„Wir lesen <em>‚Faust‘</em>“, sagte sie.</p>. Load-bearing: fixer F1R killed; my M1 (markClass classes the mark before the run by shape) killed. Generated differential c3b3b49 vs HEAD (3,021 mixed inputs × 21 locales/variants × 2 modes): typed output changed only in de, de/book, de-CH, cs, es/guillemets-outer, fi and sv; depth also changes in every locale with distinct nested closers, which is FU4; samples read correctly by role (de .‘\" → .‘“, de/book «\" closes)."
+    },
+    "F2": {
+      "status": "regressed",
+      "evidence": "The acceptance holds: ”Han sa: \"nej.\"” → ”Han sa: ’nej.’”, <p>\"<i>\"Ja,\"</i> sagte er.\"</p> → <p>”<i>’Ja,’</i> sagte er.”</p> in fi and sv, matrix T0–T6, T14, T15 clean for fi/sv; realistic Swedish and Finnish prose (elisions ruo’on, vaa’an, sa’n, rock’n’roll, ’90-luvulla, quotes after a dash, inside parentheses, after numbers, across <i>/<b>) unchanged or improved (recheck-r7v2/f2.tsv). Fixer F2R, F2T, F2A and my M7 killed. But counting ” and ’ as openers broke inch and foot marks inside those quotations: R2-1."
+    },
+    "F3": {
+      "status": "closed",
+      "evidence": "pop() uses array_pop; one flow-state object. gate-d8q4/big.php 480,007 bytes: 0.16 s (gate: 20.52 s); big2.php 500,007 bytes: 0.25 s; php:8.2-cli 960,007 bytes 0.64 s, 900,007 bytes across tags 0.50 s. recheck-r7v2/lin.php, 14 shapes (nesting, same-kind, inline tags, curly openers, closerAhead inch/possessive in one node and per tag, sv ambiguous marks in a node and across tags, fi straight-in-curly across tags, de book, es third level), 4× input: 3.8×–4.2× on 8.5.12 and 4.0× on 8.2.35. Both new unit guards are load-bearing: F3S \"FAIL perf guard: 4× as many nested quotations in one node take under 8× as long (13.8×)\", F3C \"… across 4× as many inline tags … (13.5×)\", my M8 (the c3b3b49 array_splice pop) killed."
+    },
+    "FU1": {
+      "status": "closed",
+      "evidence": "Retargeted M7, M10, M11, M19, M20 all killed (gate-kit, fixer-k3w9/engine-mutants.yaml); M7 by r-fu1-nl-glyph-in-both-pairs-is-primary, M11 by r-fu1-crossed-curly-quotations-close-their-levels. de „Er sagte ‚ja‘\" → „Er sagte ‚ja‘“; en-US \"a 'b \"c\" b' a\" → “a ‘b “c” b’ a” (both modes)."
+    },
+    "FU2": {
+      "status": "closed",
+      "evidence": "Gate C3, C4, C5, C10 on the real files, each restored (sha256 equal): C3 \"ckeditor: 36 passed, 1 failed [FAIL lite page, normalizeQuotes stored: both keys still]\", C4 \"[FAIL page, normalizing by depth: the double key only]\", C5 \"settings: 88 passed, 1 failed [FAIL normalizeQuotes: a word it cannot read keeps the value it had (on)]\", C10 \"[FAIL lite page: the normalize quotes switch is locked and marked Pro]\"."
+    },
+    "FU3": {
+      "status": "closed",
+      "evidence": "Fixer FU3V, FU3L, FU3A killed (engine-service \"FAIL lite: a variant asked for in applyWith() is not applied\", \"… engine()->apply() cannot reach one either\", \"FAIL lite: applyWith() keeps Lite’s rules even when the options allow every rule\"); my K1 (applyWith keeps the caller’s quoteNesting) killed by \"FAIL lite: options asked for depth are set to typed\". DEVELOPMENT.md edition table states the engine()->apply() limit (orchestrator’s ruling; not reported)."
+    },
+    "FU4": {
+      "status": "closed",
+      "evidence": "gate-d8q4/misc.php: en-US depth ‘He said no,' she said. → ‘He said no,’ she said.; fu.php ‘The dogs' bowls are empty,’ → ’ and ‘He came at 5' past.’ → ’ in depth as in typed. M22R killed."
+    },
+    "FU5": {
+      "status": "closed",
+      "evidence": "“The screen is 27\" wide” → 27″, fr « Il mesure 6\" de plus » → 6″, nl ‘Hij is 1,80 m en 6\" lang’ → 6″, also across a tag (“The screen is <b>27\"</b> wide.” → 27″, c3b3b49 gave 27”) and in de, de/book, de-CH guillemets, cs, pl, es guillemets-outer. FU5R, FU5A, FU5B and my M11, M12, M14 killed. Siblings outside this acceptance: R2-3, R2-4; the fi/sv counterpart is R2-1."
+    },
+    "FU6": {
+      "status": "closed",
+      "evidence": "gate-d8q4/idem.php HEAD: \"4 of 7884 not idempotent\", only a-leading-tis-inside-double-quotes and v-en-GB-single-outer-leading-apostrophes (typed, depth), both already in 98db482’s \"3 of 2217\"; the possessive and inch cases are gone. My M13 (possessive test without the curly closer) killed."
+    },
+    "FU7": {
+      "status": "closed (docs); browser check unverified",
+      "evidence": "README’s per-language list matches gate-d8q4/cke.php exactly (both keys en-US, en-GB, da, es, pt, nl/double-outer; ' only nb, nl; \" only pl as quotesPrimaryPl; none de, de-CH, cs, fr, fr-CH, it, fi, sv and the four variants; depth: nb and nl none). The rock 'n' roll and straight same-kind nesting bullet is there. The acceptance’s browser check was not done by the fixer (nothing in fixer-k3w9 or the commits) nor by me; the typed results rest on gate-d8q4/cke-sim.mjs."
+    },
+    "FU8": {
+      "status": "closed",
+      "evidence": "gate-d8q4/probe.php fu8.json: es/guillemets-outer \"a 'b \"c\" b' a\" → «a “b ‘c’ b” a» (typed and depth). FU8R, FU8T, FU8D and my M15 (child of a third-level quotation takes the third pair again), M16 (inverted depth alternation), M18 (curly ‘ counted as nested), M19 (DataLocale drops a variant’s third), M20 (bad third pair not refused) killed. README, CHANGELOG and the variant table updated. Doc nit: R2-8."
+    }
+  },
+  "findings": [
+    {
+      "id": "R2-1",
+      "summary": "Regression from F2: in fi and sv, an inch or foot mark inside a quotation set in curly ”…” or ’…’ now becomes that quotation’s closing mark. Counting ” and ’ as openers makes openD/openS non-zero, closerAhead() returns false for a pair whose two marks are the same glyph, and the single-quote digit branch has no curly-closer test at all, so the digit branch takes D_CLOSE. c3b3b49 gave the prime. The page pass and fix on save write it, and the second pass cannot repair it.",
+      "location": "src/engine/rules/QuoteScanner.php:311-313 (closerAhead: `if ($open === $close) return false;`), :348-359 (decideDouble digit branch), decideSingle digit branch (no closerAhead), :138-154 (the F2 rule that now opens a quotation at ” / ’)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-r7v2/cmp.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-r7v2/inch.tsv <head> <base> and …/prime.tsv (head and base are git-archive copies of 9822af0 and c3b3b49 in recheck-r7v2/): fi <p>”Näyttö on 27\" leveä”, hän sanoi.</p> → HEAD ”Näyttö on 27” leveä” (c3b3b49 27″); sv <p>”Skärmen är 27\" bred”, sa han.</p> → 27” (was 27″); sv <p>”Skärmen är 27\" bred” och ”den är 32\" hög”.</p> → second one 32” (was 32″); sv <p>’Han är 6' lång’, sa hon.</p> → 6’ (was 6′); fi <p>’Hän on 6' pitkä’</p> → 6’; fi <p>”Lauta on 8' pitkä ja 2\" paksu”</p> → 2” (was 2″). Typed and depth alike.",
+      "acceptance": "Inside a fi/sv curly quotation, a straight \" or ' after a digit is a prime unless it is the quotation’s end, as before F2: for a same-glyph pair, a matching mark still to come after the token (counted as closerAhead counts, a ’ only where no letter or digit follows) makes it a prime, and the single digit branch gets the same test. Corpus cases for the six inputs above give ″ / ′ in typed and depth, and a case where the mark is the real closer (”Det är 5\" → ”Det är 5”) still closes. Re-running recheck-r7v2/basediff.mjs shows no fi/sv row where c3b3b49 gave a prime and HEAD does not.",
+      "blocking": true,
+      "severity": "high",
+      "confidence": "high",
+      "likelihood": "possible",
+      "cause": "F2 made ” and ’ count as openers without extending FU5’s curly-closer-ahead test to pairs whose marks are one glyph.",
+      "needsDesign": false
+    }
+  ],
+  "notBlocking": [
+    {
+      "id": "R2-2",
+      "summary": "A straight mark closing a curly nested quotation whose level and shape differ closes the outer quotation instead: the stack keys a curly mark by its level (level 0 'd', else 's'), a straight mark by its shape. it «Disse “sì\" e se ne andò» → «Disse “sì» …; es guillemets-outer «Dijo “hola\" y se fue» → “hola»; en-GB single-outer ‘He said “no\" and left,’ → “no’; pl „Powiedział «nie\" i wyszedł” → «nie”. Pre-existing (c3b3b49 identical); silently wrong in mixed curly and straight content.",
+      "location": "src/engine/rules/QuoteScanner.php:135-137 ($markKind from level), :249 (pop by the straight mark’s kind)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-r7v2/cmp.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-r7v2/kind.tsv <head> <base>",
+      "acceptance": "Design call: either a straight mark may close the innermost curly quotation whose closing mark has its shape, or README Known limits names the case. Corpus cases for the four inputs pin the chosen output.",
+      "blocking": false,
+      "severity": "medium",
+      "confidence": "high",
+      "likelihood": "possible",
+      "cause": "pre-existing; kind is level for curly marks and shape for straight ones",
+      "needsDesign": true
+    },
+    {
+      "id": "R2-3",
+      "summary": "FU5 covers only the innermost quotation: an inch mark inside a curly single quotation inside a curly double one still closes the outer quotation. en-US “He said ‘it is 6\" long’ today.” → 6”; “She said the ‘27\" screen’ was too big.” → 27”; es guillemets-outer «Dijo “la pantalla mide 27\" de ancho” ayer» → 27». Pre-existing.",
+      "location": "src/engine/rules/QuoteScanner.php:193-196 ($curlyPair only for the top of the stack and only of the token’s kind)",
+      "repro": "recheck-r7v2/cmp.php recheck-r7v2/inch.tsv <head> <base> (rows en-US “He said ‘it is 6\" long’…”, es guillemets-outer «Dijo “…27\"…”»)",
+      "acceptance": "The curly-closer test considers the nearest open curly quotation of the token’s kind, not only the top of the stack; corpus cases for the three inputs give ″.",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "pre-existing; FU5’s fix scoped to the innermost quotation",
+      "needsDesign": false
+    },
+    {
+      "id": "R2-4",
+      "summary": "A foot mark after a digit inside a curly single quotation is taken as its closer: en-US ‘He is 6' tall,’ she said. → 6’ (typed; c3b3b49 the same, depth gave 6”); de ‚Er ist 6' groß‘ → 6‘. The FU5 curly-closer test was added to the double digit branch and the possessive test, not the single digit branch.",
+      "location": "src/engine/rules/QuoteScanner.php decideSingle digit branch",
+      "repro": "recheck-r7v2/cmp.php recheck-r7v2/prime.tsv <head> <base>",
+      "acceptance": "decideSingle’s digit branch also consults closerAhead(); corpus cases ‘He is 6' tall,’ → 6′ and ‚Er ist 6' groß‘ → 6′. (Shares the fix with R2-1.)",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "possible",
+      "cause": "pre-existing",
+      "needsDesign": false
+    },
+    {
+      "id": "R2-5",
+      "summary": "markClass() reads the raw bytes before a fi/sv ” that ends an earlier run, so an entity there (&nbsp;, &mdash;) reads as ';' and the opening ” is taken as a closer; F2’s across-a-tag case is not fixed in that shape: sv <p>Han sa:&nbsp;\"<i>\"ja\"</i>\"</p> → <p>Han sa:&nbsp;”<i>”ja”</i>”</p> (expected ’ja’ inside).",
+      "location": "src/engine/rules/QuoteScanner.php:528-541 (markClass: classOf of the last raw character, no entity decoding)",
+      "repro": "recheck-r7v2/cmp.php recheck-r7v2/f2.tsv <head> <base> (row Han sa:&nbsp;…)",
+      "acceptance": "markClass decodes a trailing entity as classBefore does; a corpus case for the input above gives ’ja’.",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "new code (F2), narrow shape",
+      "needsDesign": false
+    },
+    {
+      "id": "R2-6",
+      "summary": "Test gaps (survivors of my mutants, recheck-r7v2/my-mutants.yaml): M4 (an ambiguous fi/sv mark opens even before a space) differs on 36 of 106,800 generated rows, e.g. fi <p>” \"’</p> → ” ”’ vs ” ’’; M17 (depth closer with nothing open ignores the third pair) differs on 13 es guillemets-outer depth rows; M9 (curly closer counted for a straight-opened quotation) on 8. M2, M5, M10 and M3 showed no or only degenerate differences (M5 equivalent: pop with nothing open is a no-op).",
+      "location": "tests/engine/corpus/15-curly-marks-by-role.txt",
+      "repro": "cd /Users/dgaidula/sw/github-public/craft-sorts && gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-r7v2/my-mutants.yaml --jobs 4 --brief -- /opt/homebrew/bin/php tests/engine/run.php → \"warn survived … M4\", \"… M17\", \"… M9\"; distinguishing inputs: node recheck-r7v2/mutdiff.mjs recheck-r7v2/my-mutants.yaml <head> <workdir> M4 M9 M17",
+      "acceptance": "Corpus cases that kill M4 (a fi/sv ” before a space is not an opener) and M17 (es guillemets-outer depth closer with nothing of its kind open at depth 2).",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "medium",
+      "likelihood": "unlikely",
+      "cause": "test gap",
+      "needsDesign": false
+    },
+    {
+      "id": "R2-7",
+      "summary": "With apostrophes switched off (Pro), fi and sv have more non-idempotent inputs than at c3b3b49: recheck-r7v2/idemgen.php seed 7, 1,500 generated inputs: fi and sv noapos typed and depth 4 → 8 each, plus one noprimes depth case each (Ja, – 'don't27\"27). Every other locale improved (558 of 283,500 unstable at HEAD vs 694 at c3b3b49); default rules are stable everywhere. Most cases are machine-shaped ('90s next to a curly ’).",
+      "location": "src/engine/rules/QuoteScanner.php:138-154",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/recheck-r7v2/idemgen.php <head> 7 1500 vs <base>",
+      "acceptance": "Either no new fi/sv case against c3b3b49, or README’s existing idempotence limit (rules switched off) covers it as written.",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "medium",
+      "likelihood": "unlikely",
+      "cause": "new code (F2) with apostrophes off",
+      "needsDesign": false
+    },
+    {
+      "id": "R2-8",
+      "summary": "README.md:79 says es guillemets-outer goes «…», “…”, ‘…’; in typed mode an outermost straight ' starts at the secondary pair, so '…\"…'…'…\"…' gives “…«…‘…’…»…” (recheck tags.php T15 typed). Not wrong by the design, but the sentence reads as if the order were fixed.",
+      "location": "README.md:79",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-d8q4/tags.php → es/guillemets-outer typed T15 got <p>“A «b ‘c’ d» e”</p>",
+      "acceptance": "The sentence says the order is for a quotation typed with \" (or by depth), or gives the ' case.",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "docs",
+      "needsDesign": false
+    }
+  ],
+  "confirmedSound": [
+    "Byte-identical: gate-r3m8/dif.php seeds 11 and 29 × 3,000 generated pages × 7 option sets, c3b3b49 vs HEAD: 21,001 rows each, 0 differ.",
+    "HTML5 differential: run.php’s script fuzz compared with Dom\\HTMLDocument 400/400, and with three extra seed pairs in a scratch copy (20261107/20261201, 20261109/20261202, 202611011/20261203): RESULT 0 failed each.",
+    "Speed, 5 interleaved runs × 300, opcache on, JIT off: 8.5.12 typical 3.43 → 3.46 ms (+0.9 %), dense 4.78 → 4.82 ms (+0.8 %); php:8.2-cli 8.2.35 typical 3.89 → 3.93 ms (+1.0 %), dense 5.36 → 5.44 ms (+1.5 %). Within 3 %.",
+    "Per-locale marks cache (static WeakMap keyed by the locale object): Engine::withVariant() caches per pass by id|variant, DataLocale is readonly and no locale-registration event exists, so a key cannot change underneath. recheck-r7v2/cache.php: 54 calls over 18 locale/variant/mode configs, two engines, lang and data-sorts-lang in one page, alternated 3 rounds: 0 differ from a fresh process. recheck-r7v2/leak.php: 20,000 engines, memory flat at 1.1 MB, 0 WeakMap entries left.",
+    "Tree safety: Craft-layer mutants restored with sha256 equal each time; the real-tree gate-kit check \"ok 121 files + git unchanged\" after both engine mutant runs."
+  ],
+  "mutants": {
+    "fixer": "fixer-k3w9/engine-mutants.yaml, all 18 re-run (more than a third): ok=20 warn=0 incl. baseline and real tree; kill reasons checked for F3S, F3C, M11, FU5B, F2A, M7 (each a named corpus case or perf guard, not a crash). Craft layer: C3 C4 C5 C10 FU3V FU3L FU3A killed.",
+    "mine": "recheck-r7v2/my-mutants.yaml M1–M20: 14 killed, 8 survived (M2, M3, M5, M10 equivalent or degenerate-only; M4, M9, M17 in R2-6; M6 no difference found). Craft layer K1 killed by an assertion, K2 killed by a throw."
+  },
+  "sources": "Read directly: the diff c3b3b49..9822af0 (src, README, CHANGELOG, DEVELOPMENT.md), QuoteScanner.php at HEAD, Context.php, Flow.php, Engine::withVariant, DataLocale.php, LocaleInterface.php, the gate receipt, tests/README.md. The fixer’s claims (57,540-row snapshot, 0.20 s) were taken as claims and re-measured; the snapshot itself was not re-run, my own generated differential stands in for it.",
+  "notDone": [
+    "FU7’s browser check of the two typed CKEditor results: the testbed host (craft5-testbed.ddev.site) is not one I may sign into, and no logged-in session was used.",
+    "The fixer’s 57,540-row snapshot was not re-run (replaced by recheck-r7v2/basediff.mjs, 126,882 rows).",
+    "Side effect: composer check’s cs-check rewrote the git-ignored .php-cs-fixer.cache (sha 92f67d46… → 6afcc626…); a regenerable cache, not restored."
+  ]
+}
