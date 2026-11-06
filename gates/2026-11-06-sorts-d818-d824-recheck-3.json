@@ -1,0 +1,141 @@
+{
+  "tool": "craft-sorts",
+  "run": "2026-11-06 final closure re-check of fix round 3 for D818–D824 (2949cfa..7823e68: 6610f07 engine and corpus, 9287b03 README and SPEC, 7823e68 EFFORT), release mode, D843",
+  "suite": "composer test-engine (RESULT: 3856 passed, 0 failed, PHP 8.5.12; php:8.2-cli 8.2.35: 3456 passed, 0 failed, no Dom); composer check clean (cs 0 of 62, PHPStan no errors); node tests/run-all.mjs exit 0, twice (audit 55, ckeditor 37, engine-service 40, extension-api 16, fix-on-save 64, graphql 23, page-pass 77, settings 89, smoke 2, twig 77; testbed isolation ok, queue 0 → 0); testbed Craft 5.12.0.1, PHP 8.4, MySQL 8.4",
+  "verdict": "NOT CLOSED",
+  "verdictLine": "NOT CLOSED: R4-1, a regression against 9822af0 that R3-3 introduced (the possessive skip also reaches decideDouble(), so in en-GB single-outer and nl a straight inch mark inside a curly ‘ quotation turns into a closing ’ when a plural possessive follows). A contained fix is shown by a probe. R3-1, R3-2, R3-4, R3-5 and R3-6 are closed; R3-3 is regressed (R4-1). Follow-ups R4-2 to R4-6.",
+  "closure": {
+    "R3-1": {
+      "status": "closed",
+      "evidence": "Every input in gate-q8w3/word.tsv and word2.tsv, and the ‘hood, ‘80s, ‘til and ‘em rows of prose.tsv, gives its 9822af0 output in typed and depth (e.g. <p>\"Back in the ‘90s we had fun,\" she said. \"Yes,\" he said.</p> → “Back in the ‘90s we had fun,” she said. “Yes,” he said.). It also holds through Lite’s |sorts filter in the testbed. My own prose (gate-x5n4/prose-own.tsv: ‘70s, ‘til, ‘em, ‘80s in en-US, en-GB, de ‚80ern, es ‘80, nl double-outer ‘s avonds) gives 9822af0’s output on every wrong-way-apostrophe row. Load-bearing: restoring R2-2’s pop kind alone (t/U-BO) fails 22 cases, the 12 r3-1-* among them. The 12 r2-2-* cases now pin the back-out (the Known-limit glyph), as D843 decided. The fixer’s 50-line dlg.tsv differs from 9822af0 on one row only (fi 15\" → 15″, an intended R2-1 change)."
+    },
+    "R3-2": {
+      "status": "closed (follow-ups R4-2, R4-3)",
+      "evidence": "sv ”Det kostar 5\", sa han. ”Billigt.” → 5”; sv ”Det är rum 101\", sa hon, ”eller 102”. → 101”; fi ”Se maksoi 5\", hän sanoi. ”Halpa.” → 5”, typed and depth. The R2-1 inch rows stay primes (”Näyttö on 27\" leveä”, hän sanoi. ”Liian iso.” → 27″). Undoing R3-2 alone (t/U-R32) fails the 6 r3-2-* cases. Every generated row that R3-2 moves against 03dd4f3 is a closer-at-a-digit row. The parity reads the ”…” pair correctly but cannot see openers of the ’…’ pair (R4-2), and no case pins an odd count above one (R4-3)."
+    },
+    "R3-3": {
+      "status": "regressed (R4-1)",
+      "evidence": "The three repro inputs keep ’: ‘The final score was 3' and the players’ bus left early. → 3’; ‘We won 2' – then the fans’ songs began. → 2’; ‘It was room 101' and the guests’ rooms were empty. → 101’. r2-4-foot-inside-curly-single and r2-4-de-foot-inside-curly-nested stay primes. Undoing R3-3 alone (t/U-R33) fails 5 cases; dropping only its multibyte trim (t/U-R33trim) fails r3-3-possessive-look-ahead-ending-inside-a-character. However, the skip sits in closerAhead(), which decideDouble() also calls, so it changes a branch that 9822af0 already had: R4-1. It also does not reach a possessive followed by a tag or an entity, or one inside inline markup (R4-4)."
+    },
+    "R3-4": {
+      "status": "closed",
+      "evidence": "I rebuilt Q2, Q4, Q8 and Q9 against 7823e68 (gate-x5n4/q/; the fixer’s t/Q* trees predate the back-out and its final corpus). Each fails exactly one named case: Q2 r3-4-inch-inside-curly-single-with-no-outer-closer, Q4 r3-4-straight-opened-quotation-is-the-nearest-of-its-kind, Q8 r3-4-de-possessive-look-ahead-cuts-a-4-byte-character, Q9 r3-4-fi-inch-across-a-tag (3855 passed, 1 failed each). gate-kit on the fixer’s r3-mutants.yaml: ok=15, all 13 killed, “ok 123 files + git unchanged  real tree”."
+    },
+    "R3-5": {
+      "status": "closed",
+      "evidence": "README:330 now says it “can happen in any language” and labels its numbers as one sweep. They reproduce exactly at 7823e68 with recheck-r7v2/idemgen.php seed 7 1500 (gate-x5n4/idem-new-7.txt): apostrophes off 4 (nl) to 15 (en-GB single-outer) per language and mode, fr 38, fr-CH 40 and 43; primes off at most 1; default rules 0."
+    },
+    "R3-6": {
+      "status": "closed",
+      "evidence": "The README:79 sentence is gone with the back-out, which makes the R3-6 question moot. The new Known limit (README:331) states the mixed-shape case with an example that reproduces: it «Disse “sì\" e partì» → «Disse “sì» e partì», typed and depth. SPEC D829 records the back-out under D843. Every other README:79 example still holds (en-GB single-outer ‘She said \"no\"’ → ‘She said “no”’, de book »›Nein,‹ sagte er«, sv ”Han sa: ’nej.’”, the es guillemets-outer order by the mark typed)."
+    }
+  },
+  "findings": [
+    {
+      "id": "R4-1",
+      "summary": "A regression from R3-3, against both 9822af0 and 03dd4f3. The plural-possessive skip was added inside closerAhead(), which decideDouble() calls as well as decideSingle(). In a locale whose primary pair is ‘…’ (en-GB single-outer and nl), a straight \" after a digit inside a curly ‘ quotation that has no closer still to come therefore closes the quotation as ’ whenever a plural possessive follows in the paragraph. The ‘ can be a wrong-way apostrophe (‘s avonds, ‘90s) or a quotation that runs on into the next paragraph. Three examples, typed and depth: nl <p>‘s Avonds keken we naar een 27\" tv in Klaas’ kamer.</p> → 27’; en-GB single-outer <p>‘The new set has a 27\" screen, and the players’ lounge has two.</p> → 27’; en-GB single-outer <p>In the ‘90s a 27\" telly was bigger than the players’ wages.</p> → 27’. 9822af0 and 03dd4f3 give 27″ on all three. In this branch the skip can only do harm: a straight \" that really closes a curly ‘ is the mixed-shape case the README now lists as a Known limit. It reproduces through Craft (the testbed’s mounted plugin).",
+      "location": "src/engine/rules/QuoteScanner.php:332-335 (the possessive skip in closerAhead()’s suffix loop), reached from decideDouble() at :369; 9822af0 had the same closerAhead() call there without the skip",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/cmp3.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/prose-own.tsv (rows 31, 32 and 76: new 27’, h98 and cur 27″, and U-R33 = new with R3-3 undone gives 27″); cd /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4 && SEED=31 N=600 MAXLEN=11 node attrib2.mjs own h98 → 28 of 158,634 rows “U-R33 | back:U-R33”, all en-GB/single-outer and nl, typed and depth (rows in rows2-own-31-h98.json); Craft: ddev craft shell < /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/craft-probe.txt (in the testbed) → ‘s Avonds keken we naar een 27’ tv in Klaas’ kamer.",
+      "acceptance": "The three prose rows give 27″ in typed and depth, and the 28 generated rows give their 9822af0 output. The five r3-3-* cases stay green. New corpus cases pin the nl and en-GB single-outer rows. Evidence that a contained fix exists: the probe gate-x5n4/P-single gives closerAhead() a $skipPossessive flag (part of its suffix key), passed false from decideDouble() only. Result: 3856 passed, 0 failed. Against 9822af0, my atom set drops from 182 to 154 differing rows (exactly the 28), the base and gate sets are unchanged (17 and 20), and rows 31, 32 and 76 give 27″.",
+      "blocking": true,
+      "severity": "medium",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "R3-3 was scoped to the single-quote digit branch (R2-4), but it landed in the shared helper; the round-2 probe it follows (gate-q8w3/pos) had the same reach, and its acceptance checked only r24.tsv.",
+      "needsDesign": false
+    }
+  ],
+  "notBlocking": [
+    {
+      "id": "R4-2",
+      "summary": "R3-2’s parity cannot see the openers of fi and sv’s ’…’ pair. That pair’s closer is also the apostrophe, so the suffix loop skips a ’ that a letter follows, which is every opener. The count ahead is therefore the number of closers alone, and a foot mark inside ’…’ followed by another ’…’ quotation in the paragraph closes it. sv <p>’Han är 6' lång’, sa hon. ’Ja.’</p> → 6’; sv <p>”Hon sa ’han är 6' lång’ och ’mycket snäll’”, berättade han.</p> → 6’; fi <p>’Hän on 6' pitkä’, sanoi hän. ’Niin.’</p> → 6’; fi ”Hän sanoi ’olen 6' pitkä’ ja ’vahva’” → 6’. 03dd4f3 (R2-1) gave 6′ on all four; 9822af0 gives 6’, so this is no worse than the fallback. It is R2-1 partly undone for the ’ pair, and the ”…” pair is unaffected.",
+      "location": "src/engine/rules/QuoteScanner.php:332-345 (closerAhead(): the $close !== $apostrophe test excludes same-glyph ’ openers; the parity at :345)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/cmp3.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/fisv2.tsv all (rows 3 to 7: new 6’, cur 6′); prose-own.tsv row 98 likewise.",
+      "acceptance": "The four inputs give 6′ in typed and depth, and the r3-2-* and r2-1-* cases stay green. For example, a same-glyph ’ followed by a word counts as an opener when a space, the start or an opening mark precedes it.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "Parity needs both openers and closers of the pair, but the apostrophe exclusion removes the ’ openers.",
+      "needsDesign": false
+    },
+    {
+      "id": "R4-3",
+      "summary": "Test gaps in round 3. Two of my mutants pass the engine suite (3856 passed) yet change realistic output. M1 narrows R3-2’s parity from odd to exactly one mark ahead. fi <p>”Näyttö on 27\" leveä”, hän sanoi. ”Se on iso.” ”Niin on.”</p> then gives 27” (now 27″); so do sv ”Skärmen är 27\" bred”, sa han. ”Den är stor.” ”Ja.” and the round-2 acceptance shape ”Näyttö on 27\" leveä”, hän sanoi. ”Liian iso.”. No case pins an odd count above one. M4 makes R3-3 skip every s’ whatever follows. en-US <p>‘He is 6' tall, or so he says’, she wrote.</p> then gives 6’ (now 6′), so the lowercase-word condition is unpinned. M2 (parity for every pair) and M3 (lowercase s only) survive with no realistic difference found.",
+      "location": "tests/engine/corpus/15-curly-marks-by-role.txt (r3-2-*, r3-3-*); mutants in gate-x5n4/my-mutants.yaml",
+      "repro": "cd /Users/dgaidula/sw/github-public/craft-sorts && gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/my-mutants.yaml --jobs 4 --brief -- /opt/homebrew/bin/php tests/engine/run.php → M1 M2 M3 M4 “survived”, M5 M6 killed, real tree unchanged; outputs: FOCUS=M1 /opt/homebrew/bin/php gate-x5n4/cmp3.php gate-x5n4/all-real.tsv diff M1=gate-x5n4/m/M1 (and M4 with gate-x5n4/m4.tsv).",
+      "acceptance": "Corpus cases kill M1 (a fi or sv inch with three or more marks of the pair ahead) and M4 (a real closer ’ after s that is not before a lowercase word); gate-kit shows each killed by a named case.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "n/a (test gap)",
+      "confidence": "high",
+      "cause": "The new cases pin the repro shapes only.",
+      "needsDesign": false
+    },
+    {
+      "id": "R4-4",
+      "summary": "R3-3 does not reach a plural possessive that is followed by a tag or an entity, or that sits inside inline markup. In those cases a straight ' after a digit that really ends a curly ‘…’ is still a foot mark, the R2-4 regression against 9822af0. en-US, typed and depth: <p>‘The final score was 3' and the players’ <a href=\"/bus\">bus</a> left early.</p> → 3′; <p>‘The final score was 3' and the players’&nbsp;bus left early.</p> → 3′; <p>‘The final score was 3' and <em>the players’</em> bus left early.</p> → 3′. 9822af0 gives 3’ on all three; 03dd4f3 gives 3′. Two causes. The 8-byte look-ahead reads raw HTML (a space then < or &). A ’ in a later text node of the flow is counted by countAfter($closePattern), which has no possessive skip. A capitalised word after the possessive (players’ Bus Company) also counts, as decideSingle()’s own possessive test reads it; that is consistent, and fine as a limit. This is not new to round 3 (03dd4f3 is the same) but is left open by it. By the brief’s scope rule it is a follow-up; graded as recheck-2 graded R3-3, it would block.",
+      "location": "src/engine/rules/QuoteScanner.php:333-335 (raw substr look-ahead) and :343-344 (countAfter($closePattern) for later text nodes)",
+      "repro": "/opt/homebrew/bin/php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/cmp3.php /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/edge2.tsv all (rows 1, 2 and 6: new 3′, h98 3’); row 10 (raw U+00A0) and row 3 work.",
+      "acceptance": "Rows 1, 2 and 6 give 3’ in typed and depth, with corpus cases; or the README lists the markup case as a Known limit.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "The skip reads the bytes after the mark, not the text Sorts reads across tags and entities.",
+      "needsDesign": false
+    },
+    {
+      "id": "R4-5",
+      "summary": "Rig defect, not product. The generators in recheck-r7v2/basediff.mjs, gate-q8w3/attrib.mjs and the fixer’s attrib.mjs use seed = (seed * 1103515245 + 12345) % 2147483648 in JavaScript doubles. The product passes 2^53, so every seed falls into one shared cycle of 10,466 states (gate-x5n4/period.mjs: seeds 5, 7, 11, 23, 31 and 47 alike). Seeds are therefore not independent, and the “0 of 126,882 rows” and “0 of 140,028 rows” counts against 9822af0 sample one short stream. Reproduced: the old generator gives 0 rows against 9822af0 on all six of my runs, including my own atom set. With mulberry32 and the same atoms, 17 and 20 rows differ (all kept round-2 fixes), and my atom set finds the 28 R4-1 rows. idemgen.php (mt_rand) and dif.php (mt_rand) are unaffected.",
+      "location": "scratch rigs only: recheck-r7v2/basediff.mjs, gate-q8w3/attrib.mjs, gate-q8w3/qdiff.mjs, fixer-r3x7/attrib.mjs",
+      "repro": "node /private/tmp/claude-502/-Users-dgaidula-sw-github-public-craft-sorts/00a5e988-4909-468c-bf8c-c01c1c5d14d6/scratchpad/gate-x5n4/period.mjs → “period 10466” for every seed; compare node gate-x5n4/attrib.mjs base h98 (0) with SEED=5 node gate-x5n4/attrib2.mjs base h98 (17).",
+      "acceptance": "Generators kept for later gates use a 32-bit-safe PRNG (Math.imul, as in gate-x5n4/attrib2.mjs, or BigInt), and earlier receipts’ generated-row counts are read as one stream, not several seeds.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "n/a (rig)",
+      "confidence": "high",
+      "cause": "Float precision loss in a 31-bit LCG.",
+      "needsDesign": false
+    },
+    {
+      "id": "R4-6",
+      "summary": "r3-4-straight-opened-quotation-is-the-nearest-of-its-kind pins <p>“a \"b 'c 6\" d' e”</p> → <p>“a ‘b “c 6’ d’ e”</p>. That output leaves the “c quotation unclosed and closes it with ’, which reads as copied from the engine. The file header says expected output is written from the locale’s pairs. The case kills Q4, but a later improvement to this branch would have to rewrite it.",
+      "location": "tests/engine/corpus/15-curly-marks-by-role.txt:1345-1347",
+      "repro": "sed -n 1345,1347p tests/engine/corpus/15-curly-marks-by-role.txt",
+      "acceptance": "The case’s comment says it pins the branch, not a preferred output, or it uses an input whose right answer is clear.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "n/a (test)",
+      "confidence": "medium",
+      "cause": "A machine-made input chosen to kill a mutant.",
+      "needsDesign": false
+    }
+  ],
+  "confirmedSound": [
+    "Scope: git diff 2949cfa 7823e68 outside EFFORT.md touches only README.md, SPEC.md, src/engine/rules/QuoteScanner.php and tests/engine/corpus/15-curly-marks-by-role.txt, as briefed. The engine change is exactly the three hunks D843 names (the pop kind back to $kind, the parity, the possessive skip) plus comments. $target keeps round 2’s rule.",
+    "Back-out: t/U-BO (7823e68 with R2-2’s pop line restored) has 03dd4f3’s pop line exactly; it still carries R3-2 and R3-3. With the old generator, every row that differs from 03dd4f3 goes back with U-BO alone: 708 of 126,882 (base), 3,470 of 212,646 (gate atoms, seed 11, N 667), and 8,639 and 8,250 (my atoms, seeds 31 and 47). The same holds with mulberry32: 764 of 133,308 and 595 of 162,330. On my atom set (158,634 rows), 1,825 differ: 1,661 trace to the back-out, 157 to R3-3, 4 to R3-2 and 3 to both, each going back to 03dd4f3 with its fix undone.",
+    "Against 9822af0 (mulberry32), every differing row traces to one kept fix, undone alone: base 17 (11 R2-3, 6 slice); gate 20 (8 R2-1, 6 R2-4, 6 slice); my atoms 182 (99 R2-4, 16 R2-3+R2-4, 15 back-out+R2-4 going back with R2-4, 12 R2-1+R2-4, 8 R2-3, 4 R2-1, and the 28 R4-1 rows). The kept fixes are load-bearing: undoing R2-1 fails 13 cases, R2-3 9, R2-4 8, R2-5 4, and the slice fix 1.",
+    "Realistic prose, my own (gate-x5n4/prose-own.tsv, 105 inputs: en-US, en-GB both variants, de and de book, fr, it, es both, nl both, fi, sv, pl; dialogue, wrong-way apostrophes, scare quotes, nested quotations, measurements, plural possessives, elisions). 14 of 210 rows differ from 9822af0: the intended R2-1 and R2-4 rows, plus the R4-1 rows 31, 32 and 76. 28 differ from 03dd4f3, each tracing to the back-out, R3-2 or R3-3. 0 are unstable on a second pass. The earlier gate’s 142 realistic rows differ from 9822af0 only on intended R2-1, R2-3, R2-4, R2-5 and slice rows.",
+    "Byte-identical: gate-r3m8/dif.php with seeds 11, 29 and 53 × 3,000 generated pages × 7 option sets, 7823e68 against 9822af0: 63,000 rows, 0 differ, 0 errors. The 9822af0 seed-11 file matches gate-q8w3/dif-h98-11.tsv byte for byte.",
+    "HTML5 differential: run.php’s script fuzz agrees with Dom\\HTMLDocument on 400 of 400 pages, and on three more seed pairs in scratch copies (20261117/20261211, 20261119/20261213, 20261121/20261215): RESULT 3617 passed, 0 failed each.",
+    "Idempotence with default rules: 0 unstable in every locale and variant at idemgen.php seeds 7, 23 and 101 (283,500 rows each), and with my own atoms at seed 61 (gate-x5n4/idem-own.php). In total, with apostrophes or primes off: 527 (seed 7), 664 (23), 703 (101), and 339 at seed 61 on my atoms against 341 at 9822af0.",
+    "Linear time: all 34 shapes give 3.9× to 4.2× for 4× the input on 7823e68 (recheck-r7v2/lin.php 14, gate-q8w3/lin3.php 10, fixer-r3x7/lin4.php 3, and gate-x5n4/lin5.php 7 new: the R4-1 shape, nl ‘s with inches and possessives per tag, the sv ’ pair parity, the fi ” parity across tags, the possessive skip with multibyte text after, and wrong-way apostrophes in long dialogue in en-US and de).",
+    "Speed: 5 interleaved runs × 300 of perf.php, opcache on, JIT off, medians. PHP 8.5.12: typical 3.64 (9822af0) / 3.66 (03dd4f3) / 3.66 ms (7823e68), +0.5 %; dense 5.09 / 5.13 / 5.14 ms, +1.0 %. php:8.2-cli 8.2.35: typical 4.24 / 4.23 / 4.18 ms, −1.4 %; dense 5.76 / 5.84 / 5.82 ms, +1.0 %. Within 3 %.",
+    "The fixer’s claims check out on its own rigs and mine: 0 differing rows against 9822af0 on the old generator, attribution against 03dd4f3, dlg.tsv nowhere worse than 9822af0, and speed. They miss R4-1 because the old generator never produces that shape (R4-5).",
+    "Tree safety: both gate-kit runs end with “ok 123 files + git unchanged  real tree”. The repo’s git status (ignored files included) and the sha256 of all 123 tracked files match the start. .php-cs-fixer.cache, rewritten by composer check, was restored from my copy, so it and composer.lock match their start hashes. The testbed’s git tree is clean, its config/project hash matches the start, and it runs PHP 8.4."
+  ],
+  "mutants": {
+    "mine": "gate-x5n4/my-mutants.yaml through gate-kit: M5 (look-ahead from the mark) and M6 ($target always innermost) are killed; M1 to M4 survive (R4-3). One-revert trees: U-BO 22 failed, U-R32 6, U-R33 5, U-R33trim 1; U-R2-1 13, U-R2-3 9, U-R2-4 8, U-R2-5 4, U-slice 1. Each fails only named corpus cases.",
+    "fixer": "fixer-r3x7/r3-mutants.yaml re-run whole: ok=15, all 13 killed (N-BO, N-R32, N-R33, N-R33-slice, N-R2-1, N-R2-3, N-R2-4, N-R2-5, N-slice, Q2, Q4, Q8, Q9), real tree unchanged. Q2, Q4, Q8 and Q9, rebuilt by me against 7823e68, each fail exactly their named r3-4 case.",
+    "probes": "gate-x5n4/P-single is a scratch copy showing that R4-1 has a contained fix (3856 passed). It is not a fix."
+  },
+  "notDone": [
+    "No Craft-layer mutants: this round changed nothing outside the engine. R4-1 and R3-1 were confirmed through Craft (engine through the testbed’s autoloader, and the Lite |sorts filter), not through fix-on-save or the page pass, which run the same engine call.",
+    "R4-1’s and R4-4’s likelihood rests on judgement about mixed curly and straight content (Word’s wrong-way ‘s in Dutch, British run-on quotations, links on a possessive noun phrase), not on a measured corpus of real sites.",
+    "P-single was checked on the engine suite, the three generated sets against 9822af0 and my prose; not on idempotence, speed or dif.php.",
+    "I did not add an EFFORT.md row: the brief says to commit only the receipt.",
+    "Side effects, all inside gate-x5n4/ and kept as the evidence the repros name: extracted trees new, cur and h98 (git archive of 7823e68, 03dd4f3, 9822af0); one-revert trees t/U-*; mutant trees m/M1–M4 and q/Q2–Q9; P-single; fuzz copies fz-*; differential, idempotence, perf and run-all outputs. In the repo, composer check rewrote the git-ignored .php-cs-fixer.cache, which I restored (sha256 matches the start). The testbed is unchanged: run-all restores itself, and the Craft probe only read."
+  ],
+  "sources": "Read directly: the diff 2949cfa..7823e68 (src, README, SPEC, corpus), QuoteScanner.php at 7823e68 (lines 100–477) and 9822af0’s decideDouble() and closerAhead(), the repo CLAUDE.md, tests/README.md, and the code of every rig I ran (cmp2.php, mktree.mjs, basediff.mjs, emit.php, attrib.mjs, idemgen.php, dif.php, lin.php, lin3.php, lin4.php, perf.php, the perf scripts). Before my own runs I read the recheck-2 receipt’s findings, repros and acceptances, because they define R3-1 to R3-6, and its other keys for the receipt’s shape. Every closure status above rests on my own runs. The fixer’s mutant spec and dlg.tsv were re-run, not taken on trust; its t/Q* trees were found stale and rebuilt. Its attribution files were not used."
+}
