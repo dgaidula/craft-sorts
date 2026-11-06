@@ -37,10 +37,12 @@
 //   --cheat       print a short card of common invocations.
 //
 // To change a locale's quote pairs for the product (as opposed to following
-// CLDR), edit PAIR_OVERRIDES below and regenerate; do not edit the PHP files.
-// CLDR is the default everywhere. Where a style authority disagrees, the other
-// convention is a named variant in the LOCALES table (`variants`), written into
-// the locale file beside its source, and chosen by the caller.
+// CLDR), edit PAIR_OVERRIDES below, with the reason, and regenerate; do not edit
+// the PHP files.
+// CLDR is the default everywhere but one place: German, which defaults to book style
+// by Dan's taste (D844), with a reason recorded in PAIR_OVERRIDES. Where a style
+// authority disagrees, the other convention is a named variant in the LOCALES table
+// (`variants`), written into the locale file beside its source, and chosen by the caller.
 //
 // Exit codes: 0 all ok; 1 a locale warned or failed; 2 usage error; 3 could not
 // run (package folder missing or not CLDR 49.0.0).
@@ -71,10 +73,15 @@ const CLDR_VERSION = '49.0.0';
 const NNBSP = '\\u{202F}';
 const NBSP = '\\u{00A0}';
 
-// Where a locale differs from CLDR on purpose, list it here: id -> { quotes, nested }.
-// Empty: the product follows CLDR 49.0.0 everywhere. (en-GB and de-CH are open
-// questions for Dan; see the build report.)
-const PAIR_OVERRIDES = {};
+// Where a locale differs from CLDR on purpose, list it here: id -> { quotes, nested, reason }.
+// The reason is written into the locale file. CLDR 49.0.0 is the default everywhere
+// except here (D816); the CLDR pair then becomes a named variant of that locale.
+const PAIR_OVERRIDES = {
+  de: {
+    quotes: ['\u00BB', '\u00AB'], nested: ['\u203A', '\u2039'],
+    reason: 'Dan Gaidula\u2019s taste (decision D844, 2026-11-06): German book style \u00BB\u2026\u00AB \u203A\u2026\u2039 is the default; CLDR 49.0.0 gives German \u201E\u2026\u201C \u201A\u2026\u2018, which stays available as the variant low-high. The only place Sorts departs from CLDR by default.',
+  },
+};
 
 // The first-release locales (SPEC.md section 4). `cldr` is the folder under
 // main/ that holds the data; `no` is served by nb, so nb carries it as an alias.
@@ -88,6 +95,13 @@ const FRENCH_SPACING = {
 };
 const LOCALES = [
   { id: 'en-US', cldr: 'en', name: 'English (United States)', aliases: ['en'], dash: EM,
+    // The default stays Chicago's closed em dash; a spaced en dash for breaks is the house style (D855).
+    variants: {
+      'spaced-en-dash': {
+        dash: { ...EN_SPACED, allBreaks: true },
+        source: 'Robert Bringhurst, The Elements of Typographic Style, 3rd ed., section 5.2.1 (p. 80): set off a phrase with a spaced en dash, a normal word space either side, not a close-set em dash or a spaced hyphen (Dan Gaidula, house style, decision D855, 2026-11-06). Every way of typing a break takes it: `--`, `---` and a hyphen with a space each side. The default stays The Chicago Manual of Style, 17th ed., closed em dash.',
+      },
+    },
     source: 'Dash: The Chicago Manual of Style, 17th ed., em dash closed up (unspaced).' },
   { id: 'en-GB', cldr: 'en-GB', name: 'English (United Kingdom)', dash: EN_SPACED,
     // CLDR is the default; a style authority that disagrees is a named variant a caller can choose.
@@ -99,10 +113,13 @@ const LOCALES = [
     },
     source: 'Dash: New Hart’s Rules, 2nd ed., spaced en rule.' },
   { id: 'de', cldr: 'de', name: 'German', dash: EN_SPACED,
+    // The default is German book style (PAIR_OVERRIDES, D844; first built as the variant book, D823).
+    // The variant is CLDR's own pair, read from the package, named for its shape: the low opening
+    // mark and the high closing mark, as guillemets names the glyph and single-outer the level.
     variants: {
-      book: {
-        quotes: ['\u00BB', '\u00AB'], nested: ['\u203A', '\u2039'],
-        source: 'Dan Gaidula, typographer (decision D823, 2026-11-05); Duden Band 9, Richtiges und gutes Deutsch, 5th ed. 2001 (via secondary source): the guillemets »…« for a quotation and the single guillemets ›…‹ for one inside it, pointing into the text as German book setting has them, and no space inside either mark. CLDR 49.0.0 gives German the low-high marks „…“ ‚…‘, which stay the default.',
+      'low-high': {
+        cldr: true,
+        source: 'Unicode CLDR 49.0.0, main/de/delimiters.json: the low-high marks „…“ for a quotation and ‚…‘ for one inside it (Gänsefüßchen), as CLDR gives German. Not the default since D844: the default is the book style »…« ›…‹ (Dan Gaidula, typographer; Duden Band 9, Richtiges und gutes Deutsch, 5th ed. 2001, via a secondary source), which sets no space inside either mark.',
       },
     },
     source: 'Dash: Duden, Gedankenstrich as a spaced Halbgeviertstrich.' },
@@ -188,7 +205,12 @@ function phpString(s) {
   return `'${s.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 }
 
-function renderPhp(loc, r, pairs) {
+// A dash as PHP: allBreaks, when set, makes `---` and a spaced hyphen take the same dash as `--`.
+function dashPhp(d) {
+  return `['mark' => ${phpString(d.mark)}, 'spaced' => ${d.spaced}${d.allBreaks ? ', \'allBreaks\' => true' : ''}]`;
+}
+
+function renderPhp(loc, r, pairs, cldrPairs) {
   const sp = loc.spacing;
   const spacing = !sp ? '[]' : [
     '[',
@@ -202,15 +224,20 @@ function renderPhp(loc, r, pairs) {
   const variantEntries = Object.entries(loc.variants ?? {});
   const variants = !variantEntries.length ? '[]' : [
     '[',
-    ...variantEntries.flatMap(([name, v]) => [
-      `        // ${v.source}`,
-      `        ${phpString(name)} => [`,
-      ...(v.quotes ? [`            'quotes' => [${phpString(v.quotes[0])}, ${phpString(v.quotes[1])}],`] : []),
-      ...(v.nested ? [`            'nested' => [${phpString(v.nested[0])}, ${phpString(v.nested[1])}],`] : []),
-      // A third pair, when the authority has one: three deep, then it alternates with the nested pair.
-      ...(v.third ? [`            'third' => [${phpString(v.third[0])}, ${phpString(v.third[1])}],`] : []),
-      '        ],',
-    ]),
+    ...variantEntries.flatMap(([name, listed]) => {
+      // A variant marked cldr is CLDR's own pair, as read from the package.
+      const v = listed.cldr ? { ...listed, ...cldrPairs } : listed;
+      return [
+        `        // ${v.source}`,
+        `        ${phpString(name)} => [`,
+        ...(v.quotes ? [`            'quotes' => [${phpString(v.quotes[0])}, ${phpString(v.quotes[1])}],`] : []),
+        ...(v.nested ? [`            'nested' => [${phpString(v.nested[0])}, ${phpString(v.nested[1])}],`] : []),
+        // A third pair, when the authority has one: three deep, then it alternates with the nested pair.
+        ...(v.third ? [`            'third' => [${phpString(v.third[0])}, ${phpString(v.third[1])}],`] : []),
+        ...(v.dash ? [`            'dash' => ${dashPhp(v.dash)},`] : []),
+        '        ],',
+      ];
+    }),
     '    ]',
   ].join('\n');
   return `<?php
@@ -222,7 +249,7 @@ function renderPhp(loc, r, pairs) {
  * Do not hand-edit: change the generator and run it again.
  *
  * Quote pairs: main/${loc.cldr}/delimiters.json${r.walked.length ? `, completed from ${r.walked.join(', ')}` : ''}.
- * ${loc.source}
+${PAIR_OVERRIDES[loc.id] ? ` * Departs from CLDR: ${PAIR_OVERRIDES[loc.id].reason}\n` : ''} * ${loc.source}
  */
 
 return [
@@ -235,21 +262,27 @@ return [
     'nested' => [${phpString(pairs.nested[0])}, ${phpString(pairs.nested[1])}],
     'apostrophe' => '’',
     // What \`--\` becomes: the mark, and whether it takes a space on each side.
-    'dash' => ['mark' => ${phpString(loc.dash.mark)}, 'spaced' => ${loc.dash.spaced}],
+    'dash' => ${dashPhp(loc.dash)},
     'spacing' => ${spacing},
-    // Named alternatives to the CLDR defaults above. A variant lists only the keys it changes.
+    // Named alternatives to the ${PAIR_OVERRIDES[loc.id] ? 'default above (which departs from CLDR, see the header)' : 'CLDR defaults above'}. A variant lists only the keys it changes.
     'variants' => ${variants},
 ];
 `;
 }
 
-function pairsFor(loc, r) {
+// What CLDR itself gives the locale, whatever the product does with it.
+function cldrPairsFor(r) {
   const f = r.found;
-  const o = PAIR_OVERRIDES[loc.id] ?? {};
   return {
-    quotes: o.quotes ?? [f.quotationStart.value, f.quotationEnd.value],
-    nested: o.nested ?? [f.alternateQuotationStart.value, f.alternateQuotationEnd.value],
+    quotes: [f.quotationStart.value, f.quotationEnd.value],
+    nested: [f.alternateQuotationStart.value, f.alternateQuotationEnd.value],
   };
+}
+
+function pairsFor(loc, r) {
+  const o = PAIR_OVERRIDES[loc.id] ?? {};
+  const c = cldrPairsFor(r);
+  return { quotes: o.quotes ?? c.quotes, nested: o.nested ?? c.nested };
 }
 
 function inspectOne(loc, { pkg }) {
@@ -265,9 +298,11 @@ function inspectOne(loc, { pkg }) {
       item.summary = `${p.quotes.join('')} ${p.nested.join('')}`;
       item.walked = r.walked.length > 0;
       if (item.walked) item.reason = `completed from the parent chain: ${r.walked.join(', ')}`;
-      item.data = { quotes: p.quotes, nested: p.nested, from: r.chain, override: Boolean(PAIR_OVERRIDES[loc.id]) };
+      const o = PAIR_OVERRIDES[loc.id];
+      item.data = { quotes: p.quotes, nested: p.nested, from: r.chain, override: Boolean(o), cldr: o ? cldrPairsFor(r) : undefined, reason: o?.reason };
       item.lines = [`quotes: ${p.quotes.join(' ')}`, `nested: ${p.nested.join(' ')}`, `read: main/${r.chain.join(', main/')}`];
-      item.render = renderPhp(loc, r, p);
+      if (o) item.lines.push(`departs from CLDR (${cldrPairsFor(r).quotes.join(' ')} ${cldrPairsFor(r).nested.join(' ')}): ${o.reason}`);
+      item.render = renderPhp(loc, r, p, cldrPairsFor(r));
     }
   } catch (e) {
     item.error = e.message;
