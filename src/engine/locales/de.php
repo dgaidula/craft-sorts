@@ -23,5 +23,11 @@ return [
     'dash' => ['mark' => '–', 'spaced' => true],
     'spacing' => [],
     // Named alternatives to the CLDR defaults above. A variant lists only the keys it changes.
-    'variants' => [],
+    'variants' => [
+        // Dan Gaidula, typographer (decision D823, 2026-11-05); Duden Band 9, Richtiges und gutes Deutsch, 5th ed. 2001 (via secondary source): the guillemets »…« for a quotation and the single guillemets ›…‹ for one inside it, pointing into the text as German book setting has them, and no space inside either mark. CLDR 49.0.0 gives German the low-high marks „…“ ‚…‘, which stay the default.
+        'book' => [
+            'quotes' => ['»', '«'],
+            'nested' => ['›', '‹'],
+        ],
+    ],
 ];

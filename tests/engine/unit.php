@@ -213,7 +213,7 @@ check('locales: English has no spacing rules', [], $registry->resolve('en-US')->
 // variants: CLDR is the default, another convention is a named alternative
 $gb = $registry->resolve('en-GB');
 check('variants: en-GB offers single-outer', ['single-outer'], $gb->variants());
-check('variants: other locales offer none', [], $registry->resolve('de')->variants());
+check('variants: other locales offer none', [], $registry->resolve('fr')->variants());
 $single = $gb->withVariant('single-outer');
 check('variants: single-outer swaps the pairs', [['‘', '’'], ['“', '”'], 'en-GB'], [$single->quotes(), $single->nestedQuotes(), $single->id()]);
 check('variants: a variant keeps the keys it does not change', [$gb->dash(), $gb->apostrophe()], [$single->dash(), $single->apostrophe()]);
@@ -224,6 +224,11 @@ check('variants: Options keeps them', ['en-GB' => 'single-outer'], (new Options(
 check('variants: de-CH offers guillemets, es offers guillemets-outer', [['guillemets'], ['guillemets-outer']], [$registry->resolve('de-CH')->variants(), $registry->resolve('es')->variants()]);
 check('variants: de-CH guillemets swap the pairs', [['«', '»'], ['‹', '›']], [$registry->resolve('de-CH')->withVariant('guillemets')->quotes(), $registry->resolve('de-CH')->withVariant('guillemets')->nestedQuotes()]);
 check('variants: es guillemets-outer swap the pairs', [['«', '»'], ['“', '”']], [$registry->resolve('es')->withVariant('guillemets-outer')->quotes(), $registry->resolve('es')->withVariant('guillemets-outer')->nestedQuotes()]);
+
+check('variants: de offers book, nl offers double-outer', [['book'], ['double-outer']], [$registry->resolve('de')->variants(), $registry->resolve('nl')->variants()]);
+check('variants: de book swaps the pairs', [['»', '«'], ['›', '‹']], [$registry->resolve('de')->withVariant('book')->quotes(), $registry->resolve('de')->withVariant('book')->nestedQuotes()]);
+check('variants: nl double-outer swaps the pairs', [['“', '”'], ['‘', '’']], [$registry->resolve('nl')->withVariant('double-outer')->quotes(), $registry->resolve('nl')->withVariant('double-outer')->nestedQuotes()]);
+check('variants: the de and nl defaults are CLDR’s', [['„', '“'], ['‘', '’']], [$registry->resolve('de')->quotes(), $registry->resolve('nl')->quotes()]);
 
 // quoteNesting: typed by default, depth on request, anything else means typed
 check('quoteNesting: typed is the default', 'typed', (new Options())->quoteNesting);

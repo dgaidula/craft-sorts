@@ -23,5 +23,11 @@ return [
     'dash' => ['mark' => '–', 'spaced' => true],
     'spacing' => [],
     // Named alternatives to the CLDR defaults above. A variant lists only the keys it changes.
-    'variants' => [],
+    'variants' => [
+        // Taalunie, taaladvies.net, “Dubbele of enkele aanhalingstekens bij een citaat” (12 May 2021, https://taaladvies.net/dubbele-of-enkele-aanhalingstekens-bij-een-citaat/): there is no fixed rule, but a traditional preference for double marks around a literal quotation, single marks inside it. CLDR 49.0.0 gives Dutch the single marks ‘…’ at both levels, which stay the default.
+        'double-outer' => [
+            'quotes' => ['“', '”'],
+            'nested' => ['‘', '’'],
+        ],
+    ],
 ];

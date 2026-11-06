@@ -165,6 +165,38 @@
 < 'She said "no" twice'
 > „She said ‚no‘ twice“
 
+@ n-de-book-typed-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< He said "yes" today
+> He said »yes« today
+
+@ n-de-book-typed-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< He said 'yes' today
+> He said ›yes‹ today
+
+@ n-de-book-typed-double-over-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< "She said 'no' twice"
+> »She said ›no‹ twice«
+
+@ n-de-book-typed-single-over-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< 'She said "no" twice'
+> ›She said »no« twice‹
+
+@ n-de-book-typed-apostrophe-in-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< 'I don't know'
+> ›I don’t know‹
+
+@ n-de-book-depth-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< He said 'yes' today
+> He said »yes« today
+
+@ n-de-book-depth-double-over-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< "She said 'no' twice"
+> »She said ›no‹ twice«
+
+@ n-de-book-depth-single-over-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+< 'She said "no" twice'
+> »She said ›no‹ twice«
+
 @ n-en-GB-typed-double only=quotes,apostrophes,primes locale=en-GB
 < He said "yes" today
 > He said “yes” today
@@ -516,6 +548,38 @@
 @ n-nl-depth-single-over-double only=quotes,apostrophes,primes locale=nl config={"quoteNesting":"depth"}
 < 'She said "no" twice'
 > ‘She said ‘no’ twice’
+
+@ n-nl-double-outer-typed-double only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< He said "yes" today
+> He said “yes” today
+
+@ n-nl-double-outer-typed-single only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< He said 'yes' today
+> He said ‘yes’ today
+
+@ n-nl-double-outer-typed-double-over-single only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< "She said 'no' twice"
+> “She said ‘no’ twice”
+
+@ n-nl-double-outer-typed-single-over-double only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< 'She said "no" twice'
+> ‘She said “no” twice’
+
+@ n-nl-double-outer-typed-apostrophe-in-single only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< 'I don't know'
+> ‘I don’t know’
+
+@ n-nl-double-outer-depth-single only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"},"quoteNesting":"depth"}
+< He said 'yes' today
+> He said “yes” today
+
+@ n-nl-double-outer-depth-double-over-single only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"},"quoteNesting":"depth"}
+< "She said 'no' twice"
+> “She said ‘no’ twice”
+
+@ n-nl-double-outer-depth-single-over-double only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"},"quoteNesting":"depth"}
+< 'She said "no" twice'
+> “She said ‘no’ twice”
 
 @ n-pl-typed-double only=quotes,apostrophes,primes locale=pl
 < He said "yes" today

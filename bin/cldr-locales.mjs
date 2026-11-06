@@ -99,6 +99,12 @@ const LOCALES = [
     },
     source: 'Dash: New Hart’s Rules, 2nd ed., spaced en rule.' },
   { id: 'de', cldr: 'de', name: 'German', dash: EN_SPACED,
+    variants: {
+      book: {
+        quotes: ['\u00BB', '\u00AB'], nested: ['\u203A', '\u2039'],
+        source: 'Dan Gaidula, typographer (decision D823, 2026-11-05); Duden Band 9, Richtiges und gutes Deutsch, 5th ed. 2001 (via secondary source): the guillemets »…« for a quotation and the single guillemets ›…‹ for one inside it, pointing into the text as German book setting has them, and no space inside either mark. CLDR 49.0.0 gives German the low-high marks „…“ ‚…‘, which stay the default.',
+      },
+    },
     source: 'Dash: Duden, Gedankenstrich as a spaced Halbgeviertstrich.' },
   { id: 'de-CH', cldr: 'de-CH', name: 'German (Switzerland)', dash: EN_SPACED,
     variants: {
@@ -125,6 +131,12 @@ const LOCALES = [
   { id: 'pt', cldr: 'pt', name: 'Portuguese', dash: EM_SPACED,
     source: 'Dash: travessão with spaces (Brazilian and European editorial practice).' },
   { id: 'nl', cldr: 'nl', name: 'Dutch', dash: EN_SPACED,
+    variants: {
+      'double-outer': {
+        quotes: ['\u201C', '\u201D'], nested: ['\u2018', '\u2019'],
+        source: 'Taalunie, taaladvies.net, “Dubbele of enkele aanhalingstekens bij een citaat” (12 May 2021, https://taaladvies.net/dubbele-of-enkele-aanhalingstekens-bij-een-citaat/): there is no fixed rule, but a traditional preference for double marks around a literal quotation, single marks inside it. CLDR 49.0.0 gives Dutch the single marks ‘…’ at both levels, which stay the default.',
+      },
+    },
     source: 'Dash: Taalunie, Woordenlijst and Schrijfwijzer, spaced en dash.' },
   { id: 'sv', cldr: 'sv', name: 'Swedish', dash: EN_SPACED,
     source: 'Dash: Språkrådet, tankstreck as a spaced en dash.' },
