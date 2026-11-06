@@ -183,10 +183,17 @@ The quote rules are one scan because their decisions depend on each other (a
 quote after a digit is a prime or a closing quote depending on whether a quotation
 is open). Which pair a recognised quotation gets is `Options::$quoteNesting`
 (`Context::$quoteNesting` in a rule). `typed`, the default and the only mode in
-Lite, keeps the quote type typed (D818): a straight `"` pair gets the locale’s
-primary pair and a straight `'` pair its nested pair, at any depth, as CKEditor’s
+Lite, keeps the quote type typed (D818): an outermost `"` pair gets the locale’s
+primary pair and an outermost `'` pair its nested pair, as CKEditor’s
 `quotesPrimary` and `quotesSecondary` do. It is level, not glyph shape, so a
 variant that swaps the pairs (`en-GB` `single-outer`) swaps what each key gives.
+A quotation inside another takes the other level from its parent, whatever was typed
+(D822): the scanner keeps each open quotation’s level beside its kind (`QuoteScanner`’s
+`$levels`, in the flow state), a closing mark takes the level of the quotation it
+closes, and a curly mark already in the text counts as the level its glyph has in the
+locale and variant. A glyph that is in both pairs (`fr`, `nl`) counts as primary,
+and one that both opens and closes (`fi`, `sv` `”`) is not counted at all, as before.
+A closing mark with nothing open takes the level its own mark asks for.
 `depth` normalises: the outermost level uses the primary pair, the next the
 nested pair, then they alternate. Only the choice of glyph differs; what is a
 quotation, an apostrophe or a prime is decided before it and is the same in both.
@@ -225,15 +232,18 @@ entry lists only the keys it changes (`quotes`, `nested`, `apostrophe`, `dash`,
 table is where they are declared (`variants: { 'single-outer': … }` on `en-GB`).
 A caller picks one per locale with `new Options(variants: ['en-GB' =>
 'single-outer'])`; an unknown name, or a locale without that variant, means the
-CLDR default and never an error. Built: `en-GB` `single-outer`, `de-CH`
-`guillemets` and `es` `guillemets-outer`. A variant is added only after its authority
-has been read at the source and is named in the locale file; `de` book style
-(`»…«`), `fr`/`fr-CH` with `“…”` nested and `nl` `“…”`/`‘…’` were proposed (D819)
-and are not built, because the sources read on 2026-11-05 did not support them: Duden’s
-online rules (D 5–D 12, §79 of the official rules) give only „…“ ‚…‘ and say nothing of »…«; the
-Imprimerie nationale’s *Lexique* (3rd ed., 1990, “Citations de deuxième rang”) nests by repeating « »,
-and uses “…” only exceptionally in French text; the Taalunie’s taaladvies.net says there is no
-rule for double or single marks.
+CLDR default and never an error. Built: `en-GB` `single-outer`, `de` `book`
+(`»…«` `›…‹`), `de-CH` `guillemets`, `es` `guillemets-outer` and `nl`
+`double-outer`. A variant is added only after its authority is named in the locale
+file. `de` `book` rests on Dan’s decision as a typographer (D823) and on Duden Band 9,
+cited via a secondary source; Duden’s online rules (D 5–D 12, §79 of the official rules)
+give only „…“ ‚…‘, so CLDR’s marks stay `de`’s default. `nl` `double-outer` follows
+taaladvies.net (Taalunie, 12 May 2021), which says there is no fixed rule but a traditional
+preference for double marks around a literal quotation (D824). Proposed in D819 and not
+built: `fr`/`fr-CH` with `“…”` nested, because the Imprimerie nationale’s *Lexique* (3rd ed.,
+1990, “Citations de deuxième rang”) nests by repeating « » and uses “…” only exceptionally.
+A variant set for `de` or `nl` applies to the regional forms that fall back to them
+(`de-AT`, `de-DE`, `nl-BE`).
 
 ### Tests and speed
 
@@ -248,6 +258,8 @@ rules and expected output, and every case is also run a second time on its own
 output. See the header of `tests/engine/corpus.php` for the format.
 `13-quote-nesting.txt` holds the quote-type cases (every locale and variant, typed and
 `depth`); its `-depth` copies of earlier cases keep the expectations from before D818.
+`14-same-type-nesting.txt` holds the D822 cases: same-kind nesting, three deep, and a curly
+parent, for every locale and variant.
 
 ## The editions model
 

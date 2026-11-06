@@ -66,7 +66,7 @@ Sorts is a typography engine (plain PHP, no Craft code, in `src/engine/`) with a
 
 ### Which quotation marks a quote gets
 
-Sorts keeps the quote type the author typed. A straight `"` pair becomes the language’s **primary** quotation marks and a straight `'` pair its **secondary** (nested) marks, whatever the depth, so the same text typed in a CKEditor field (where `quotesPrimary` and `quotesSecondary` do the same) and pasted in agree on one page. It is a matter of level, not of the shape of the glyph, so a language’s variant still applies:
+Sorts keeps the quote type the author typed for the outermost quotation. A straight `"` pair becomes the language’s **primary** quotation marks and a straight `'` pair its **secondary** (nested) marks, so the same text typed in a CKEditor field (where `quotesPrimary` and `quotesSecondary` do the same) and pasted in agree on one page. A quotation inside another always takes the other level from the one around it, whichever mark was typed. It is a matter of level, not of the shape of the glyph, so a language’s variant still applies:
 
 | Typed | en-US | en-GB `single-outer` | de |
 | --- | --- | --- | --- |
@@ -74,6 +74,9 @@ Sorts keeps the quote type the author typed. A straight `"` pair becomes the lan
 | `'no'` | `‘no’` | `“no”` | `‚no‘` |
 | `"She said 'no'"` | `“She said ‘no’”` | `‘She said “no”’` | `„She said ‚no‘“` |
 | `'She said "no"'` | `‘She said “no”’` | `“She said ‘no’”` | `‚She said „no“‘` |
+| `"She said "no" today"` | `“She said ‘no’ today”` | `‘She said “no” today’` | `„She said ‚no‘ today“` |
+
+A quotation already set in curly marks counts as the level its marks have in the language, so `‘She said "no"’` in en-GB `single-outer` (where ‘…’ is the primary pair) becomes `‘She said “no”’`. Three deep, the levels go primary, secondary, primary.
 
 Apostrophes, primes and the rules that tell an apostrophe or a prime from a quotation (`don't`, `'90s`, `5'10"`) do not depend on this; only the choice of marks for a quotation Sorts has recognised does.
 
@@ -184,8 +187,10 @@ CLDR is the default for every language. Where a style authority writes it differ
 | `en-GB` | `single-outer` | ‘…’ outermost, “…” inside | New Hart’s Rules (Oxford University Press), 2nd ed. |
 | `de-CH` | `guillemets` | «…» outermost, ‹…› inside | Schweizerische Bundeskanzlei, *Schreibweisungen*, 2nd ed. 2013, section 2.1.1 |
 | `es` | `guillemets-outer` | «…» outermost, “…” inside | Real Academia Española, *Ortografía de la lengua española* (2010), “Las comillas” |
+| `de` | `book` | »…« outermost, ›…‹ inside | Dan Gaidula, typographer (decision D823); Duden Band 9, *Richtiges und gutes Deutsch*, 5th ed. 2001 (via a secondary source) |
+| `nl` | `double-outer` | “…” outermost, ‘…’ inside | Taalunie, taaladvies.net, “Dubbele of enkele aanhalingstekens bij een citaat” (12 May 2021): no fixed rule, but a traditional preference for double marks around a literal quotation |
 
-A variant changes only the quotation marks it names; the spacing and the dash stay the language’s own. The variant sets which marks are the primary and secondary pair, and the quote type typed picks between them (see above). An unknown variant name falls back to CLDR. The authority for each is in its locale file (`src/engine/locales/`).
+A variant changes only the quotation marks it names; the spacing and the dash stay the language’s own (the German book style sets no space inside » « or › ‹, as German practice has it). A variant chosen for `de` or `nl` also applies to the regional forms that fall back to them (`de-AT`, `de-DE`, `nl-BE`); `de-CH` has its own. The variant sets which marks are the primary and secondary pair, and the quote type typed picks between them (see above). An unknown variant name falls back to CLDR. The authority for each is in its locale file (`src/engine/locales/`).
 
 ## CKEditor
 
@@ -195,7 +200,9 @@ What CKEditor allows, and what Sorts makes of it:
 
 - The editor’s config reaches the browser as JSON, and JSON cannot carry a regular expression, so Sorts can only switch on CKEditor’s built-in transformations by name.
 
-- Quotation marks: the key typed picks the language’s primary pair (`"`) or secondary pair (`'`), as Sorts does elsewhere, and a key is enabled only where one of CKEditor’s transformations has exactly that pair. English gets “…” for `"` and ‘…’ for `'`; Polish gets „…” for `"`. German, French and the rest, and every variant (`single-outer`, `guillemets`, `guillemets-outer`), are left straight as typed, because CKEditor’s config cannot carry a pair it does not know by name; the page pass or fix on save sets them correctly later. CKEditor’s `en-GB` pairs put ‘…’ on `'`, which is not what `single-outer` does (it puts ‘…’ on `"`), so Sorts does not use them.
+- Quotation marks: the key typed picks the language’s primary pair (`"`) or secondary pair (`'`), as Sorts does elsewhere, and a key is enabled only where one of CKEditor’s transformations has exactly that pair. English gets “…” for `"` and ‘…’ for `'`, and so does Dutch set to `double-outer`; Polish gets „…” for `"`. German, French and the rest, and the variants whose marks CKEditor does not have (`single-outer`, `book`, `guillemets`, `guillemets-outer`), are left straight as typed, because CKEditor’s config cannot carry a pair it does not know by name; the page pass or fix on save sets them correctly later. CKEditor’s `en-GB` pairs put ‘…’ on `'`, which is not what `single-outer` does (it puts ‘…’ on `"`), so Sorts does not use them.
+
+- CKEditor keeps no memory of nesting: typing `"` inside an open “…” gives “…” again, where Sorts gives a straight `"` typed inside a quotation the other level. Sorts leaves the curly marks CKEditor wrote as they are.
 
 - With *Normalize quotes to house style* on, only `"` is converted while typing: a typed `'` may be an outermost quotation, which depth sets in the primary marks, and CKEditor cannot know that.
 
@@ -311,7 +318,7 @@ HTML pages rendered by Craft templates. Not handled: JSON and XML responses, ema
 
 ## Known limits
 
-- **A typed quote is taken as the level it was typed at.** Because `"` is always the primary pair and `'` always the secondary pair, a quotation typed with the same mark inside itself gets the same marks both times (`"She said "no""` becomes `“She said “no””`), and a single-quoted quotation at the outermost level gets the secondary marks (`'No,' she said.` becomes `‘No,’ she said.` in en-US, and `“No,” she said.` in en-GB `single-outer`). Switch on *Normalize quotes to house style* to have the nesting depth decide instead.
+- **An outermost single-quoted quotation gets the secondary marks.** Because `'` is always the secondary pair at the outermost level, `'No,' she said.` becomes `‘No,’ she said.` in en-US, and `“No,” she said.` in en-GB `single-outer`. Switch on *Normalize quotes to house style* to have the nesting depth decide instead.
 
 - **Misnested markup inside code.** Sorts reads the page as it is written and does not rebuild HTML5’s tree: an end tag closes the nearest open element of that name, and Sorts does not run the browser’s repair of misnested formatting (the adoption agency and the reopening of formatting elements). In well-formed pages this changes nothing. In misnested ones, text that a browser would still show inside `code`, `kbd`, `samp` or `var` (after, say, a stray `</figcaption>` inside a `<code>`) can be typeset. Sorts assumes well-formed markup inside code-like elements.
 - **Compiled templates after an update.** The filter’s escaping is decided when Twig compiles a template (`RawInputVisitor`). Craft runs Twig with `auto_reload` on, but Twig compares a compiled template only with the template and the extension class files, not the visitor, so a Sorts update that changes how the filter compiles may not reach templates compiled before it. Craft clears compiled templates when `php craft up` runs, after the updater runs migrations, and when Craft’s own version changes (verified against Craft 5.12.0.1: `console/controllers/UpController.php:99-100`, `services/Updates.php:264`, `web/Application.php:257-260`), but not after a Composer update of a plugin on its own. **After updating Sorts, run `php craft up` or clear compiled templates** (Utilities → Caches → Compiled templates, or `php craft clear-caches/compiled-templates`).

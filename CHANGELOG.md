@@ -35,12 +35,17 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
 - Pro: on sites in more than one language, fix-on-save and the audit leave as typed a value that
   reaches a site in another language (a new entry, a field shared by every site); the page pass
   sets it on each page in that page’s language.
-- Quotation marks keep the quote type the author typed: a straight `"` pair becomes the language’s
-  primary marks and a straight `'` pair its secondary marks at any depth, as CKEditor does while
-  typing, in every edition (the engine option `quoteNesting`, `typed` by default). Pro setting
+- Quotation marks keep the quote type the author typed for the outermost quotation: a straight `"`
+  pair becomes the language’s primary marks and a straight `'` pair its secondary marks, as CKEditor
+  does while typing, and a quotation inside another takes the other level from its parent whatever was
+  typed (`"She said "no""` gives “She said ‘no’”; three deep alternates primary, secondary, primary),
+  in every edition (the engine option `quoteNesting`, `typed` by default). Pro setting
   `normalizeQuotes` (off by default) sets every quotation by nesting depth instead, through the page
   pass, the filter, `@sorts`, fix on save and the audit. CKEditor’s as-you-type quotes follow the same
   rule.
+- Quotation-style variants `de` `book` (`»…«` `›…‹`, Duden Band 9 and the author’s decision as a
+  typographer) and `nl` `double-outer` (`“…”` `‘…’`, Taalunie’s taaladvies.net), CLDR’s marks staying
+  the default for both; a variant for `de` or `nl` also applies to `de-AT`, `de-DE` and `nl-BE`.
 - Quotation-style variants `de-CH` `guillemets` (`«…»` `‹…›`, Schweizerische Bundeskanzlei,
   *Schreibweisungen*) and `es` `guillemets-outer` (`«…»` `“…”`, RAE *Ortografía*), beside `en-GB`
   `single-outer`.
