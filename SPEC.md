@@ -196,7 +196,9 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
   `fr-CH` with `“…”` nested inside `«…»` (Imprimerie nationale); `es` `«…»` outside, `“…”` nested (RAE); `nl`
   `“…” ‘…’` (Taalunie). **Built (`81e35a2`):** `de-CH` `guillemets` (Swiss Federal Chancellery, *Schreibweisungen*
   2013/2015, rules 202–203, read at source) and `es` `guillemets-outer` (RAE *Ortografía* 2010; rae.es refused
-  automated reads, so built on consistent secondary sources quoting the RAE). **Dropped:** `fr`/`fr-CH` nested `“…”`
+  automated reads, so built on consistent secondary sources quoting the RAE). Following the same authority’s order
+  « “ ‘, `es` `guillemets-outer` also carries a third-level pair `‘…’` (`4411307`): depth 3 uses it, and deeper
+  levels alternate second and third; locale data without a third pair is unchanged. **Dropped:** `fr`/`fr-CH` nested `“…”`
   (the *Lexique* itself, 3rd ed. 1990, nests by repeating « », as CLDR does). The other two became D823 and D824.
 - **D822 — nested quotes of the same kind: decided 2026-11-05 (Dan: y).** A quotation inside another takes the other
   level, whatever was typed; only the outermost keeps the typed type (D818), so `"She said "no" today"` gives
