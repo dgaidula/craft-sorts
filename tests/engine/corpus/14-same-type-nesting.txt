@@ -55,51 +55,51 @@
 < ‘She said 'no' today’
 > ‘She said “no” today’
 
-@ n-de-same-type-double only=quotes,apostrophes,primes locale=de
+@ n-de-same-type-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < "She said "no" today"
 > „She said ‚no‘ today“
 
-@ n-de-same-type-single only=quotes,apostrophes,primes locale=de
+@ n-de-same-type-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < 'She said 'no' today'
 > ‚She said „no“ today‘
 
-@ n-de-three-deep-double-first only=quotes,apostrophes,primes locale=de
+@ n-de-three-deep-double-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < "a 'b "c" b' a"
 > „a ‚b „c“ b‘ a“
 
-@ n-de-three-deep-single-first only=quotes,apostrophes,primes locale=de
+@ n-de-three-deep-single-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < 'a "b 'c' b" a'
 > ‚a „b ‚c‘ b“ a‘
 
-@ n-de-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de
+@ n-de-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < „She said "no" today“
 > „She said ‚no‘ today“
 
-@ n-de-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de
+@ n-de-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < ‚She said 'no' today‘
 > ‚She said „no“ today‘
 
-@ n-de-book-same-type-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-same-type-double only=quotes,apostrophes,primes locale=de
 < "She said "no" today"
 > »She said ›no‹ today«
 
-@ n-de-book-same-type-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-same-type-single only=quotes,apostrophes,primes locale=de
 < 'She said 'no' today'
 > ›She said »no« today‹
 
-@ n-de-book-three-deep-double-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-three-deep-double-first only=quotes,apostrophes,primes locale=de
 < "a 'b "c" b' a"
 > »a ›b »c« b‹ a«
 
-@ n-de-book-three-deep-single-first only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-three-deep-single-first only=quotes,apostrophes,primes locale=de
 < 'a "b 'c' b" a'
 > ›a »b ›c‹ b« a‹
 
-@ n-de-book-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-curly-primary-outer-straight-double-inside only=quotes,apostrophes,primes locale=de
 < »She said "no" today«
 > »She said ›no‹ today«
 
-@ n-de-book-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-curly-secondary-outer-straight-single-inside only=quotes,apostrophes,primes locale=de
 < ›She said 'no' today‹
 > ›She said »no« today‹
 
@@ -519,7 +519,7 @@
 
 # A regional language uses its base language’s variant (de-AT and de-DE take the de setting, nl-BE the nl one).
 
-@ n-de-AT-takes-the-de-book-variant only=quotes,apostrophes,primes locale=de-AT config={"variants":{"de":"book"}}
+@ n-de-AT-takes-the-de-default only=quotes,apostrophes,primes locale=de-AT
 < "Er sagte "nein" und ging."
 > »Er sagte ›nein‹ und ging.«
 

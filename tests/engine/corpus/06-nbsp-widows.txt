@@ -180,3 +180,109 @@
 @ w-last-space-before-inline only=widows
 < <h1>one two <b>three</b></h1>
 > <h1>one two\u{A0}<b>three</b></h1>
+
+# ---- D858: a no-break space after an honorific written without its period (Bringhurst 5.4.4) ----
+
+@ nb-honorific-mr-no-period only=nbsp
+< Mr Smith arrived.
+> Mr\u{A0}Smith arrived.
+
+@ nb-honorific-mrs-no-period only=nbsp
+< We met Mrs Jones.
+> We met Mrs\u{A0}Jones.
+
+@ nb-honorific-ms-no-period only=nbsp
+< Ask Ms Okafor.
+> Ask Ms\u{A0}Okafor.
+
+@ nb-honorific-dr-no-period only=nbsp
+< Dear Dr Patel, thank you.
+> Dear Dr\u{A0}Patel, thank you.
+
+@ nb-honorific-fr-no-period only=nbsp
+< Fr Brown spoke.
+> Fr\u{A0}Brown spoke.
+
+@ nb-honorific-msgr-no-period only=nbsp
+< Msgr Kelly said so.
+> Msgr\u{A0}Kelly said so.
+
+@ nb-honorific-st-no-period-saint only=nbsp
+< We drove to St Louis.
+> We drove to St\u{A0}Louis.
+
+@ nb-honorific-st-opening-a-sentence only=nbsp
+< St Ives is in Cornwall.
+> St\u{A0}Ives is in Cornwall.
+
+@ nb-honorific-st-after-a-verb-at-the-start only=nbsp
+< Visit St Louis today.
+> Visit St\u{A0}Louis today.
+
+@ nb-honorific-st-after-a-sentence-opener-is-read-as-a-saint only=nbsp
+< We left. Main St Louis was far.
+> We left. Main St\u{A0}Louis was far.
+
+@ nb-honorific-st-after-a-street-name-stays only=nbsp
+< She lives on Main St Louis is far.
+> She lives on Main St Louis is far.
+
+@ nb-honorific-st-after-a-numbered-street-stays only=nbsp
+< The bus stops at 42nd St Station.
+
+@ nb-honorific-st-after-a-number-stays only=nbsp
+< Turn at 5 St Michael is there.
+
+@ nb-honorific-st-after-a-sentence-end-is-a-saint only=nbsp
+< We left. St Louis was far.
+> We left. St\u{A0}Louis was far.
+
+@ nb-honorific-st-after-a-sentence-end-in-a-quote only=nbsp
+< He said, “Go.” St Louis was far.
+> He said, “Go.” St\u{A0}Louis was far.
+
+@ nb-honorific-st-lowercase-before-is-a-saint only=nbsp
+< the city of St Louis
+> the city of St\u{A0}Louis
+
+@ nb-honorific-st-street-name-across-a-tag only=nbsp
+< On <b>Main</b> St Louis is far.
+> On <b>Main</b> St Louis is far.
+
+@ nb-honorific-needs-a-capital-after only=nbsp
+< Dr who? Mr smith St louis
+
+@ nb-honorific-dr-after-a-capitalised-word-is-not-a-street only=nbsp
+< Backstage Dr Smith
+> Backstage Dr\u{A0}Smith
+
+@ nb-honorific-inside-a-word-stays only=nbsp
+< AMr Smith and Sdr Smith
+
+@ nb-honorific-with-a-period-is-unchanged only=nbsp
+< Dr. Smith and St. Louis
+> Dr.\u{A0}Smith and St.\u{A0}Louis
+
+@ nb-honorific-spelled-out-stays only=nbsp
+< Doctor Smith, Mister Jones
+
+@ nb-honorific-all-capitals-stay only=nbsp
+< MR SMITH and DR JONES
+
+@ nb-honorific-case-stays only=nbsp
+< dr Smith, mr Jones
+
+@ nb-honorific-two-spaces-stay only=nbsp
+< Mr  Smith
+
+@ nb-honorific-across-an-inline-tag only=nbsp
+< <p>Dr <b>Smith</b> spoke.</p>
+> <p>Dr <b>Smith</b> spoke.</p>
+
+@ nb-honorific-in-text-mode only=nbsp mode=text
+< Mrs Jones and Mr Smith
+> Mrs\u{A0}Jones and Mr\u{A0}Smith
+
+@ nb-honorific-in-a-heading-with-widows only=nbsp,widows
+< <h2>Letters to Dr Smith</h2>
+> <h2>Letters to Dr\u{A0}Smith</h2>

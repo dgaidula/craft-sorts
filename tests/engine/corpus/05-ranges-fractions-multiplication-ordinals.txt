@@ -86,8 +86,9 @@
 @ r-version-left-alone only=ranges
 < v1.2-3
 
-@ r-time-left-alone only=ranges
+@ r-time-is-a-clock-range only=ranges
 < 10:30-11:00
+> 10:30–11:00
 
 @ r-words-left-alone only=ranges
 < Mon-Fri and e-mail
@@ -153,7 +154,7 @@
 
 @ f-mixed-number-space only=fractions
 < 10 1/2 miles
-> 10 ½ miles
+> 10½ miles
 
 @ f-with-hyphen-after only=fractions
 < a 1/2-inch pipe
@@ -342,3 +343,187 @@
 @ n-url-guard-slash-between-words-is-not-a-path only=multiplication,fractions
 < <p>3x4 / 1/2 cup</p>
 > <p>3×4 / ½ cup</p>
+
+# ---- B9 (Bringhurst 5.2.2): clock-time ranges take a close-set en dash ----
+
+@ r-clock-simple only=ranges
+< 4:30-5:00
+> 4:30–5:00
+
+@ r-clock-with-meridiem only=ranges
+< Open 4:30-5:00 PM daily
+> Open 4:30–5:00 PM daily
+
+@ r-clock-24-hour only=ranges
+< Open 09:00-17:00.
+> Open 09:00–17:00.
+
+@ r-clock-past-midnight only=ranges
+< Doors 22:00-06:00
+> Doors 22:00–06:00
+
+@ r-clock-in-parentheses only=ranges
+< (4:30-5:00)
+> (4:30–5:00)
+
+@ r-clock-two-in-a-sentence only=ranges
+< Mon 9:00-12:00, Tue 13:30-17:45
+> Mon 9:00–12:00, Tue 13:30–17:45
+
+@ r-clock-text-mode only=ranges mode=text
+< 4:30-5:00
+> 4:30–5:00
+
+@ r-clock-off-by-default only=dashes
+< 4:30-5:00
+
+@ r-clock-already-an-en-dash only=ranges
+< 4:30–5:00
+
+@ r-clock-utc-offset-after-a-date-stays only=ranges
+< Posted 2024-01-15 10:30-05:00
+
+@ r-clock-utc-offset-after-a-date-and-T-stays only=ranges
+< 2024-01-15T10:30-05:00
+
+@ r-clock-with-seconds-stays only=ranges
+< 4:30:15-5:00:00
+
+@ r-clock-minutes-over-59-stay only=ranges
+< 4:75-5:00
+
+@ r-clock-hours-over-24-stay only=ranges
+< 25:00-26:00
+
+@ r-clock-glued-to-a-letter-stays only=ranges
+< a4:30-5:00 and 4:30-5:00b
+
+@ r-clock-in-a-url-stays only=ranges
+< https://example.com/at/4:30-5:00 and /at/4:30-5:00
+
+@ r-clock-three-times-chained-stay only=ranges
+< 4:30-5:00-6:00
+
+@ r-clock-phone-number-stays only=ranges
+< Call 555-1234 or 555-123-4567
+
+@ r-clock-date-and-isbn-stay only=ranges
+< 2024-01-15 and ISBN 978-3-16-148410-0
+
+# ---- B16 (Bringhurst 5.2.6): a number may end in a precomposed fraction before the x ----
+
+@ m-fraction-before-x-spaced only=multiplication
+< 8½ x 11
+> 8½ × 11
+
+@ m-fraction-before-x-closed only=multiplication
+< 8½x11
+> 8½×11
+
+@ m-fraction-after-x only=multiplication
+< 11 x 8½
+> 11 × 8½
+
+@ m-fraction-chain only=multiplication
+< 1½ x 2 x 3½
+> 1½ × 2 × 3½
+
+@ m-fraction-alone-before-x only=multiplication
+< ½ x 2
+> ½ × 2
+
+@ m-fraction-after-a-space-before-x only=multiplication
+< 8 ½ x 11
+> 8 ½ × 11
+
+@ m-eighths-and-quarters only=multiplication
+< 3⅛ x 5¼ in
+> 3⅛ × 5¼ in
+
+@ m-fraction-glued-to-a-letter-stays only=multiplication
+< a8½ x 11
+
+@ m-fraction-unequal-spacing-stays only=multiplication
+< 8½ x11
+
+@ m-fraction-after-x-needs-a-digit-after only=multiplication
+< ½ x ¼
+
+@ m-fraction-joined-then-multiplied only=fractions,multiplication
+< Paper is 8 1/2 x 11 in
+> Paper is 8½ × 11 in
+
+# ---- B15 (Bringhurst 5.2.5): a whole number and its fraction join ----
+
+@ f-join-simple only=fractions
+< 8 1/2
+> 8½
+
+@ f-join-in-a-sentence only=fractions
+< Add 2 1/4 cups of flour.
+> Add 2¼ cups of flour.
+
+@ f-join-three-quarters only=fractions
+< 3 3/4 in
+> 3¾ in
+
+@ f-join-three-digit-whole only=fractions
+< 120 1/2 miles
+> 120½ miles
+
+@ f-join-then-a-bare-fraction only=fractions
+< 8 1/2 and 1/2
+> 8½ and ½
+
+@ f-join-in-parentheses only=fractions
+< (2 1/3)
+> (2⅓)
+
+@ f-join-in-text-mode only=fractions mode=text
+< 8 1/2
+> 8½
+
+@ f-join-the-hyphen-is-the-authors only=fractions
+< 1-1/2
+> 1-½
+
+@ f-join-a-date-keeps-the-virgule only=fractions
+< 10 1/2/2024 and 1/2/2024
+
+@ f-join-a-number-ending-a-path-does-not-join only=fractions
+< see /docs/3 1/2
+> see /docs/3 ½
+
+@ f-join-not-a-fraction-in-the-set only=fractions
+< 8 1/11
+
+@ f-join-a-long-number-does-not-join only=fractions
+< 2024 1/2
+> 2024 ½
+
+@ f-join-a-thousands-number-does-not-join only=fractions
+< 1,000 1/2
+> 1,000 ½
+
+@ f-join-a-decimal-does-not-join only=fractions
+< version 2.1 1/2
+> version 2.1 ½
+
+@ f-join-a-version-letter-does-not-join only=fractions
+< v2 1/2
+> v2 ½
+
+@ f-join-a-time-does-not-join only=fractions
+< 10:30 1/2
+> 10:30 ½
+
+@ f-join-the-end-of-a-range-does-not-join only=fractions
+< 2-3 1/2
+> 2-3 ½
+
+@ f-join-a-whole-number-in-another-run-does-not-join only=fractions
+< <b>8</b> 1/2
+> <b>8</b> ½
+
+@ f-join-off-by-default only=dashes
+< 8 1/2

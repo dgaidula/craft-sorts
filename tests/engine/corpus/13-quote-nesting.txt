@@ -133,67 +133,67 @@
 < 'She said "no" twice'
 > «She said ‹no› twice»
 
-@ n-de-typed-double only=quotes,apostrophes,primes locale=de
+@ n-de-typed-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < He said "yes" today
 > He said „yes“ today
 
-@ n-de-typed-single only=quotes,apostrophes,primes locale=de
+@ n-de-typed-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < He said 'yes' today
 > He said ‚yes‘ today
 
-@ n-de-typed-double-over-single only=quotes,apostrophes,primes locale=de
+@ n-de-typed-double-over-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < "She said 'no' twice"
 > „She said ‚no‘ twice“
 
-@ n-de-typed-single-over-double only=quotes,apostrophes,primes locale=de
+@ n-de-typed-single-over-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < 'She said "no" twice'
 > ‚She said „no“ twice‘
 
-@ n-de-typed-apostrophe-in-single only=quotes,apostrophes,primes locale=de
+@ n-de-typed-apostrophe-in-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < 'I don't know'
 > ‚I don’t know‘
 
-@ n-de-depth-single only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+@ n-de-depth-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"},"quoteNesting":"depth"}
 < He said 'yes' today
 > He said „yes“ today
 
-@ n-de-depth-double-over-single only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+@ n-de-depth-double-over-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"},"quoteNesting":"depth"}
 < "She said 'no' twice"
 > „She said ‚no‘ twice“
 
-@ n-de-depth-single-over-double only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+@ n-de-depth-single-over-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"},"quoteNesting":"depth"}
 < 'She said "no" twice'
 > „She said ‚no‘ twice“
 
-@ n-de-book-typed-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-typed-double only=quotes,apostrophes,primes locale=de
 < He said "yes" today
 > He said »yes« today
 
-@ n-de-book-typed-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-typed-single only=quotes,apostrophes,primes locale=de
 < He said 'yes' today
 > He said ›yes‹ today
 
-@ n-de-book-typed-double-over-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-typed-double-over-single only=quotes,apostrophes,primes locale=de
 < "She said 'no' twice"
 > »She said ›no‹ twice«
 
-@ n-de-book-typed-single-over-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-typed-single-over-double only=quotes,apostrophes,primes locale=de
 < 'She said "no" twice'
 > ›She said »no« twice‹
 
-@ n-de-book-typed-apostrophe-in-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+@ n-de-book-typed-apostrophe-in-single only=quotes,apostrophes,primes locale=de
 < 'I don't know'
 > ›I don’t know‹
 
-@ n-de-book-depth-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+@ n-de-book-depth-single only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
 < He said 'yes' today
 > He said »yes« today
 
-@ n-de-book-depth-double-over-single only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+@ n-de-book-depth-double-over-single only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
 < "She said 'no' twice"
 > »She said ›no‹ twice«
 
-@ n-de-book-depth-single-over-double only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"},"quoteNesting":"depth"}
+@ n-de-book-depth-single-over-double only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
 < 'She said "no" twice'
 > »She said ›no‹ twice«
 
@@ -831,7 +831,7 @@
 > “The dogs’ bowls are empty”
 
 # was 02-apostrophes.txt: a-german-apostrophe-differs-from-closing-quote
-@ a-german-apostrophe-differs-from-closing-quote-depth only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+@ a-german-apostrophe-differs-from-closing-quote-depth only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"},"quoteNesting":"depth"}
 < 'geht's nicht'
 > „geht’s nicht“
 

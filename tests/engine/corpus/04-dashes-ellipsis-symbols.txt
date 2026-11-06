@@ -213,3 +213,97 @@
 @ s-multiple-in-one-line only=symbols
 < (c) and (r) and (tm)
 > © and ® and ™
+
+# ---- D855: the en-US variant spaced-en-dash (Bringhurst 5.2.1): -- and --- and a spaced hyphen are breaks ----
+
+@ dv-closed-double-hyphen only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< a--b
+> a – b
+
+@ dv-spaced-double-hyphen only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< a -- b
+> a – b
+
+@ dv-closed-triple-hyphen only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< a---b
+> a – b
+
+@ dv-spaced-triple-hyphen only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< a --- b
+> a – b
+
+@ dv-spaced-hyphen-between-words only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< a - b
+> a – b
+
+@ dv-spaced-hyphen-between-numbers-and-words only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< 25 December - 3 January
+> 25 December – 3 January
+
+@ dv-after-punctuation only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< Wait. - what
+> Wait. – what
+
+@ dv-curly-quotes-either-side only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< “No” - she said - “Go.”
+> “No” – she said – “Go.”
+
+@ dv-across-inline-tags only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< <b>word</b> - <i>word</i>
+> <b>word</b> – <i>word</i>
+
+@ dv-list-bullet-at-the-start-stays only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< - one
+
+@ dv-list-bullet-in-a-list-item-stays only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< <ul><li>- one</li><li>- two</li></ul>
+
+@ dv-list-bullet-after-a-break-stays only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< <p>a<br>- b</p>
+
+@ dv-list-bullet-after-a-newline-stays only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}} mode=text
+< Items:
+< - one
+<  - two
+< - three
+
+@ dv-an-equation-minus-stays only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< 5 - 3 = 2 and x - y = z
+
+@ dv-a-trailing-hyphen-stays only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< a - 
+
+@ dv-code-is-never-touched only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< <p>a - b <code>c - d</code> e--f</p>
+> <p>a – b <code>c - d</code> e – f</p>
+
+@ dv-compound-words-stay only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< well-known and pre- and post-war
+
+@ dv-command-line-option-and-arrow-stay only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< run --force and a --> b
+
+@ dv-ranges-stay-closed only=dashes,ranges locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< pages 10-12 - see 5
+> pages 10–12 – see 5
+
+@ dv-text-mode only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}} mode=text
+< a - b -- c --- d
+> a – b – c – d
+
+@ dv-the-default-leaves-a-spaced-hyphen only=dashes locale=en-US
+< a - b
+
+@ dv-the-default-keeps-the-closed-em-dash only=dashes locale=en-US
+< a--b and c---d
+> a—b and c—d
+
+@ dv-other-locales-leave-a-spaced-hyphen only=dashes locale=en-GB
+< a - b
+
+@ dv-other-locales-keep-triple-as-em-dash only=dashes locale=en-GB
+< a---b
+> a—b
+
+@ dv-the-variant-is-for-en-US-only only=dashes locale=en-GB config={"variants":{"en-US":"spaced-en-dash"}}
+< a - b

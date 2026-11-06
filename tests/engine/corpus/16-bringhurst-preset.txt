@@ -1,0 +1,301 @@
+
+# D817: the Bringhurst preset (Robert Bringhurst, The Elements of Typographic Style, 3rd ed., chapter 5). Expectations are
+# worked out from the rule and the section named in each case. The last block pins that with the preset off nothing changes.
+
+@ bp-dash-double-hyphen-is-a-spaced-en-dash preset=bringhurst only=dashes
+< a--b and c -- d
+> a – b and c – d
+
+@ bp-dash-triple-hyphen-is-a-spaced-en-dash preset=bringhurst only=dashes
+< a---b
+> a – b
+
+@ bp-dash-spaced-hyphen-is-a-spaced-en-dash preset=bringhurst only=dashes
+< 25 December - 3 January
+> 25 December – 3 January
+
+@ bp-dash-list-bullet-stays preset=bringhurst only=dashes
+< <ul><li>- one</li></ul>
+
+@ bp-dash-en-GB-already-spaced preset=bringhurst only=dashes locale=en-GB
+< a--b
+> a – b
+
+@ bp-dash-es-keeps-its-own-closed-em-dash preset=bringhurst only=dashes locale=es
+< a--b
+> a—b
+
+@ bp-dash-pl-keeps-its-own-spaced-em-dash preset=bringhurst only=dashes locale=pl
+< a--b
+> a — b
+
+@ bp-dash-an-explicit-variant-wins preset=bringhurst only=dashes config={"variants":{"en-US":"nonsense"}}
+< a--b
+> a—b
+
+@ bp-typed-closed-em-dash preset=bringhurst only=typed-dashes
+< a—b
+> a – b
+
+@ bp-typed-spaced-em-dash preset=bringhurst only=typed-dashes
+< a — b
+> a – b
+
+@ bp-typed-em-dash-after-punctuation preset=bringhurst only=typed-dashes
+< Wait.—what
+> Wait. – what
+
+@ bp-typed-em-dash-touching-a-quotation-mark-stays preset=bringhurst only=typed-dashes
+< “No”—she said and “yes—” he said
+
+@ bp-typed-em-dash-run-stays preset=bringhurst only=typed-dashes
+< Smith, J.——— and a——b
+
+@ bp-typed-em-dash-opening-a-block-stays preset=bringhurst only=typed-dashes
+< <p>—Hello</p><p>— Hello</p>
+
+@ bp-typed-em-dash-in-de preset=bringhurst only=typed-dashes locale=de
+< a—b
+> a – b
+
+@ bp-typed-em-dash-in-es-is-already-the-dash preset=bringhurst only=typed-dashes locale=es
+< a—b
+
+@ bp-typed-em-dash-in-pl-gets-its-spaces preset=bringhurst only=typed-dashes locale=pl
+< a—b
+> a — b
+
+@ bp-typed-em-dash-across-inline-tags preset=bringhurst only=typed-dashes
+< <b>a</b>—<i>b</i>
+> <b>a</b> – <i>b</i>
+
+@ bp-typed-em-dash-in-code-stays preset=bringhurst only=typed-dashes
+< <code>a—b</code>
+
+@ bp-typed-em-dash-text-mode preset=bringhurst only=typed-dashes mode=text
+< a—b
+> a – b
+
+@ bp-dialogue-double-hyphen preset=bringhurst only=dialogue-dash
+< -- So this is how it ends.
+> —\u{202F}So this is how it ends.
+
+@ bp-dialogue-em-dash preset=bringhurst only=dialogue-dash
+< — So this is how it ends.
+> —\u{202F}So this is how it ends.
+
+@ bp-dialogue-every-paragraph preset=bringhurst only=dialogue-dash
+< <p>-- One.</p><p>-- Two.</p>
+> <p>—\u{202F}One.</p><p>—\u{202F}Two.</p>
+
+@ bp-dialogue-after-a-break preset=bringhurst only=dialogue-dash
+< <p>-- One.<br>-- Two.</p>
+> <p>—\u{202F}One.<br>—\u{202F}Two.</p>
+
+@ bp-dialogue-in-text-mode-after-a-blank-line preset=bringhurst only=dialogue-dash mode=text
+< -- One.
+< 
+< -- Two.
+> —\u{202F}One.
+> 
+> —\u{202F}Two.
+
+@ bp-dialogue-in-every-locale preset=bringhurst only=dialogue-dash locale=fr
+< -- Alors c’est ça.
+> —\u{202F}Alors c’est ça.
+
+@ bp-dialogue-in-the-middle-of-a-block-is-not-dialogue preset=bringhurst only=dialogue-dash
+< He said -- So this.
+
+@ bp-dialogue-needs-a-space-after-the-dash preset=bringhurst only=dialogue-dash
+< --So this.
+
+@ bp-dialogue-a-run-of-dashes-stays preset=bringhurst only=dialogue-dash
+< --- So this. —— And that.
+
+@ bp-dialogue-a-list-bullet-stays preset=bringhurst only=dialogue-dash
+< - So this.
+
+@ bp-dialogue-the-whole-set-in-one-line preset=bringhurst
+< -- So this -- or that.
+> —\u{202F}So this – or that.
+
+@ bp-guillemets-it preset=bringhurst only=locale-spacing locale=it
+< «Sì,» disse.
+> «\u{202F}Sì,\u{202F}» disse.
+
+@ bp-guillemets-it-from-straight-quotes preset=bringhurst only=quotes,locale-spacing locale=it
+< "Sì," disse.
+> «\u{202F}Sì,\u{202F}» disse.
+
+@ bp-guillemets-nb preset=bringhurst only=locale-spacing locale=nb
+< «Ja»
+> «\u{202F}Ja\u{202F}»
+
+@ bp-guillemets-es-guillemets-outer preset=bringhurst only=locale-spacing locale=es config={"variants":{"es":"guillemets-outer"}}
+< «Dijo “no”»
+> «\u{202F}Dijo “no”\u{202F}»
+
+@ bp-guillemets-pl-nested preset=bringhurst only=locale-spacing locale=pl
+< „Powiedział «tak»”
+> „Powiedział «\u{202F}tak\u{202F}»”
+
+@ bp-guillemets-fr-already preset=bringhurst only=locale-spacing locale=fr
+< «Oui»
+> «\u{202F}Oui\u{202F}»
+
+@ bp-guillemets-single-guillemets-too preset=bringhurst only=locale-spacing locale=fr-CH
+< ‹Oui›
+> ‹\u{202F}Oui\u{202F}›
+
+@ bp-guillemets-german-book-style-keeps-none preset=bringhurst only=locale-spacing locale=de
+< »Ja«
+
+@ bp-guillemets-de-AT-keeps-none preset=bringhurst only=locale-spacing locale=de-AT
+< »Ja«
+
+@ bp-guillemets-swiss-german-guillemets-keep-none preset=bringhurst only=locale-spacing locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< «Ja»
+
+@ bp-guillemets-a-locale-without-them-is-untouched preset=bringhurst only=locale-spacing
+< “Ja”
+
+@ bp-guillemets-at-the-edges-of-a-block-are-not-padded-outside preset=bringhurst only=locale-spacing locale=it
+< <p>«Sì»</p>
+> <p>«\u{202F}Sì\u{202F}»</p>
+
+@ bp-ellipsis-between-words-typed-with-dots preset=bringhurst only=ellipsis,ellipsis-spacing
+< wait...then
+> wait … then
+
+@ bp-ellipsis-between-words-typed-closed preset=bringhurst only=ellipsis-spacing
+< wait…then
+> wait … then
+
+@ bp-ellipsis-after-a-word-only preset=bringhurst only=ellipsis,ellipsis-spacing
+< wait... then
+> wait … then
+
+@ bp-ellipsis-before-a-word-only preset=bringhurst only=ellipsis,ellipsis-spacing
+< wait ...then
+> wait … then
+
+@ bp-ellipsis-already-spaced preset=bringhurst only=ellipsis,ellipsis-spacing
+< wait ... then
+> wait … then
+
+@ bp-ellipsis-meeting-a-full-stop-closes-up preset=bringhurst only=ellipsis,ellipsis-spacing
+< wait .... Then
+> wait…. Then
+
+@ bp-ellipsis-meeting-a-comma-closes-up preset=bringhurst only=ellipsis-spacing
+< wait …, then
+> wait…, then
+
+@ bp-ellipsis-meeting-a-question-mark-closes-up preset=bringhurst only=ellipsis-spacing
+< wait …?
+> wait…?
+
+@ bp-ellipsis-at-the-start-stays preset=bringhurst only=ellipsis-spacing
+< …and so on
+
+@ bp-ellipsis-at-the-end-stays preset=bringhurst only=ellipsis-spacing
+< and so on…
+
+@ bp-ellipsis-beside-a-quotation-mark-stays preset=bringhurst only=ellipsis-spacing
+< “wait…” she said
+
+@ bp-ellipsis-across-inline-tags preset=bringhurst only=ellipsis-spacing
+< <b>wait</b>…<i>then</i>
+> <b>wait</b> … <i>then</i>
+
+@ bp-ellipsis-in-en-GB preset=bringhurst only=ellipsis-spacing locale=en-GB
+< wait…then
+> wait … then
+
+@ bp-ellipsis-never-in-french preset=bringhurst only=ellipsis,ellipsis-spacing locale=fr
+< attends...puis
+> attends…puis
+
+@ bp-ellipsis-not-in-german preset=bringhurst only=ellipsis,ellipsis-spacing locale=de
+< warte...dann
+> warte…dann
+
+@ bp-ranges-on preset=bringhurst only=ranges
+< pages 10-12
+> pages 10–12
+
+@ bp-ranges-clock-times preset=bringhurst only=ranges
+< 4:30-5:00 PM
+> 4:30–5:00 PM
+
+@ bp-fractions-on-and-joined preset=bringhurst only=fractions
+< 8 1/2 in
+> 8½ in
+
+@ bp-fractions-dates-keep-the-virgule preset=bringhurst only=fractions
+< 1/2/2024
+
+@ bp-multiplication-on preset=bringhurst only=multiplication
+< 26 x 42 cm
+> 26 × 42 cm
+
+@ bp-multiplication-after-a-fraction preset=bringhurst only=multiplication
+< 8½ x 11
+> 8½ × 11
+
+@ bp-those-three-together preset=bringhurst
+< Paper 8 1/2 x 11, pp 396-424, 4:30-5:00
+> Paper 8½ × 11, pp 396–424, 4:30–5:00
+
+@ bp-a-switch-off-wins-for-ranges preset=bringhurst off=ranges
+< pages 10-12 and 4:30-5:00
+
+@ bp-a-switch-off-wins-for-multiplication preset=bringhurst off=multiplication,nbsp
+< 26 x 42 cm
+
+@ bp-a-switch-off-wins-for-fractions preset=bringhurst off=fractions
+< 8 1/2 in
+
+@ bp-a-switch-off-wins-for-dashes preset=bringhurst off=dashes,typed-dashes,dialogue-dash
+< a--b a—b
+
+@ bp-a-switch-off-wins-for-the-new-rules preset=bringhurst off=dashes,typed-dashes,dialogue-dash,ellipsis-spacing
+< -- a—b and wait…then
+> -- a—b and wait…then
+
+@ bp-a-switch-off-wins-for-locale-spacing preset=bringhurst off=locale-spacing locale=it
+< «Sì»
+
+@ bp-a-switch-on-without-the-preset-is-just-that-rule only=dialogue-dash
+< -- One.
+> —\u{202F}One.
+
+@ bp-off-dashes-as-before only=dashes
+< a--b a - b a---b
+> a—b a - b a—b
+
+@ bp-off-typed-em-dash-and-ellipsis-stay
+< a—b — Hello wait…then
+
+@ bp-off-dialogue-dash-as-before only=dashes
+< -- So this.
+> — So this.
+
+@ bp-off-ranges-fractions-multiplication-stay-off 
+< pages 10-12, 8 1/2 x 11, 4:30-5:00
+
+@ bp-off-guillemets-as-before only=locale-spacing locale=it
+< «Sì»
+
+@ bp-off-ellipsis-as-before only=ellipsis
+< wait...then
+> wait…then
+
+@ bp-an-empty-preset-name-is-no-preset preset= only=dashes
+< a--b
+> a—b
+
+@ bp-an-unknown-preset-name-is-no-preset preset=nonsense only=dashes
+< a--b
+> a—b

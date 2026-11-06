@@ -84,11 +84,11 @@ check('run: text holds only what rules wrote (no markers)', "\u{E000}x", $run->t
 
 $engine = newEngine();
 $handles = array_map(static fn ($r) => $r->handle(), $engine->rules());
-check('engine: sixteen built-in rules plus four fixtures', 20, count($handles));
+check('engine: nineteen built-in rules plus four fixtures', 23, count($handles));
 check('engine: built-in handles', [
-    'symbols', 'ellipsis', 'dashes', 'fractions', 'ranges', 'multiplication', 'primes', 'apostrophes', 'quotes',
-    'nbsp', 'locale-spacing', 'widows', 'ordinals', 'hook-amp', 'hook-caps', 'hook-quotes',
-], array_slice(array_values(array_diff($handles, ['recipe-fractions', 'fixture-en-dash', 'fixture-markup', 'fixture-german'])), 0, 16));
+    'symbols', 'ellipsis', 'ellipsis-spacing', 'dialogue-dash', 'dashes', 'typed-dashes', 'fractions', 'ranges', 'multiplication',
+    'primes', 'apostrophes', 'quotes', 'nbsp', 'locale-spacing', 'widows', 'ordinals', 'hook-amp', 'hook-caps', 'hook-quotes',
+], array_slice(array_values(array_diff($handles, ['recipe-fractions', 'fixture-en-dash', 'fixture-markup', 'fixture-german'])), 0, 19));
 $priorities = array_map(static fn ($r) => $r->priority(), $engine->rules());
 $sorted = $priorities;
 sort($sorted);
@@ -225,10 +225,12 @@ check('variants: de-CH offers guillemets, es offers guillemets-outer', [['guille
 check('variants: de-CH guillemets swap the pairs', [['«', '»'], ['‹', '›']], [$registry->resolve('de-CH')->withVariant('guillemets')->quotes(), $registry->resolve('de-CH')->withVariant('guillemets')->nestedQuotes()]);
 check('variants: es guillemets-outer swap the pairs', [['«', '»'], ['“', '”']], [$registry->resolve('es')->withVariant('guillemets-outer')->quotes(), $registry->resolve('es')->withVariant('guillemets-outer')->nestedQuotes()]);
 
-check('variants: de offers book, nl offers double-outer', [['book'], ['double-outer']], [$registry->resolve('de')->variants(), $registry->resolve('nl')->variants()]);
-check('variants: de book swaps the pairs', [['»', '«'], ['›', '‹']], [$registry->resolve('de')->withVariant('book')->quotes(), $registry->resolve('de')->withVariant('book')->nestedQuotes()]);
+check('variants: de offers low-high, nl offers double-outer', [['low-high'], ['double-outer']], [$registry->resolve('de')->variants(), $registry->resolve('nl')->variants()]);
+check('variants: de low-high is CLDR’s pair', [['„', '“'], ['‚', '‘']], [$registry->resolve('de')->withVariant('low-high')->quotes(), $registry->resolve('de')->withVariant('low-high')->nestedQuotes()]);
+check('variants: the retired de book name falls back to the default, which is book style', [['»', '«'], ['›', '‹']], [$registry->resolve('de')->withVariant('book')->quotes(), $registry->resolve('de')->withVariant('book')->nestedQuotes()]);
 check('variants: nl double-outer swaps the pairs', [['“', '”'], ['‘', '’']], [$registry->resolve('nl')->withVariant('double-outer')->quotes(), $registry->resolve('nl')->withVariant('double-outer')->nestedQuotes()]);
-check('variants: the de and nl defaults are CLDR’s', [['„', '“'], ['‘', '’']], [$registry->resolve('de')->quotes(), $registry->resolve('nl')->quotes()]);
+check('variants: nl’s default is CLDR’s, de’s is book style (D844)', [['»', '«'], ['‘', '’']], [$registry->resolve('de')->quotes(), $registry->resolve('nl')->quotes()]);
+check('variants: de-AT and de-DE take de’s default, de-CH keeps CLDR’s', [['»', '«'], ['»', '«'], ['„', '“']], [$registry->resolve('de-AT')->quotes(), $registry->resolve('de-DE')->quotes(), $registry->resolve('de-CH')->quotes()]);
 
 // quoteNesting: typed by default, depth on request, anything else means typed
 check('quoteNesting: typed is the default', 'typed', (new Options())->quoteNesting);
@@ -369,7 +371,7 @@ $convertible = [
 ];
 foreach ($convertible as $i => [$input, $want]) {
     if ($want === null) {
-        $want = str_replace('"x"', '„x“', $input);
+        $want = str_replace('"x"', '»x«', $input);
     }
     check("tokenizer: only text runs change (#$i)", $want, $engine->apply($input, [], new Options(rules: array_merge($allOff->rules, ['quotes' => true]))));
 }
@@ -483,3 +485,80 @@ check('run: overlapsSettled() just before a span is free', false, $run->overlaps
 check('run: overlapsSettled() a point at the end of a span is free', false, $run->overlapsSettled(4, 0));
 check('run: overlapsSettled() a point inside a span is not', true, $run->overlapsSettled(3, 0));
 check('run: edit() right after a settled span is allowed', 1, $run->edit([[4, 1, 'Z']]));
+
+// ---- Findings (D859): read-only notes the engine makes and never acts on -----
+
+$summary = static fn (array $findings): array => array_map(static fn ($f): array => [$f->code, $f->match, $f->suggestion], $findings);
+$finder = new Engine();
+$html = '<p>Born in the 1930\'s, and 2 × 4\'s are lumber.</p>';
+$found = $finder->findings($html);
+check('findings: a numerical plural is found, with the plural to write', [['numerical-plural', "1930's", '1930s'], ['numerical-plural', "4's", '4s']], $summary($found));
+check('findings: each offset is where the match starts in the input', [strpos($html, "1930's"), strpos($html, "4's")], array_map(static fn ($f): int => $f->offset, $found));
+check('findings: the message is plain text for a person', true, str_contains($found[0]->message, '1930s') && !str_contains($found[0]->message, '<'));
+check('findings: the same text through apply() is untouched by the call', '<p>Born in the 1930’s, and 2 × 4’s are lumber.</p>', $finder->apply($html, [], new Options(rules: ['multiplication' => true])));
+check('findings: a curly apostrophe', [['numerical-plural', '1930’s', '1930s']], $summary($finder->findings('<p>the 1930’s</p>')));
+check('findings: a word processor’s wrong-way apostrophe', [['numerical-plural', '1930‘s', '1930s']], $summary($finder->findings('<p>the 1930‘s</p>')));
+check('findings: an entity apostrophe in HTML', [['numerical-plural', '1930&#39;s', '1930s'], ['numerical-plural', '1940&apos;S', '1940S']], $summary($finder->findings('<p>the 1930&#39;s and 1940&apos;S</p>')));
+check('findings: in plain text an entity is only text', [], $finder->findings('the 1930&#39;s', new Options(mode: 'text')));
+check('findings: plain text has its offsets from the start', [4], array_map(static fn ($f): int => $f->offset, $finder->findings("the 1930's", new Options(mode: 'text'))));
+check('findings: a plural without the apostrophe, a possessive of a word and a leading apostrophe are not found', [], $finder->findings('<p>the 1930s, the dog\'s bowl, the \'90s, 1930\'s1 and A1\'s</p>'));
+check('findings: code, attributes, scripts, comments and an off element are not read', [], $finder->findings('<p title="1930\'s"><code>1930\'s</code></p><script>var a = "1930\'s";</script><!-- 1930\'s --><div data-sorts="off">1930\'s</div><pre>1930\'s</pre>'));
+check('findings: a title is read, as apply() reads it', [['numerical-plural', "1930's", '1930s']], $summary($finder->findings("<title>The 1930's</title>")));
+check('findings: nothing found is an empty list', [], $finder->findings('<p>Nothing to see.</p>'));
+check('findings: an input that is not UTF-8 has none', [], $finder->findings("1930's \xFF"));
+check('findings: an empty input has none', [], $finder->findings(''));
+check('findings: no rule switch, locale or variant changes them', $summary($found), $summary($finder->findings($html, new Options(locale: 'de', rules: array_fill_keys(array_map(static fn ($r): string => $r->handle(), $finder->rules()), false)))));
+check('findings: the call leaves a later apply() as it would have been', $finder->apply($html), (new Engine())->apply($html));
+check('findings: lastError is not set by it', null, $finder->lastError());
+
+// ---- The Bringhurst preset (D817) -------------------------------------------
+
+use iceboxind\sorts\engine\Presets;
+
+$fine = new Engine(new Options(preset: Options::PRESET_BRINGHURST));
+check('preset: Options has none by default and keeps one through with()', ['', 'bringhurst'], [(new Options())->preset, (new Options())->with(preset: 'bringhurst', locale: 'de')->preset]);
+check('preset: its rules and variants are data a caller can read', [true, ['en-US' => 'spaced-en-dash'], [], []], [Presets::rules('bringhurst')['ranges'], Presets::variants('bringhurst'), Presets::rules(''), Presets::variants('nonsense')]);
+check('preset: a page it changes', '<p>8½ × 11 – 4:30–5:00</p>', $fine->apply('<p>8 1/2 x 11 -- 4:30-5:00</p>'));
+check('preset: the same page without it', '<p>8 1/2 x 11 — 4:30-5:00</p>', (new Engine())->apply('<p>8 1/2 x 11 -- 4:30-5:00</p>'));
+check('preset: a rule in the options wins, off', '<p>8 1/2 x 11 – 4:30–5:00</p>', $fine->apply('<p>8 1/2 x 11 -- 4:30-5:00</p>', [], new Options(preset: 'bringhurst', rules: ['fractions' => false, 'multiplication' => false])));
+check('preset: a rule in the options wins, on, without the preset', '<p>8½ x 11 — 4:30-5:00</p>', (new Engine())->apply('<p>8 1/2 x 11 -- 4:30-5:00</p>', [], new Options(rules: ['fractions' => true])));
+check('preset: the allowed list still caps it', '<p>pages 10-12 and 8 1/2</p>', $fine->apply('<p>pages 10-12 and 8 1/2</p>', [], new Options(preset: 'bringhurst', allowed: ['quotes', 'dashes'])));
+check('preset: a rule named in a call still runs without it', '<p>—' . "\u{202F}" . 'One</p>', (new Engine())->apply('<p>-- One</p>', ['dialogue-dash']));
+check('preset: a data-sorts-rules scope still runs without it', '<p data-sorts-rules="ranges">pages 10–12</p><p>pages 10-12</p>', (new Engine())->apply('<p data-sorts-rules="ranges">pages 10-12</p><p>pages 10-12</p>'));
+check('preset: data-sorts="off" is respected', '<p data-sorts="off">a—b 8 1/2</p>', $fine->apply('<p data-sorts="off">a—b 8 1/2</p>'));
+check('preset: a lang attribute switches the locale and the spacing with it', "<p lang=\"it\">«\u{202F}Sì\u{202F}»</p><p lang=\"de\">»Ja«</p><p>«Sì»</p>", $fine->apply('<p lang="it">«Sì»</p><p lang="de">»Ja«</p><p>«Sì»</p>'));
+$registry = new LocaleRegistry();
+$fine->apply('<p>«Sì»</p><p lang="it">«Sì»</p>', [], new Options(locale: 'it', preset: 'bringhurst'));
+check('preset: it leaves the registry’s locale as it was', [[], ['“', '”']], [$registry->resolve('it')->spacing(), $registry->resolve('en-US')->quotes()]);
+$battery = ['-- So this.', 'a—b', 'wait…then', 'wait...then', '<p>«Sì»</p>', 'pages 10-12 and 8 1/2 x 11 at 4:30-5:00', 'a - b'];
+check('preset: off, the rules it adds stay off', array_map(static fn (string $s): string => (new Engine())->apply($s), $battery), array_map(static fn (string $s): string => (new Engine())->apply($s, [], new Options(rules: ['typed-dashes' => false, 'dialogue-dash' => false, 'ellipsis-spacing' => false])), $battery));
+check('preset: off, the new rules change nothing a page had', ['— So this.', 'a—b', 'wait…then', 'wait…then', '<p>«Sì»</p>', 'pages 10-12 and 8 1/2 x 11 at 4:30-5:00', 'a - b'], array_map(static fn (string $s): string => (new Engine())->apply($s), $battery));
+
+// ---- Linear time for the D817–D859 work ---------------------------------------
+//
+// Each of these puts one construct in a single paragraph, 4,096 and 16,384 times (a few hundred KB, under the page pass's
+// own 1,000,000 byte limit): 4× the input must take under 8× the time.
+
+$guard = static function (string $name, string $unit, ?Options $options = null) use ($slower): void {
+    $page = static fn (int $n): string => '<p>' . str_repeat($unit, $n) . '</p>';
+    [$ratio, $a, $b] = $slower($page(4_096), $page(16_384), $options);
+    check(sprintf('perf guard: %s 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $name, $ratio, $a, $b), true, $ratio < 8);
+};
+$guard('word-initial apostrophes', "'Áshįįh ");
+$guard('honorifics with and without a period', 'Main St Louis and Dr Smith, Mrs. Jones ');
+$guard('mixed numbers and fractions before an x', '8 1/2 x 11½ x 3 ', new Options(rules: ['fractions' => true, 'multiplication' => true]));
+$guard('clock-time ranges', '4:30-5:00 and 22:00-06:00 ', new Options(rules: ['ranges' => true]));
+$guard('the dash variant', 'a - b -- c --- d ', new Options(variants: ['en-US' => 'spaced-en-dash']));
+$guard('the Bringhurst preset', 'wait...then a—b 8 1/2 x 11 4:30-5:00 -- ok «Sì» ', new Options(preset: 'bringhurst'));
+$findingsTime = static function (string $html) use ($finder): float {
+    $best = INF;
+    for ($try = 0; $try < 3; $try++) {
+        $t = hrtime(true);
+        $finder->findings($html);
+        $best = min($best, (hrtime(true) - $t) / 1e6);
+    }
+    return $best;
+};
+$small = $findingsTime('<p>' . str_repeat("1930's ", 4_096) . '</p>');
+$large = $findingsTime('<p>' . str_repeat("1930's ", 16_384) . '</p>');
+check(sprintf('perf guard: findings() on a paragraph 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $large / max($small, 0.001), $small, $large), true, $large / max($small, 0.001) < 8);

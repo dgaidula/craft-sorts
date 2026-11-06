@@ -144,10 +144,90 @@
 < Don't say "no" at six o'clock.
 > Don’t say “no” at six o’clock.
 
-@ a-german-apostrophe-differs-from-closing-quote only=quotes,apostrophes,primes locale=de
+@ a-german-apostrophe-differs-from-closing-quote only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < 'geht's nicht'
 > ‚geht’s nicht‘
 
-@ a-german-quote-and-apostrophe only=quotes,apostrophes,primes locale=de
+@ a-german-quote-and-apostrophe only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
 < "Er sagte 'nein', weil's regnet"
 > „Er sagte ‚nein‘, weil’s regnet“
+
+# The same two cases on the book default (D844), where the closing mark is « and ‹.
+
+@ a-german-book-apostrophe-differs-from-closing-quote only=quotes,apostrophes,primes locale=de
+< 'geht's nicht'
+> ›geht’s nicht‹
+
+@ a-german-book-quote-and-apostrophe only=quotes,apostrophes,primes locale=de
+< "Er sagte 'nein', weil's regnet"
+> »Er sagte ›nein‹, weil’s regnet«
+
+# ---- B38 (Bringhurst 5.5.2): a ’ at the start of a word with nothing later to close it is an apostrophe ----
+
+@ a-navajo-word-initial-apostrophes only=quotes,apostrophes,primes
+< Navajo 'Áshįįh 'Asdzáán
+> Navajo ’Áshįįh ’Asdzáán
+
+@ a-dutch-s-hertogenbosch only=quotes,apostrophes,primes
+< in 's-Hertogenbosch
+> in ’s-Hertogenbosch
+
+@ a-word-initial-apostrophe-at-the-start-of-the-text only=quotes,apostrophes,primes
+< 'Aiea is on Oahu.
+> ’Aiea is on Oahu.
+
+@ a-word-initial-apostrophe-before-a-double-quotation only=quotes,apostrophes,primes
+< The 'Asdzáán said "yes"
+> The ’Asdzáán said “yes”
+
+@ a-word-initial-apostrophe-in-entity-form only=quotes,apostrophes,primes
+< Navajo &#39;Áshįįh and &apos;Asdzáán
+> Navajo ’Áshįįh and ’Asdzáán
+
+@ a-word-initial-apostrophe-across-inline-tags only=quotes,apostrophes,primes
+< <p>'Áshįįh <b>and</b> 'Asdzáán</p>
+> <p>’Áshįįh <b>and</b> ’Asdzáán</p>
+
+@ a-word-initial-apostrophe-in-en-GB only=quotes,apostrophes,primes locale=en-GB
+< Navajo 'Áshįįh 'Asdzáán
+> Navajo ’Áshįįh ’Asdzáán
+
+@ a-word-initial-apostrophe-in-de only=quotes,apostrophes,primes locale=de
+< Navajo 'Áshįįh 'Asdzáán
+> Navajo ’Áshįįh ’Asdzáán
+
+@ a-word-initial-apostrophe-in-text-mode only=quotes,apostrophes,primes mode=text
+< Navajo 'Áshįįh 'Asdzáán
+> Navajo ’Áshįįh ’Asdzáán
+
+@ a-word-initial-apostrophe-in-depth-mode only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< Navajo 'Áshįįh 'Asdzáán
+> Navajo ’Áshįįh ’Asdzáán
+
+@ a-word-initial-mark-with-a-closing-mark-is-a-quotation only=quotes,apostrophes,primes
+< He said 'Áshįįh' twice.
+> He said ‘Áshįįh’ twice.
+
+@ a-word-initial-mark-closed-by-a-later-sentence-is-a-quotation only=quotes,apostrophes,primes
+< 'Áshįįh is a name. Say it twice.'
+> ‘Áshįįh is a name. Say it twice.’
+
+@ a-word-initial-mark-closed-in-a-later-run-is-a-quotation only=quotes,apostrophes,primes
+< <p>'Áshįįh is a <b>name</b> and I like it.'</p>
+> <p>‘Áshįįh is a <b>name</b> and I like it.’</p>
+
+@ a-word-initial-mark-closed-by-a-curly-mark-is-a-quotation only=quotes,apostrophes,primes
+< 'Áshįįh is a name.’
+> ‘Áshįįh is a name.’
+
+@ a-word-initial-mark-inside-an-open-quotation-keeps-its-reading only=quotes,apostrophes,primes
+< "He's from the 'hood," she said.
+> “He’s from the ‘hood,” she said.
+
+@ a-word-initial-mark-before-a-digit-is-not-this-rule only=quotes,apostrophes,primes
+< the '90s were fun
+> the ’90s were fun
+
+@ a-mark-after-a-word-is-not-word-initial only=quotes,apostrophes,primes
+< Navajo Áshįįh' and more
+> Navajo Áshįįh’ and more

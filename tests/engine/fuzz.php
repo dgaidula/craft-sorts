@@ -6,7 +6,9 @@
  * - every page, all rules off: the output must be byte-identical to the input;
  * - pages built from nothing convertible, default rules on: byte-identical too;
  * - pages with convertible text, default rules on: running twice must equal
- *   running once, and the number of "<" must not change.
+ *   running once, and the number of "<" must not change;
+ * - the same with the Bringhurst preset (D817): all rules off, byte-identical; nothing
+ *   convertible, the preset on, byte-identical; with convertible text, twice equals once.
  *
  * The pages are generated from FUZZ_SEED, so a failure reproduces. No page is
  * scraped from the web.
@@ -167,6 +169,7 @@ final class FuzzPages
 $engine = newEngine();
 $handles = array_map(static fn ($r) => $r->handle(), $engine->rules());
 $off = new Options(rules: array_fill_keys($handles, false));
+$bringhurst = new Options(preset: Options::PRESET_BRINGHURST);
 $byteSum = 0;
 $changedPages = 0;
 $total = FUZZ_PAGES + FUZZ_LARGE_PAGES;
@@ -180,9 +183,14 @@ for ($i = 0; $i < $total; $i++) {
     $byteSum += strlen($page);
 
     check("fuzz #$i rules off: byte-identical", $page, $engine->apply($page, [], $off));
+    check("fuzz #$i rules off, Bringhurst preset: byte-identical", $page, $engine->apply($page, [], $off->with(preset: Options::PRESET_BRINGHURST)));
     if ($inert) {
         check("fuzz #$i nothing convertible, defaults on: byte-identical", $page, $engine->apply($page));
+        check("fuzz #$i nothing convertible, Bringhurst preset: byte-identical", $page, $engine->apply($page, [], $bringhurst));
     } else {
+        $fine = $engine->apply($page, [], $bringhurst);
+        check("fuzz #$i Bringhurst preset: running twice equals once", $fine, $engine->apply($fine, [], $bringhurst));
+        check("fuzz #$i Bringhurst preset: markup characters unchanged", substr_count($page, '<') . '/' . substr_count($page, '>'), substr_count($fine, '<') . '/' . substr_count($fine, '>'));
         $once = $engine->apply($page);
         $changedPages += $once !== $page ? 1 : 0;
         check("fuzz #$i defaults on: running twice equals once", $once, $engine->apply($once));

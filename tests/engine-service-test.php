@@ -38,8 +38,8 @@ sortsTry('pro', function () {
     $e = sorts()->engine;
     sortsEq('pro: symbols and no-break spaces', "© 2026 and 10\u{00A0}kg", $e->apply('(c) 2026 and 10 kg'));
     sortsEq('pro: French site, French quotes and spacing', "\u{00AB}\u{202F}Bonjour\u{202F}\u{00BB}", $e->apply('"Bonjour"', [], 'fr'));
-    sortsEq('pro: German by language', '„Hallo“', $e->apply('"Hallo"', [], 'de'));
-    sortsEq('pro: data-sorts-lang switches locale', '<p data-sorts-lang="de">„x“</p>', $e->apply('<p data-sorts-lang="de">"x"</p>'));
+    sortsEq('pro: German by language (book style by default, D844)', '»Hallo«', $e->apply('"Hallo"', [], 'de'));
+    sortsEq('pro: data-sorts-lang switches locale', '<p data-sorts-lang="de">»x«</p>', $e->apply('<p data-sorts-lang="de">"x"</p>'));
     sortsEq('pro: an unknown handle is an error', 'No rule is registered with the handle “nope”.', (function () use ($e) {
         try {
             $e->apply('x', ['nope']);
@@ -69,9 +69,13 @@ sortsTry('pro', function () {
     sortsEq('pro: the variant leaves en-US alone', '“She said ‘no’”', $e->apply('"She said \'no\'"', [], 'en-US'));
     sortsEq('pro: a quotation inside one of the same kind takes the other level', '“She said ‘no’ today”', $e->apply('"She said "no" today"', [], 'en-US'));
 
-    sortsConfigure('pro', ['variants' => ['de' => 'book', 'nl' => 'double-outer']]);
+    sortsConfigure('pro');
+    sortsEq('pro: de is book style by default (D844)', '»Er sagte ›nein‹«', sorts()->engine->apply('"Er sagte \'nein\'"', [], 'de'));
+    sortsEq('pro: de-AT follows de', '»Er sagte ›nein‹«', sorts()->engine->apply('"Er sagte \'nein\'"', [], 'de-AT'));
+    sortsConfigure('pro', ['variants' => ['de' => 'low-high', 'nl' => 'double-outer']]);
     $e = sorts()->engine;
-    sortsEq('pro: de book variant', '»Er sagte ›nein‹«', $e->apply('"Er sagte \'nein\'"', [], 'de'));
+    sortsEq('pro: de low-high variant (CLDR’s marks)', '„Er sagte ‚nein‘“', $e->apply('"Er sagte \'nein\'"', [], 'de'));
+    sortsEq('pro: de-CH keeps its own default under a de variant', '„Er sagte ‚nein‘“', $e->apply('"Er sagte \'nein\'"', [], 'de-CH'));
     sortsEq('pro: nl double-outer variant', '“Hij zei ‘nee’”', $e->apply('"Hij zei \'nee\'"', [], 'nl'));
     sortsEq('pro: the de and nl variants leave en-US alone', '“She said ‘no’”', $e->apply('"She said \'no\'"', [], 'en-US'));
 
@@ -90,6 +94,30 @@ sortsTry('stored options', function () {
     $o = $svc->storedOptions('en-US', 'text');
     sortsEq('stored: only character rules run', "© ½ “a” and 10 kg", $svc->applyWith('(c) 1/2 "a" and 10 kg', $o));
     sortsEq('stored: spacing is left to the page pass', 'Bonjour : «x»', $svc->applyWith('Bonjour : "x"', $svc->storedOptions('fr', 'text')));
+});
+
+sortsTry('fine typography, the Bringhurst preset (D817)', function () {
+    $page = '8 1/2 x 11 -- a—b and pages 10-12';
+    sortsConfigure('pro');
+    sortsEq('fine: off by default, the page is as it always was', '8 1/2 x 11 — a—b and pages 10-12', sorts()->engine->apply($page));
+    sortsConfigure('pro', ['fineTypography' => true]);
+    sortsEq('fine: on, a spaced en dash, a typed em dash restyled, fractions, multiplication and ranges', '8½ × 11 – a – b and pages 10–12', sorts()->engine->apply($page));
+    sortsEq('fine: dialogue opens with an em dash and a narrow no-break space', "—\u{202F}So it ends.", sorts()->engine->apply('-- So it ends.'));
+    sortsEq('fine: thin spaces inside guillemets, but not in German', ["«\u{202F}Sì\u{202F}»", '»Ja«'], [sorts()->engine->apply('«Sì»', [], 'it'), sorts()->engine->apply('»Ja«', [], 'de')]);
+    sortsEq('fine: an ellipsis between words in English, not in French', ['wait … then', 'attends…puis'], [sorts()->engine->apply('wait...then'), sorts()->engine->apply('attends...puis', [], 'fr')]);
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dashes' => false, 'multiplication' => false]]);
+    sortsEq('fine: a switch moved off its default wins (dashes off); one switched off that is off by default is not moved, so the preset decides it', '8½ × 11 -- a – b and pages 10–12', sorts()->engine->apply($page));
+    sortsConfigure('pro', ['fineTypography' => true]);
+    sortsEq('fine: a variant chosen for the language wins (an unknown name, which settings refuse, is CLDR’s default)', '8½ × 11 — a—b and pages 10–12', sorts()->engine->applyWith($page, sorts()->engine->options()->with(variants: ['en-US' => 'nonsense'])));
+    sortsConfigure('lite', ['fineTypography' => true]);
+    sortsEq('lite: the setting is stored but never read', '8 1/2 x 11 — a—b and pages 10-12', sorts()->engine->apply($page));
+    sortsEq('lite: options asked for the preset are set to none', '8 1/2 x 11 — a—b and pages 10-12', sorts()->engine->applyWith($page, sorts()->engine->options()->with(preset: 'bringhurst')));
+    sortsConfigure('pro', ['fineTypography' => true]);
+    $svc = sorts()->engine;
+    $o = $svc->storedOptions('en-US', 'text');
+    sortsEq('fine, stored: characters only (a typed em dash, fractions, ranges), no spacing', 'a – b and 8½ and 4:30–5:00 wait…then', $svc->applyStored('a—b and 8 1/2 and 4:30-5:00 wait...then', $o));
+    sortsEq('fine, stored: no dialogue dash (the dash is still the spaced en dash) and no guillemet spaces', ['– So.', '«Sì»'], [$svc->applyStored('-- So.', $svc->storedOptions('en-US', 'text')), $svc->applyStored('«Sì»', $svc->storedOptions('it', 'text'))]);
+    sortsEq('fine, stored: the options a queued job carries keep the preset', 'bringhurst', (new \iceboxind\sorts\engine\Options(...get_object_vars($svc->storedOptions('en-US', 'html'))))->preset);
 });
 
 sortsDefaults();

@@ -309,15 +309,15 @@
 
 @ h-lang-switch-paragraphs only=quotes,apostrophes,primes
 < <p lang="de">"a"</p><p lang="fr">"b"</p><p>"c"</p>
-> <p lang="de">„a“</p><p lang="fr">«b»</p><p>“c”</p>
+> <p lang="de">»a«</p><p lang="fr">«b»</p><p>“c”</p>
 
 @ h-lang-ancestor-wins-over-default only=quotes,apostrophes,primes locale=de
 < <div lang="en-GB"><p>"a"</p></div><p>"b"</p>
-> <div lang="en-GB"><p>“a”</p></div><p>„b“</p>
+> <div lang="en-GB"><p>“a”</p></div><p>»b«</p>
 
 @ h-lang-nearest-ancestor only=quotes,apostrophes,primes
 < <div lang="de"><p>"a"</p><p lang="fr">"b"</p><p>"c"</p></div>
-> <div lang="de"><p>„a“</p><p lang="fr">«b»</p><p>„c“</p></div>
+> <div lang="de"><p>»a«</p><p lang="fr">«b»</p><p>»c«</p></div>
 
 @ h-lang-inline-span-mid-sentence only=quotes,apostrophes,primes
 < <p>Say <span lang="fr">"oui"</span> now "ok"</p>
@@ -329,7 +329,7 @@
 
 @ h-lang-region-falls-to-primary only=quotes,apostrophes,primes
 < <p lang="de-AT">"a"</p><p lang="pt-BR">"b"</p>
-> <p lang="de-AT">„a“</p><p lang="pt-BR">“b”</p>
+> <p lang="de-AT">»a«</p><p lang="pt-BR">“b”</p>
 
 @ h-lang-underscore-and-case only=quotes,apostrophes,primes
 < <p lang="DE_ch">"a"</p>
@@ -337,7 +337,7 @@
 
 @ h-lang-unknown-uses-default only=quotes,apostrophes,primes locale=de
 < <p lang="xx">"a"</p>
-> <p lang="xx">„a“</p>
+> <p lang="xx">»a«</p>
 
 @ h-lang-unknown-without-default-is-en-US only=quotes,apostrophes,primes
 < <p lang="xx">"a"</p>
@@ -345,7 +345,7 @@
 
 @ h-lang-empty-ignored only=quotes,apostrophes,primes locale=de
 < <p lang="">"a"</p>
-> <p lang="">„a“</p>
+> <p lang="">»a«</p>
 
 @ h-lang-no-to-nb only=quotes,apostrophes,primes
 < <p lang="no">"a"</p>
@@ -361,15 +361,15 @@
 
 @ h-lang-data-sorts-lang-on-ancestor-lang-on-child only=quotes,apostrophes,primes
 < <div data-sorts-lang="fr"><p lang="de">"a"</p></div>
-> <div data-sorts-lang="fr"><p lang="de">„a“</p></div>
+> <div data-sorts-lang="fr"><p lang="de">»a«</p></div>
 
 @ h-lang-resets-after-element only=quotes,apostrophes,primes
 < <p lang="de">"a"</p><p>"b"</p>
-> <p lang="de">„a“</p><p>“b”</p>
+> <p lang="de">»a«</p><p>“b”</p>
 
 @ h-lang-implied-end-of-p only=quotes,apostrophes,primes
 < <p lang="de">"a"<p>"b"
-> <p lang="de">„a“<p>“b”
+> <p lang="de">»a«<p>“b”
 
 @ h-lang-dash-follows-locale only=dashes
 < <p lang="en-GB">a--b</p><p>a--b</p>
@@ -385,7 +385,7 @@
 
 @ h-lang-with-attribute-order-and-case only=quotes,apostrophes,primes
 < <p CLASS="a" LANG="de">"x"</p>
-> <p CLASS="a" LANG="de">„x“</p>
+> <p CLASS="a" LANG="de">»x«</p>
 
 @ h-scope-attribute-enables-rule 
 < <p data-sorts-rules="ranges">pages 10-12</p><p>pages 10-12</p>
@@ -573,7 +573,7 @@
 
 @ h-lang-empty-is-the-default
 < <div lang="de"><p lang="">"x"</p><p>"y"</p></div>
-> <div lang="de"><p lang="">“x”</p><p>„y“</p></div>
+> <div lang="de"><p lang="">“x”</p><p>»y«</p></div>
 
 @ h-lang-empty-is-the-default-fr locale=fr
 < <div lang="de"><p lang=" ">"x"</p></div>
@@ -581,7 +581,7 @@
 
 @ h-sorts-lang-empty-still-inherits
 < <div lang="de"><p data-sorts-lang="" lang="fr">"x"</p></div>
-> <div lang="de"><p data-sorts-lang="" lang="fr">„x“</p></div>
+> <div lang="de"><p data-sorts-lang="" lang="fr">»x«</p></div>
 
 # Comments end at -->, never ->; attributes in single quotes may hold > and ".
 

@@ -43,15 +43,15 @@
 
 @ loc-de-double only=quotes,apostrophes,primes locale=de
 < He said "yes" today
-> He said „yes“ today
+> He said »yes« today
 
 @ loc-de-nested only=quotes,apostrophes,primes locale=de
 < "She said 'no'"
-> „She said ‚no‘“
+> »She said ›no‹«
 
 @ loc-de-three-deep only=quotes,apostrophes,primes locale=de
 < "A 'B "C"'"
-> „A ‚B „C“‘“
+> »A ›B »C«‹«
 
 @ loc-de-apostrophe only=quotes,apostrophes,primes locale=de
 < don't and '90s
@@ -332,7 +332,7 @@
 
 @ loc-resolve-de-AT only=quotes locale=de-AT
 < "a"
-> „a“
+> »a«
 
 @ loc-resolve-de-underscore-CH only=quotes locale=de_CH
 < "a"
@@ -360,7 +360,7 @@
 
 @ loc-resolve-uppercase only=quotes locale=DE
 < "a"
-> „a“
+> »a«
 
 @ loc-resolve-unknown-falls-to-en-US only=quotes locale=xx
 < "a"

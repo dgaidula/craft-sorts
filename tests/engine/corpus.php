@@ -5,7 +5,7 @@
  * own output, which must come back unchanged (idempotence).
  *
  * Format of corpus/*.txt (one case per `@` header):
- *   @ <name> [locale=fr] [mode=text] [only=h1,h2] [on=h] [off=h] [named=h] [config={json}]
+ *   @ <name> [locale=fr] [mode=text] [only=h1,h2] [on=h] [off=h] [named=h] [preset=bringhurst] [config={json}]
  *   < input line (repeat for more lines; joined with \n)
  *   > expected line (repeat likewise; leave out when the input must come back unchanged)
  * `\u{A0}` style escapes work in input and expected. `#` starts a comment line.
@@ -91,6 +91,7 @@ function caseOptions(Engine $engine, array $attrs): array
         skipClasses: $config['skipClasses'] ?? [],
         variants: $config['variants'] ?? [],
         quoteNesting: $config['quoteNesting'] ?? Options::NESTING_TYPED,
+        preset: $attrs['preset'] ?? Options::PRESET_NONE,
     );
     $named = array_values(array_filter(explode(',', $attrs['named'] ?? '')));
     return [$options, $named];

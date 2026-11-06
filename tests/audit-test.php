@@ -105,6 +105,28 @@ sortsTry('the fix is quiet', function () use (&$a, &$b, &$c, $revisions, $update
     sortsEq('fix: a second scan finds nothing left', [], $result['items']);
 });
 
+sortsTry('flagged, not changed (D859)', function () use (&$b, $sectionId, $primary, $updated, $revisions) {
+    sortsConfigure('pro');
+    // Already curly, as the fix leaves them, so there is nothing to change: the plurals are only flagged.
+    $f = sortsEntry(['title' => 'The 1930’s', 'sortsPlain' => 'Clean text', 'sortsBodySite' => '<p>Built in the 1950’s and 2 × 4’s.</p>']);
+    $before = [$revisions($f->id), $updated($f->id)];
+    $result = sorts()->auditScanner->scan($sectionId(), $primary(), 0);
+    $flagged = array_column($result['flagged'], null, 'id');
+    sortsCheck('flagged: the entry with plurals is listed', isset($flagged[$f->id]), json_encode(array_keys($flagged)));
+    sortsCheck('flagged: a clean entry is not', !isset($flagged[$b->id]));
+    sortsCheck('flagged: it is not offered for a fix, for there is nothing to change', !in_array($f->id, array_column($result['items'], 'id'), true));
+    $flags = $flagged[$f->id]['flags'] ?? [];
+    sortsEq('flagged: names each value that has one', ['Title', 'Sorts Body Site'], array_column($flags, 'label'));
+    sortsEq('flagged: the title note shows the match, what to write and the words around it', [['match' => '1930’s', 'suggestion' => '1930s', 'context' => 'The 1930’s']], $flags[0]['notes'] ?? null);
+    sortsEq('flagged: a rich-text note shows plain words, and finds every plural', [['match' => '1950’s', 'suggestion' => '1950s', 'context' => 'Built in the 1950’s and 2 ×'], ['match' => '4’s', 'suggestion' => '4s', 'context' => 'and 2 × 4’s.']], $flags[1]['notes'] ?? null);
+    $page = (string) sortsCpClient()->get('/admin/utilities/sorts?scan=1&section=' . $sectionId() . '&site=' . $primary())->getBody();
+    sortsCheck('flagged: the page has a section for them', str_contains($page, 'Flagged, not changed') && str_contains($page, 'id="sorts-flagged"'));
+    sortsCheck('flagged: the page shows what was found and what to write', str_contains($page, 'The 1930’s') && str_contains($page, '1930s') && str_contains($page, 'Sorts Body Site'));
+    sortsCheck('flagged: the page gives them no tick box', !str_contains($page, 'value="' . $f->id . ':' . $primary() . '"'));
+    sortsEq('flagged: nothing stored changed', 'The 1930’s', sortsFresh($f->id)->title);
+    sortsEq('flagged: the entry has the same revision count and Date Updated', $before, [$revisions($f->id), $updated($f->id)]);
+});
+
 sortsTry('the revision box', function () use (&$a, $revisions, $updated, $primary, $postFix, $sectionId) {
     sortsConfigure('pro');
     $d = sortsEntry(['title' => 'Fourth "three"']);

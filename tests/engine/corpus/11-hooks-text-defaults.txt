@@ -171,7 +171,7 @@
 
 @ d-paragraph-de locale=de
 < <p>"Er sagte 'nein'" -- und ging...</p>
-> <p>„Er sagte ‚nein‘“ – und ging…</p>
+> <p>»Er sagte ›nein‹« – und ging…</p>
 
 @ d-paragraph-en-GB locale=en-GB
 < <p>She said "no" -- twice.</p>

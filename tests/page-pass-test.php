@@ -17,6 +17,16 @@ sortsTry('lite', function () use ($body, $has, $straight) {
     sortsCheck('lite: the page pass does nothing (straight quotes stay)', $has($body($r), $straight), substr($body($r), 0, 600));
 });
 
+sortsTry('pro, fine typography (D817)', function () use ($body, $has) {
+    sortsConfigure('pro', ['fineTypography' => true]);
+    $html = $body(sortsHttp()->get('/sorts-lab'));
+    sortsCheck('fine: a break is a spaced en dash', $has($html, '“Hello” – she said'), $html);
+    sortsCheck('fine: the French text keeps its narrow no-break spaces', $has($html, "«\u{202F}Bonjour\u{202F}»"), $html);
+    sortsConfigure('lite', ['fineTypography' => true]);
+    sortsCheck('fine: Lite does nothing, as without it', $has($body(sortsHttp()->get('/sorts-lab')), '"Hello" -- she said'));
+    sortsConfigure('pro');
+});
+
 sortsTry('pro, on', function () use ($body, $has, $curly) {
     sortsConfigure('pro');
     $http = sortsHttp();

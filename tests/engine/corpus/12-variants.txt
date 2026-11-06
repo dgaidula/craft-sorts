@@ -98,7 +98,7 @@
 
 @ v-en-GB-single-outer-not-for-other-locales only=quotes,apostrophes,primes locale=de config={"variants":{"en-GB":"single-outer"}}
 < "She said 'no'"
-> „She said ‚no‘“
+> »She said ›no‹«
 
 @ v-unknown-variant-name-falls-back only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"nonsense"}}
 < "She said 'no'"
@@ -110,7 +110,7 @@
 
 @ v-variant-for-locale-without-it-falls-back only=quotes,apostrophes,primes locale=de config={"variants":{"de":"single-outer"}}
 < "She said 'no'"
-> „She said ‚no‘“
+> »She said ›no‹«
 
 @ v-variant-for-unknown-locale-key-ignored only=quotes,apostrophes,primes locale=en-GB config={"variants":{"xx":"single-outer"}}
 < "She said 'no'"
@@ -120,3 +120,41 @@
 < a--b
 > a – b
 
+
+# ---- D844: de defaults to book style; CLDR’s pair is the variant low-high ----
+
+@ v-de-default-is-book-style only=quotes,apostrophes,primes locale=de
+< "Er sagte 'nein'."
+> »Er sagte ›nein‹.«
+
+@ v-de-low-high-is-cldrs-pair only=quotes,apostrophes,primes locale=de config={"variants":{"de":"low-high"}}
+< "Er sagte 'nein'."
+> „Er sagte ‚nein‘.“
+
+@ v-de-AT-inherits-the-book-default only=quotes,apostrophes,primes locale=de-AT
+< "Er sagte 'nein'."
+> »Er sagte ›nein‹.«
+
+@ v-de-DE-inherits-the-book-default only=quotes,apostrophes,primes locale=de-DE
+< "Er sagte 'nein'."
+> »Er sagte ›nein‹.«
+
+@ v-de-AT-takes-the-de-low-high-variant only=quotes,apostrophes,primes locale=de-AT config={"variants":{"de":"low-high"}}
+< "Er sagte 'nein'."
+> „Er sagte ‚nein‘.“
+
+@ v-de-CH-keeps-its-own-default only=quotes,apostrophes,primes locale=de-CH
+< "Er sagte 'nein'."
+> „Er sagte ‚nein‘.“
+
+@ v-de-CH-guillemets-variant-is-unchanged only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de-CH":"guillemets"}}
+< "Er sagte 'nein'."
+> «Er sagte ‹nein›.»
+
+@ v-de-CH-ignores-the-de-variant only=quotes,apostrophes,primes locale=de-CH config={"variants":{"de":"low-high"}}
+< "Er sagte 'nein'."
+> „Er sagte ‚nein‘.“
+
+@ v-de-the-retired-name-book-is-the-default only=quotes,apostrophes,primes locale=de config={"variants":{"de":"book"}}
+< "Er sagte 'nein'."
+> »Er sagte ›nein‹.«
