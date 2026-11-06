@@ -206,6 +206,14 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
 - **D823 — `de` book style: decided 2026-11-05 (Dan: y, “I prefer german book style”).** Variant `»…« ›…‹`, citing
   Dan (typographer) and *Duden Band 9* (5th ed., 2001); per D816 CLDR’s „…“ stays `de`’s default.
 - **D824 — `nl` double-outer: decided 2026-11-05 (Dan: y).** Variant `“…” ‘…’`, citing taaladvies.net (Taalunie, 2021).
+- **D829 — second fix round for D818–D824: decided 2026-11-05 (Dan: y); landed `c7f6856`, `94880b6`.** Two rules
+  as the orchestrator ruled them after the fixer measured the literal versions:
+  - **A straight closing mark** closes the innermost open quotation and takes its closing glyph **when that quotation
+    was opened with a curly mark** (`«Disse “sì" …»` → `“sì”`); a quotation opened with a straight mark still closes
+    by kind. Applied literally, the rule changed 1,209 generated rows in every locale and broke ordinary dialogue
+    (`"He's from the 'hood," she said. "Yes," he said.` pushed every later quotation down a level).
+  - **An inch mark, foot mark or possessive** is judged against the quotation the mark would close, not every open
+    one; checking all of them turned real closing marks into primes (`“He said ‘I was 6' then.”`).
 - **D814 — editions and price: decided 2026-11-05 (Dan: y).** Lite free; Pro **$39 + $19/yr** at launch (paid
   installs are flat across price bands, and freemium newcomers out-install paid-only ones; both prices can rise
   later, since Craft honours only the renewal price in the 30-day reminder).
