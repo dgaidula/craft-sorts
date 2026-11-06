@@ -8,7 +8,9 @@ use iceboxind\sorts\engine\Run;
 /**
  * 1/2 to ½, for the fractions Unicode has a character for. Off by default. It
  * leaves dates (1/2/2024), URLs and paths (/1/2) and anything glued to letters or digits.
- * A mixed number written 1-1/2 becomes 1-½: the hyphen is the author’s.
+ * A mixed number written 1-1/2 becomes 1-½: the hyphen is the author’s. A whole number of
+ * one to three digits and a space before the fraction join it (8 1/2 becomes 8½, Bringhurst
+ * 5.2.5), unless that number is part of a longer one, a date, a time, a version, a path or a word.
  */
 final class FractionsRule extends AbstractRule
 {
@@ -43,12 +45,19 @@ final class FractionsRule extends AbstractRule
         $text = $run->text();
         $urls = self::urlSpans($text);
         $run->replaceAll(
-            '/(?<!\d)(\d{1,2})\/(\d{1,2})(?!\d)/',
-            function (array $m, int $offset) use ($text, $context, $urls): ?string {
-                if (!isset(self::MAP[$m[0]]) || self::inSpans($urls, $offset)) {
+            '~(?:(?<![\p{L}\p{N}/\\\\.,:;_@#=&%\~+-])(\d{1,3}) )?(?<!\d)(\d{1,2})/(\d{1,2})(?!\d)~u',
+            function (array $m, int $matchOffset) use ($text, $context, $urls): ?string {
+                $whole = $m[1];
+                $fraction = $m[2] . '/' . $m[3];
+                if (!isset(self::MAP[$fraction]) || self::inSpans($urls, $matchOffset)) {
                     return null;
                 }
-                $end = $offset + strlen($m[0]);
+                // The whole number joins only when it is in this run, or what comes before the run allows it.
+                $offset = $matchOffset + ($whole === '' ? 0 : strlen($whole) + 1);
+                if ($whole !== '' && $matchOffset === 0 && preg_match('~[\p{L}\p{N}/\\\\.,:;_@#=&%\~+-]~u', $context->before(1))) {
+                    return $whole . ' ' . self::MAP[$fraction];
+                }
+                $end = $offset + strlen($fraction);
                 $before = self::charBefore($text, $offset, $context);
                 $after = self::charAfter($text, $end, $context);
                 if ($before !== '' && preg_match('/[\p{L}\p{N}\/\\\\.:_@#=&%~+]/u', $before)) {
@@ -64,7 +73,7 @@ final class FractionsRule extends AbstractRule
                 if (preg_match('/^[.,]\d/', $next2)) {
                     return null;
                 }
-                return self::MAP[$m[0]];
+                return $whole . self::MAP[$fraction];
             }
         );
     }

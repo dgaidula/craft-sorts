@@ -61,6 +61,11 @@ final class QuoteScanner
 
     private const DOUBLE_ENTITY = '/^&(?:quot|QUOT|#0*34|#[xX]0*22);$/';
     private const SINGLE_ENTITY = '/^&(?:apos|#0*39|#[xX]0*27);$/';
+    // The single-quote shapes among the curly marks, and a pattern for a single mark in the rest of a flow
+    // that could close a quotation: not after a space or an opening mark, not before a letter or digit. A run
+    // starts and ends in the middle of the flow, so a mark at either end is counted as one that could.
+    private const SINGLE_MARKS = ['‘' => true, '’' => true, '‹' => true, '›' => true];
+    private const CLOSING_SINGLE_MARK = '/(?<![\s(\[{"“‘«‹])(?:\'|&(?:apos|#0*39|#[xX]0*27);)(?![\p{L}\p{N}])|[‘’‹›](?![\p{L}\p{N}])/u';
     private const ANY_DOUBLE = '/"|&(?:quot|QUOT|#0*34|#[xX]0*22);/';
     private const ANY_SINGLE = '/\'|&(?:apos|#0*39|#[xX]0*27);/';
 
@@ -221,7 +226,8 @@ final class QuoteScanner
                     $html,
                     $suffix,
                     $roles,
-                    $curlyPair
+                    $curlyPair,
+                    $stack === []
                 );
             }
 
@@ -308,14 +314,21 @@ final class QuoteScanner
     /**
      * Whether the closing mark of a quotation opened with a curly mark is still to come in the
      * flow after token $k: more of its closing marks than its opening ones. A closing mark that
-     * is also the apostrophe counts only where it is not followed by a letter or digit, nor after
-     * an s with a space and a lowercase word after it (a plural possessive, as decideSingle() reads
-     * one). A pair whose marks are the same glyph (fi, sv) cannot tell its openers from its
-     * closers, so an odd number of its marks still to come counts, as the straight-quote test
-     * counts its pairs.
+     * is also the apostrophe counts only where it is not followed by a letter or digit, and, when
+     * $skipPossessive is true, not after an s with a space and a lowercase word after it (a plural
+     * possessive, as decideSingle() reads one). A pair whose marks are the same glyph (fi, sv)
+     * cannot tell its openers from its closers, so an odd number of its marks still to come counts,
+     * as the straight-quote test counts its pairs.
+     *
+     * $skipPossessive is true on the single-quote path, where a closing ’ after an s is more likely a
+     * possessive than the end of the quotation (R4-1, D850 a), and false on the double-quote path,
+     * where an inch mark is being judged and the ’ after an s is a real closer. The two read the same
+     * pair but count differently, so the flag is part of the cache key: dropping it from the key makes
+     * whichever path asked first decide for the other.
      *
      * @param array{string, string, string, bool, array<string, int>} $pair opening and closing mark, apostrophe, html, roles
      * @param array<string, array<int, int>> $suffix
+     * @param bool $skipPossessive whether a ’ after an s, a space and a lowercase word is not counted as a closer
      */
     private static function closerAhead(array $pair, string $text, array $tokens, int $k, Context $context, array &$suffix, bool $skipPossessive = true): bool
     {
@@ -398,7 +411,8 @@ final class QuoteScanner
         bool $html,
         array &$suffix,
         array $roles,
-        ?array $curlyPair
+        ?array $curlyPair,
+        bool $noneOpen
     ): int {
         if (isset($apostrophes[$offset])) {
             return self::D_APOSTROPHE;
@@ -436,6 +450,12 @@ final class QuoteScanner
             if (preg_match(self::LEADING_WORD, $head) || preg_match(self::LEADING_YEAR, $head)) {
                 return self::D_APOSTROPHE;
             }
+            // 'Áshįįh 'Asdzáán: at the start of a word, with nothing later that could close it, it opens
+            // no quotation (Bringhurst 5.5.2). Only where no quotation is open: inside one, a lone mark is
+            // as likely a nested quotation left open ('hood in dialogue reads either way) and keeps its old reading.
+            if ($opening && $noneOpen && self::singleClosersAfter($text, $tokens, $k, $context, $html, $roles, $suffix) === 0) {
+                return self::D_APOSTROPHE;
+            }
             return self::D_OPEN;
         }
         if (!$opening) {
@@ -455,6 +475,39 @@ final class QuoteScanner
             return $openS ? self::D_CLOSE : self::D_APOSTROPHE;
         }
         return self::D_OPEN;
+    }
+
+    /**
+     * How many single-quote marks that could close a quotation are still to come after token $k: a
+     * straight one after a word, punctuation or a closing mark and before a space, punctuation, a
+     * closing mark or the end, and a curly one the locale closes with (that is not an apostrophe
+     * inside a word). In the rest of the flow the marks are counted by their shape in their own run
+     * (see CLOSING_SINGLE_MARK), so a doubt is read as a possible closer and the mark stays an opening one.
+     *
+     * @param array<string, int> $roles
+     * @param array<string, array<int, int>> $suffix
+     */
+    private static function singleClosersAfter(string $text, array $tokens, int $k, Context $context, bool $html, array $roles, array &$suffix): int
+    {
+        if (!isset($suffix['single-closers'])) {
+            $count = count($tokens);
+            $sums = array_fill(0, $count + 1, 0);
+            for ($i = $count - 1; $i >= 0; $i--) {
+                [$raw, $at] = $tokens[$i];
+                $step = 0;
+                if ($raw === "'" || ($html && $raw[0] === '&' && preg_match(self::SINGLE_ENTITY, $raw))) {
+                    $step = in_array(self::classBefore($text, $at, $context, $html, $roles)[0], [self::WORD, self::PUNCT, self::CLOSE], true)
+                        && in_array(self::classAfter($text, $at + strlen($raw), $context, $html, $roles)[0], [self::START, self::SPACE, self::PUNCT, self::CLOSE], true)
+                        ? 1 : 0;
+                } elseif (isset(self::SINGLE_MARKS[$raw]) && in_array($roles[$raw] ?? null, [self::CLOSE, self::BOTH], true)
+                    && self::classAfter($text, $at + strlen($raw), $context, $html, $roles)[0] !== self::WORD) {
+                    $step = 1;
+                }
+                $sums[$i] = $sums[$i + 1] + $step;
+            }
+            $suffix['single-closers'] = $sums;
+        }
+        return $suffix['single-closers'][$k + 1] + $context->countAfter(self::CLOSING_SINGLE_MARK);
     }
 
     /**

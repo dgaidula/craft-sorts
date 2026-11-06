@@ -11,6 +11,9 @@ use iceboxind\sorts\engine\Run;
  * numbers (555-1234, 555-123-4567), ISBNs, SKUs, dates (2024-01-15, 2024-01)
  * anything inside a URL or a path, and anything glued to letters or other punctuation. A pair whose second
  * number is shorter (1990-95) converts when it reads as a continuation.
+ *
+ * A pair of clock times (4:30-5:00, Bringhurst 5.2.2) converts the same way, with the same
+ * guards, and a time that ends in a UTC offset (2024-01-15 10:30-05:00) is left alone.
  */
 final class RangesRule extends AbstractRule
 {
@@ -39,6 +42,9 @@ final class RangesRule extends AbstractRule
     public function apply(Run $run, Context $context): void
     {
         $urls = self::urlSpans($run->text());
+        if (strpos($run->text(), ':') !== false) {
+            $this->clockTimes($run, $urls);
+        }
         $run->replaceAll(
             '/(?<![\p{L}\p{N}_.,\-\/:@#+=&%~])(' . self::NUMBER . ')-(' . self::NUMBER . ')(?![\p{L}\p{N}_\-\/:@#+=&~]|[.,]\d)/u',
             static function (array $m, int $offset) use ($urls): ?string {
@@ -60,6 +66,30 @@ final class RangesRule extends AbstractRule
                     $fine = (int) $b > (int) substr($a, -strlen($b));
                 }
                 return $fine ? $m[1] . '–' . $m[2] : null;
+            }
+        );
+    }
+
+    /**
+     * 4:30-5:00 to 4:30–5:00. Hours up to 24 and minutes under sixty; either way round,
+     * since a range may run past midnight (22:00-06:00).
+     *
+     * @param list<array{int, int}> $urls
+     */
+    private function clockTimes(Run $run, array $urls): void
+    {
+        $text = $run->text();
+        $run->replaceAll(
+            '/(?<![\p{L}\p{N}_.,\-\/:@#+=&%~])((?:[01]?\d|2[0-4]):[0-5]\d)-((?:[01]?\d|2[0-4]):[0-5]\d)(?![\p{L}\p{N}_\-\/:@#+=&~]|[.,]\d)/u',
+            static function (array $m, int $offset) use ($text, $urls): ?string {
+                if (self::inSpans($urls, $offset)) {
+                    return null;
+                }
+                // 2024-01-15 10:30-05:00 is a time and its UTC offset.
+                if (preg_match('/\d{4}-\d{2}-\d{2} $/', substr($text, max(0, $offset - 11), min(11, $offset)))) {
+                    return null;
+                }
+                return $m[1] . '–' . $m[2];
             }
         );
     }
