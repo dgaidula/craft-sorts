@@ -4,7 +4,9 @@ namespace iceboxind\sorts\engine;
 
 use iceboxind\sorts\engine\rules\ApostrophesRule;
 use iceboxind\sorts\engine\rules\DashesRule;
+use iceboxind\sorts\engine\rules\DialogueDashRule;
 use iceboxind\sorts\engine\rules\EllipsisRule;
+use iceboxind\sorts\engine\rules\EllipsisSpacingRule;
 use iceboxind\sorts\engine\rules\FractionsRule;
 use iceboxind\sorts\engine\rules\HookAmpRule;
 use iceboxind\sorts\engine\rules\HookCapsRule;
@@ -17,6 +19,7 @@ use iceboxind\sorts\engine\rules\PrimesRule;
 use iceboxind\sorts\engine\rules\QuotesRule;
 use iceboxind\sorts\engine\rules\RangesRule;
 use iceboxind\sorts\engine\rules\SymbolsRule;
+use iceboxind\sorts\engine\rules\TypedDashesRule;
 use iceboxind\sorts\engine\rules\WidowsRule;
 use InvalidArgumentException;
 
@@ -79,7 +82,7 @@ final class Engine
     {
         $this->locales = $locales ?? new LocaleRegistry();
         foreach ([
-            new SymbolsRule(), new EllipsisRule(), new DashesRule(), new FractionsRule(), new RangesRule(),
+            new SymbolsRule(), new EllipsisRule(), new EllipsisSpacingRule(), new DialogueDashRule(), new DashesRule(), new TypedDashesRule(), new FractionsRule(), new RangesRule(),
             new MultiplicationRule(), new PrimesRule(), new ApostrophesRule(), new QuotesRule(),
             new NonBreakingSpacesRule(), new LocaleSpacingRule(), new WidowsRule(), new OrdinalsRule(),
             new HookAmpRule(), new HookCapsRule(), new HookQuotesRule(),
@@ -159,6 +162,27 @@ final class Engine
         $output = $options->mode === Options::TEXT ? $this->applyText($input, $pass) : $this->applyHtml($input, $pass);
         $this->lastError = $pass->error;
         return $output;
+    }
+
+    /**
+     * What a writer may want to look at in $input, which the engine will not change: a numerical
+     * plural with an apostrophe (1930's). Read-only, and over the same text apply() would edit:
+     * no code, attribute, script, excluded element or comment, and none inside a `data-sorts="off"`
+     * element. No rule runs and nothing is written; no rule switch, locale or variant matters.
+     * An input that is not UTF-8 has none.
+     *
+     * @return list<Finding> in input order, with each offset in bytes into $input
+     */
+    public function findings(string $input, ?Options $options = null): array
+    {
+        $options ??= $this->options;
+        if ($input === '' || preg_match('//u', $input) !== 1) {
+            return [];
+        }
+        $pass = new Pass($options, [], $this->locales->resolveOrFallback($options->locale));
+        $pass->findings = [];
+        $options->mode === Options::TEXT ? $this->applyText($input, $pass) : $this->applyHtml($input, $pass);
+        return $pass->findings;
     }
 
     /**
@@ -434,14 +458,20 @@ final class Engine
         }
     }
 
-    /** The locale with the variant the options ask for, if it has one by that name. */
+    /**
+     * The locale as this pass wants it: with the variant the options ask for (or, failing that, the
+     * preset’s), if it has one by that name, and with the preset’s spacing inside guillemets.
+     */
     private function withVariant(Pass $pass, LocaleInterface $locale): LocaleInterface
     {
-        $name = $pass->options->variants[$locale->id()] ?? null;
-        if ($name === null || !in_array($name, $locale->variants(), true)) {
-            return $locale;
+        $name = $pass->options->variants[$locale->id()] ?? $pass->presetVariants[$locale->id()] ?? null;
+        if ($name !== null && in_array($name, $locale->variants(), true)) {
+            $locale = $pass->variantLocales[$locale->id() . '|' . $name] ??= $locale->withVariant($name);
         }
-        return $pass->variantLocales[$locale->id() . '|' . $name] ??= $locale->withVariant($name);
+        if ($pass->options->preset !== '' && $locale instanceof DataLocale && Presets::spacesGuillemets($pass->options->preset, $locale)) {
+            return $pass->presetLocales[spl_object_id($locale)] ??= $locale->withGuillemetSpace(Presets::GUILLEMET_SPACE);
+        }
+        return $locale;
     }
 
     /** Process the flow, if there is one. Returns null: the caller’s next flow starts empty. */
@@ -496,6 +526,14 @@ final class Engine
 
     private function processFlow(Flow $flow, Pass $pass): void
     {
+        if ($pass->findings !== null) {
+            foreach ($flow->texts as $i => $text) {
+                if ($flow->editable[$i] && $text !== '') {
+                    array_push($pass->findings, ...Findings::scan($text, $flow->offsets[$i], $pass->options->mode === Options::HTML));
+                }
+            }
+            return;
+        }
         foreach ($flow->texts as $i => $text) {
             $result = $text;
             $frame = $flow->frames[$i];
@@ -548,7 +586,7 @@ final class Engine
         $union = '';
         foreach ($this->rules() as $rule) {
             $handle = $rule->handle();
-            $on = ($pass->options->rules[$handle] ?? $rule->defaultEnabled()) || isset($pass->named[$handle]) || isset($scoped[$handle]);
+            $on = ($pass->options->rules[$handle] ?? $pass->presetRules[$handle] ?? $rule->defaultEnabled()) || isset($pass->named[$handle]) || isset($scoped[$handle]);
             // Nothing turns on a rule the options do not allow: not the settings, a scope or the call.
             if (!$on || ($allowed !== null && !isset($allowed[$handle])) || !$rule->supportsLocale($frame->locale)
                 || ($textOnly && $rule->emitsMarkup())) {

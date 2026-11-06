@@ -19,6 +19,9 @@ namespace iceboxind\sorts\engine;
  * deeply it is nested: the primary pair outermost, the secondary inside it, then alternating,
  * whichever mark was typed, even for an outermost `'`. Any other value means `typed`.
  *
+ * `preset` names a {@see Presets} set of choices that sits above the rule switches ('' for none, the
+ * default). A rule in `rules` and a variant in `variants` win over it; see {@see Presets} for how they combine.
+ *
  * `allowed`, when set, lists the only rules that may run at all: a rule outside it
  * stays off whatever turns it on (`rules`, a `data-sorts-rules` scope or a rule
  * named in the call). Null allows every registered rule.
@@ -30,6 +33,9 @@ final class Options
 
     public const NESTING_TYPED = 'typed';
     public const NESTING_DEPTH = 'depth';
+
+    public const PRESET_NONE = '';
+    public const PRESET_BRINGHURST = Presets::BRINGHURST;
 
     /**
      * @param array<string, bool> $rules
@@ -49,6 +55,7 @@ final class Options
         public readonly array $variants = [],
         public readonly ?array $allowed = null,
         public readonly string $quoteNesting = self::NESTING_TYPED,
+        public readonly string $preset = self::PRESET_NONE,
     ) {
     }
 

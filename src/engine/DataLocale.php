@@ -69,6 +69,12 @@ final class DataLocale implements LocaleInterface
         return new self(array_replace($this->data, array_intersect_key($changes, array_flip(['quotes', 'nested', 'third', 'apostrophe', 'dash', 'spacing']))));
     }
 
+    /** This locale with a space inside its guillemets (a preset’s choice), keeping every other key. */
+    public function withGuillemetSpace(string $space): self
+    {
+        return new self(array_replace($this->data, ['spacing' => array_replace($this->data['spacing'] ?? [], ['guillemets' => $space])]));
+    }
+
     public function quotes(): array
     {
         return $this->data['quotes'];
