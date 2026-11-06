@@ -23,7 +23,7 @@
 ## 3. The next three steps
 
 1. **Read the build’s commits on `main` after `6b077dd`** (`git log`), run `composer test-engine`, `composer check`, `node tests/run-all.mjs`. Then a **release gate at `xhigh`** (cast `gate`) over the delta since `0bb7844`, fix rounds per the casting rules, then renew the Hardened line and push (pushing hardened Sorts is covered by D850). Acceptance: gate closed, README line renewed, `origin/main` level.
-2. **Install the icon:** the responsive SVG is at `…/scratchpad/icon/sorts-icon-c-responsive.svg` if the designer finished (else its `sorts-icon-c-archive.svg`); copy to `src/icon.svg`, check it renders in the testbed CP (Settings → Plugins), commit. If the scratchpad is gone, re-brief from §2. Acceptance: Store readiness complete (CLAUDE.md list).
+2. **Done 2026-11-06 (`76de41b`):** the responsive icon is `src/icon.svg`; its preview and build script are kept in `docs/icon/`. Still to check by eye in the testbed CP (Settings → Plugins at 44 px, the Settings grid at 40 px). Original step: **Install the icon:** the responsive SVG is at `…/scratchpad/icon/sorts-icon-c-responsive.svg` if the designer finished (else its `sorts-icon-c-archive.svg`); copy to `src/icon.svg`, check it renders in the testbed CP (Settings → Plugins), commit. If the scratchpad is gone, re-brief from §2. Acceptance: Store readiness complete (CLAUDE.md list).
 3. **G32 phase 4:** `web-standards-check typography` (D847) and the one-line G29g allowance for `hanging-punctuation` and `text-wrap: pretty` (D849), in `~/sw/github-private/web-standards-check`; link `prose-typeset` onto PATH. Acceptance: working-mode gate closed.
 
 ## 4. Decisions still Dan’s
