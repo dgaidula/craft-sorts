@@ -189,17 +189,32 @@ primary pair and an outermost `'` pair its nested pair, as CKEditor’s
 variant that swaps the pairs (`en-GB` `single-outer`) swaps what each key gives.
 A quotation inside another takes the other level from its parent, whatever was typed
 (D822): the scanner keeps each open quotation’s level beside its kind (`QuoteScanner`’s
-`$levels`, in the flow state), a closing mark takes the level of the quotation it
-closes, and a curly mark already in the text counts as the level its glyph has in the
-locale and variant. A glyph that is in both pairs (`fr`, `nl`) counts as primary,
-and one that both opens and closes (`fi`, `sv` `”`) is not counted at all, as before.
-A closing mark with nothing open takes the level its own mark asks for.
+`$levels`, in one object in the flow state that every run changes in place, so a run
+copies nothing and closing a quotation costs only the quotations it closes), a closing
+mark takes the level of the quotation it closes, in `typed` and `depth` alike, and a
+curly mark already in the text counts as the level its glyph has in the locale and
+variant. A glyph that is in both pairs (`fr`, `nl`) counts as primary. A curly mark next
+to a straight one is classed by its role in the locale, not its shape (`QuoteScanner::marks()`):
+the locale’s opening marks are openers and its closing marks closers, so German “ ‘ and
+the `book` style’s « ‹ close; marks the locale does not use keep their English shape.
+That holds across an inline tag too, where the mark before the run is the scan’s own
+output. A mark that both opens and closes (`fi`, `sv` `”` and `’`) is told by its
+sides, as a straight one is: after a space, an opening bracket, a dash or the start and
+not before a space it opens (a `’` before `90-` or `tis` stays an apostrophe), after a
+word or punctuation with a quotation of its pair open it closes, and otherwise it is
+not counted. Inside a quotation opened with a curly mark, its own closing mark still to
+come in the flow (more of them than of its opening marks; one that is also the apostrophe
+only where no letter follows) makes a straight `"` after a digit an inch mark and a `'`
+after an `s` a possessive. A closing mark with nothing open takes the level its own mark
+asks for (`typed`) or its depth (`depth`).
 `depth` normalises: the outermost level uses the primary pair, the next the
-nested pair, then they alternate. Only the choice of glyph differs; what is a
-quotation, an apostrophe or a prime is decided before it and is the same in both.
-The Pro setting `normalizeQuotes` selects `depth`; `EngineService::options()`
-builds it into every path, `applyWith()` forces `typed` on Lite, and an audit job
-carries it in its options like the variants.
+nested pair, then they alternate. A locale may also have a third pair (`third` in its
+data; `es` `guillemets-outer` has the RAE’s ‘…’): then the third level uses it, and deeper
+levels alternate the nested and third pairs, in both modes. Only the choice of glyph
+differs; what is a quotation, an apostrophe or a prime is decided before it and is the
+same in both. The Pro setting `normalizeQuotes` selects `depth`; `EngineService::options()`
+builds it into every path, `applyWith()` forces Lite’s options on Lite (`typed`, no
+variants, Lite’s rules), and an audit job carries it in its options like the variants.
 
 ### Settled characters
 
@@ -284,7 +299,7 @@ half-finishes content.
 | Pro capability | Where the gate is | Lite fallback |
 |---|---|---|
 | Automatic page pass | `PagePass::shouldRun()` | The page is sent as rendered. |
-| Every rule and locale, the settings | `EngineService::options()`, `EngineService::engine()` | Fixed option set: quotes, apostrophes, primes, dashes, ellipsis; `en-US` and `en-GB` only. The settings are stored, not read. |
+| Every rule and locale, the settings | `EngineService::options()`, `EngineService::engine()`, `EngineService::applyWith()` | Fixed option set: quotes, apostrophes, primes, dashes, ellipsis; `en-US` and `en-GB` only, without their variants. The settings are stored, not read. `applyWith()` puts Lite’s options over any it is given (quotes as typed, no variants, Lite’s rules). `engine()->apply()` with `Options` a caller built itself is not an edition gate for the rules or the quote mode: the engine applies the options it is given (and any PHP can build its own `Engine`); only the locales are Lite’s there. |
 | Exclusion settings (skip tags, classes, paths; head and meta) | `EngineService::options()` and `PagePass::shouldRun()` | Not read. `data-sorts="off"` and `data-sorts-lang` are safety controls (PATTERNS §1: gates control features, never safety), so they work in every edition. `data-sorts-rules`, and a rule named in a call, can run only Lite’s own rules: Lite’s options carry `allowed: LITE_RULES`, an allow-list the engine applies after every way of turning a rule on, and the Lite engine is built with it too. |
 | Extension API | `EngineService::engine()` fires `EVENT_REGISTER_RULES` only in Pro; `applyWith()` | The event does not fire. A rule named in a call is skipped, not an error. |
 | `@sorts` GraphQL directive | `gql\directives\Sorts::apply()` | The directive is in the schema and returns the value unchanged, so queries survive a downgrade. |

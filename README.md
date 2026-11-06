@@ -76,7 +76,7 @@ Sorts keeps the quote type the author typed for the outermost quotation. A strai
 | `'She said "no"'` | `‘She said “no”’` | `“She said ‘no’”` | `‚She said „no“‘` |
 | `"She said "no" today"` | `“She said ‘no’ today”` | `‘She said “no” today’` | `„She said ‚no‘ today“` |
 
-A quotation already set in curly marks counts as the level its marks have in the language, so `‘She said "no"’` in en-GB `single-outer` (where ‘…’ is the primary pair) becomes `‘She said “no”’`. Three deep, the levels go primary, secondary, primary.
+A quotation already set in curly marks counts as the level its marks have in the language, so `‘She said "no"’` in en-GB `single-outer` (where ‘…’ is the primary pair) becomes `‘She said “no”’`. A curly mark is read by what it does in the language, not by its shape: in German “ and ‘ close a quotation, and in the `book` style » and › open one, so `»"Nein," sagte er«` becomes `»›Nein,‹ sagte er«`. In Swedish and Finnish, where ” and ’ both open and close, a curly mark is read by what is on either side of it, as a straight one is: `”Han sa: "nej."”` becomes `”Han sa: ’nej.’”`. Three deep, the levels go primary, secondary, primary; `es` `guillemets-outer` has a third pair, so there they go «…», “…”, ‘…’, and deeper “…” and ‘…’ alternate.
 
 Apostrophes, primes and the rules that tell an apostrophe or a prime from a quotation (`don't`, `'90s`, `5'10"`) do not depend on this; only the choice of marks for a quotation Sorts has recognised does.
 
@@ -186,7 +186,7 @@ CLDR is the default for every language. Where a style authority writes it differ
 | --- | --- | --- | --- |
 | `en-GB` | `single-outer` | ‘…’ outermost, “…” inside | New Hart’s Rules (Oxford University Press), 2nd ed. |
 | `de-CH` | `guillemets` | «…» outermost, ‹…› inside | Schweizerische Bundeskanzlei, *Schreibweisungen*, 2nd ed. 2013, section 2.1.1 |
-| `es` | `guillemets-outer` | «…» outermost, “…” inside | Real Academia Española, *Ortografía de la lengua española* (2010), “Las comillas” |
+| `es` | `guillemets-outer` | «…» outermost, “…” inside, ‘…’ inside that | Real Academia Española, *Ortografía de la lengua española* (2010), “Las comillas” |
 | `de` | `book` | »…« outermost, ›…‹ inside | Dan Gaidula, typographer (decision D823); Duden Band 9, *Richtiges und gutes Deutsch*, 5th ed. 2001 (via a secondary source) |
 | `nl` | `double-outer` | “…” outermost, ‘…’ inside | Taalunie, taaladvies.net, “Dubbele of enkele aanhalingstekens bij een citaat” (12 May 2021): no fixed rule, but a traditional preference for double marks around a literal quotation |
 
@@ -200,11 +200,19 @@ What CKEditor allows, and what Sorts makes of it:
 
 - The editor’s config reaches the browser as JSON, and JSON cannot carry a regular expression, so Sorts can only switch on CKEditor’s built-in transformations by name.
 
-- Quotation marks: the key typed picks the language’s primary pair (`"`) or secondary pair (`'`), as Sorts does elsewhere, and a key is enabled only where one of CKEditor’s transformations has exactly that pair. English gets “…” for `"` and ‘…’ for `'`, and so does Dutch set to `double-outer`; Polish gets „…” for `"`. German, French and the rest, and the variants whose marks CKEditor does not have (`single-outer`, `book`, `guillemets`, `guillemets-outer`), are left straight as typed, because CKEditor’s config cannot carry a pair it does not know by name; the page pass or fix on save sets them correctly later. CKEditor’s `en-GB` pairs put ‘…’ on `'`, which is not what `single-outer` does (it puts ‘…’ on `"`), so Sorts does not use them.
+- Quotation marks: the key typed picks the language’s primary pair (`"`) or secondary pair (`'`), as Sorts does elsewhere, and a key is enabled only where one of CKEditor’s transformations has exactly that pair. By language:
+  - Both keys, “…” for `"` and ‘…’ for `'`: `en-US`, `en-GB`, `da`, `es`, `pt`, and `nl` set to `double-outer`.
+  - `'` only, as ‘…’: `nb` (its primary «…» is not one of CKEditor’s) and `nl` by default (‘…’ on both levels; CKEditor’s `"` gives “…”).
+  - `"` only, as „…”: `pl` (its nested «…» is not one of CKEditor’s).
+  - Neither, left straight as typed: `de`, `de-CH`, `cs`, `fr`, `fr-CH`, `it`, `fi`, `sv`, and the variants `single-outer`, `book`, `guillemets` and `guillemets-outer`.
+
+  CKEditor’s config cannot carry a pair it does not know by name, so marks left straight are set by the page pass or fix on save later. CKEditor’s `en-GB` pairs put ‘…’ on `'`, which is not what `single-outer` does (it puts ‘…’ on `"`), so Sorts does not use them. On Lite the editor is always English, with both keys.
 
 - CKEditor keeps no memory of nesting: typing `"` inside an open “…” gives “…” again, where Sorts gives a straight `"` typed inside a quotation the other level. Sorts leaves the curly marks CKEditor wrote as they are.
 
-- With *Normalize quotes to house style* on, only `"` is converted while typing: a typed `'` may be an outermost quotation, which depth sets in the primary marks, and CKEditor cannot know that.
+- Typed and pasted text still differ in two cases. `rock 'n' roll` typed gives `rock ‘n’ roll`, because CKEditor pairs the two marks as a quotation, where pasted or saved text gives `rock ’n’ roll`. A quotation of the same kind typed straight inside another, `"She said "no" today"`, gives `“She said ”no" today"` in the editor, because CKEditor closes the quotation at the second `"`; Sorts keeps the curly marks CKEditor wrote, so the page shows `“She said ”no” today”`, where pasted text gives `“She said ‘no’ today”`. Type the inner quotation with `'`, or correct these by hand.
+
+- With *Normalize quotes to house style* on, only `"` is converted while typing: a typed `'` may be an outermost quotation, which depth sets in the primary marks, and CKEditor cannot know that. So `nb` and `nl` (by default) convert nothing while typing.
 
 - Dashes, ellipsis and symbols follow the rules that are on. `--` becomes an en dash only for languages where Sorts’ `--` is a spaced en dash.
 

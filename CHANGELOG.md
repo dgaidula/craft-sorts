@@ -38,8 +38,11 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
 - Quotation marks keep the quote type the author typed for the outermost quotation: a straight `"`
   pair becomes the language’s primary marks and a straight `'` pair its secondary marks, as CKEditor
   does while typing, and a quotation inside another takes the other level from its parent whatever was
-  typed (`"She said "no""` gives “She said ‘no’”; three deep alternates primary, secondary, primary),
-  in every edition (the engine option `quoteNesting`, `typed` by default). Pro setting
+  typed (`"She said "no""` gives “She said ‘no’”; three deep alternates primary, secondary, primary,
+  or uses a third pair where the locale has one), in every edition (the engine option `quoteNesting`,
+  `typed` by default). A curly mark already in the text counts as its level, read by what it does in
+  the language rather than its shape (German “ closes, the book style’s » opens), and in Swedish and
+  Finnish, where ” and ’ both open and close, by what is on either side of it. Pro setting
   `normalizeQuotes` (off by default) sets every quotation by nesting depth instead, through the page
   pass, the filter, `@sorts`, fix on save and the audit. CKEditor’s as-you-type quotes follow the same
   rule.
@@ -47,6 +50,6 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
   typographer) and `nl` `double-outer` (`“…”` `‘…’`, Taalunie’s taaladvies.net), CLDR’s marks staying
   the default for both; a variant for `de` or `nl` also applies to `de-AT`, `de-DE` and `nl-BE`.
 - Quotation-style variants `de-CH` `guillemets` (`«…»` `‹…›`, Schweizerische Bundeskanzlei,
-  *Schreibweisungen*) and `es` `guillemets-outer` (`«…»` `“…”`, RAE *Ortografía*), beside `en-GB`
+  *Schreibweisungen*) and `es` `guillemets-outer` (`«…»` `“…”` `‘…’`, RAE *Ortografía*), beside `en-GB`
   `single-outer`.
 - After updating Sorts, run `php craft up` or clear compiled templates (README, Known limits).
