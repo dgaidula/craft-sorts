@@ -47,15 +47,16 @@ return [
         'widowsMinWords' => 3,
 
         // Quotation style per language. CLDR is the default. Variants: en-GB
-        // 'single-outer' (New Hart's Rules), de-CH 'guillemets' (Schreibweisungen
-        // der Bundeskanzlei), es 'guillemets-outer' (RAE).
+        // 'single-outer' (New Hart's Rules), de 'book' (Duden, with Dan Gaidula's
+        // preference), de-CH 'guillemets' (Schreibweisungen der Bundeskanzlei),
+        // es 'guillemets-outer' (RAE), nl 'double-outer' (Taalunie).
         'variants' => [
             // 'en-GB' => 'single-outer',
         ],
 
-        // Off: a straight " pair gets the language's main quotation marks and a straight '
-        // pair its inner marks, at any depth. On: every quotation is set by its nesting
-        // depth, whichever mark was typed.
+        // Off: an outermost quotation typed with " gets the language's main quotation marks
+        // and one typed with ' its inner marks, and a quotation inside another gets the other
+        // pair. On: every quotation is set by its nesting depth, whichever mark was typed.
         'normalizeQuotes' => false,
 
         // Exclusions: tag names, class names, and request paths (`*` matches any run

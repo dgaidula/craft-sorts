@@ -31,9 +31,12 @@ use yii\base\Event;
  * language’s pairs are enabled, and the key typed picks the pair as it does in Sorts
  * (typing `"` gives the language’s primary pair, `'` its secondary pair; see
  * `Options::$quoteNesting`), so typing `"` in an English field gives “…” and `'` gives ‘…’,
- * and in a German or French field both are left straight, to be set by the page pass or
- * fix-on-save, as are the keys of an en-GB single-outer field (CKEditor’s en-GB pairs put
- * ‘…’ on `'`, Sorts’ put it on `"`). With the Pro setting that normalizes quotes by depth,
+ * and in a German or French field both are left straight (so are the German book style »…«
+ * and the Swiss and Spanish guillemets), to be set by the page pass or fix-on-save, as are the
+ * keys of an en-GB single-outer field (CKEditor’s en-GB pairs put ‘…’ on `'`, Sorts’ put it
+ * on `"`). A Dutch field set to double-outer gets both keys, as English does. CKEditor
+ * keeps no memory of nesting: a `"` typed inside an open “…” gives “…” again, where Sorts
+ * would give ‘…’ to a straight one, and Sorts leaves the curly marks CKEditor wrote alone. With the Pro setting that normalizes quotes by depth,
  * `'` is left straight everywhere too: CKEditor cannot tell that a typed `'` is
  * outermost, where depth gives it the primary pair. Apostrophes, primes, ranges and spacing are not
  * transformations CKEditor offers. It acts only on text typed, never on pasted text or on

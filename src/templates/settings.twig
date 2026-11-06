@@ -171,7 +171,7 @@
 {% set lockNormalize = ('normalizeQuotes' in overrides) or not isPro %}
 {{ forms.lightswitchField({
     label: 'Normalize quotes to house style'|t('sorts'),
-    instructions: 'Off by default: a straight " pair becomes the language’s main pair and a straight \' pair its inner pair, however deeply it is nested, as in CKEditor while typing. On: every quotation is set by its depth instead, the main pair outermost and the inner pair inside it, whichever mark was typed. Applies to the page pass, the filter, fix on save and the audit.'|t('sorts'),
+    instructions: 'Off by default: an outermost quotation typed with a straight " gets the language’s main pair and one typed with a straight \' its inner pair, as in CKEditor while typing, and a quotation inside another gets the other pair. On: every quotation is set by its depth instead, the main pair outermost and the inner pair inside it, whichever mark was typed. Applies to the page pass, the filter, fix on save and the audit.'|t('sorts'),
     id: 'normalizeQuotes',
     name: 'normalizeQuotes',
     on: settings.normalizeQuotes,

@@ -59,6 +59,13 @@ sortsTry('pro', function () {
     sortsEq('pro: de-CH guillemets variant', '«Er sagte ‹nein›»', $e->apply('"Er sagte \'nein\'"', [], 'de-CH'));
     sortsEq('pro: es guillemets-outer variant', '«Dijo “no”»', $e->apply('"Dijo \'no\'"', [], 'es'));
     sortsEq('pro: the variant leaves en-US alone', '“She said ‘no’”', $e->apply('"She said \'no\'"', [], 'en-US'));
+    sortsEq('pro: a quotation inside one of the same kind takes the other level', '“She said ‘no’ today”', $e->apply('"She said "no" today"', [], 'en-US'));
+
+    sortsConfigure('pro', ['variants' => ['de' => 'book', 'nl' => 'double-outer']]);
+    $e = sorts()->engine;
+    sortsEq('pro: de book variant', '»Er sagte ›nein‹«', $e->apply('"Er sagte \'nein\'"', [], 'de'));
+    sortsEq('pro: nl double-outer variant', '“Hij zei ‘nee’”', $e->apply('"Hij zei \'nee\'"', [], 'nl'));
+    sortsEq('pro: the de and nl variants leave en-US alone', '“She said ‘no’”', $e->apply('"She said \'no\'"', [], 'en-US'));
 
     sortsConfigure('pro', ['widowsMinWords' => 5]);
     sortsEq('pro: widows minimum word count from settings', '<h2>Four words in here</h2>', sorts()->engine->apply('<h2>Four words in here</h2>'));

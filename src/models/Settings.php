@@ -71,8 +71,9 @@ class Settings extends Model
 
     /**
      * Pro. Set every quotation by how deeply it is nested (the locale’s primary pair outermost, the
-     * secondary pair inside it), whichever mark was typed. Off: a straight `"` pair gets the primary
-     * pair and a straight `'` pair the secondary pair, as CKEditor does while typing. Lite is always off.
+     * secondary pair inside it), whichever mark was typed. Off: the outermost quotation gets the pair its
+     * mark asks for (`"` primary, `'` secondary), as CKEditor does while typing, and one inside another
+     * the other pair. Lite is always off.
      */
     public bool $normalizeQuotes = false;
 

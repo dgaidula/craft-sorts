@@ -67,6 +67,7 @@ sortsTry('validation', function () use ($make) {
     sortsCheck('variants: an unknown locale is refused', !$make(['variants' => ['xx' => 'single-outer']])->validate(['variants']));
     sortsEq('variants: de-CH guillemets and es guillemets-outer are valid', true, $make(['variants' => ['de-CH' => 'guillemets', 'es' => 'guillemets-outer']])->validate());
     sortsCheck('variants: a variant of another locale is refused', !$make(['variants' => ['es' => 'guillemets']])->validate(['variants']));
+    sortsEq('variants: de book and nl double-outer are valid', true, $make(['variants' => ['de' => 'book', 'nl' => 'double-outer']])->validate());
     sortsCheck('widows: 1 is refused', !$make(['widowsMinWords' => 1])->validate(['widowsMinWords']));
     sortsCheck('widows: 21 is refused', !$make(['widowsMinWords' => 21])->validate(['widowsMinWords']));
     sortsEq('widows: 2 to 20 are valid', true, $make(['widowsMinWords' => 2])->validate() && $make(['widowsMinWords' => 20])->validate());
@@ -129,7 +130,7 @@ sortsTry('the settings page, Pro, saving through the form', function () {
     $html = (string) $cp->get('/admin/settings/plugins/sorts')->getBody();
     sortsCheck('pro page: nothing is marked as needing Pro', !str_contains($html, 'Needs Sorts Pro.'));
     sortsCheck('pro page: every rule has a switch', substr_count($html, 'name="settings[rules][') >= 16, (string) substr_count($html, 'name="settings[rules]['));
-    sortsCheck('pro page: the variants are offered', str_contains($html, 'single-outer') && str_contains($html, 'value="guillemets"') && str_contains($html, 'value="guillemets-outer"'));
+    sortsCheck('pro page: the variants are offered', str_contains($html, 'single-outer') && str_contains($html, 'value="guillemets"') && str_contains($html, 'value="guillemets-outer"') && str_contains($html, 'value="book"') && str_contains($html, 'value="double-outer"'));
     sortsCheck('pro page: the normalize quotes switch is there and off', (bool) preg_match('/name="settings\[normalizeQuotes\]"/', $html) && !preg_match('/<button[^>]*id="settings-normalizeQuotes"[^>]*aria-checked="true"/', $html));
     $fields = sortsFormFields($html, 'plugins/save-plugin-settings');
     $fields['settings[skipTags]'] = "figcaption\nblockquote";
