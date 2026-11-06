@@ -7,8 +7,9 @@
 # quotation an inch mark or a plural possessive is not its closer when the curly closer still
 # follows (FU5, FU6); es guillemets-outer has a third level, the RAE order « “ ‘ (FU8); and cases
 # that pin the scanner’s level bookkeeping (FU1). Fix round 2 (R2-1 to R2-6, at the end): the same
-# test in fi and sv and for the quotation a mark would close, and a straight closer closing the
-# innermost quotation opened curly, whatever its shape.
+# test in fi and sv and for the quotation a mark would close; its straight closer for a curly
+# quotation of the other shape (R2-2) is backed out. Fix round 3 (R3-1 to R3-4, last): wrong-way
+# apostrophes in dialogue, the fi/sv count by pairs, plural possessives ahead, and branch pins.
 # Expected output is written from the locale’s pairs, not copied from the engine.
 
 # ---- FU1 ----
@@ -1102,40 +1103,41 @@
 < ‚Er ist 6' groß‘, sagte sie.
 > ‚Er ist 6′ groß‘, sagte sie.
 
-# R2-2: a straight closer closes the innermost quotation opened curly and takes its closing mark,
-# whatever its shape (D829): every locale and variant whose nested pair is not the shape of its level.
+# R2-2, backed out under D843: a straight closer closes the nearest open quotation of its own kind,
+# as before fix round 2, so one that ends a curly quotation of the other shape takes the wrong glyph
+# (README Known limits). These pin that; a curly-opened quotation of its own kind still closes.
 
 @ r2-2-it-curly-nested-straight-closer only=quotes,apostrophes,primes locale=it
 < «Disse “sì" e se ne andò», raccontò.
-> «Disse “sì” e se ne andò», raccontò.
+> «Disse “sì» e se ne andò», raccontò.
 
 @ r2-2-it-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=it config={"quoteNesting":"depth"}
 < «Disse “sì" e se ne andò», raccontò.
-> «Disse “sì” e se ne andò», raccontò.
+> «Disse “sì» e se ne andò», raccontò.
 
 @ r2-2-es-guillemets-outer-curly-nested-straight-closer only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"}}
 < «Dijo “hola" y se fue», contó.
-> «Dijo “hola” y se fue», contó.
+> «Dijo “hola» y se fue», contó.
 
 @ r2-2-es-guillemets-outer-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
 < «Dijo “hola" y se fue», contó.
-> «Dijo “hola” y se fue», contó.
+> «Dijo “hola» y se fue», contó.
 
 @ r2-2-en-GB-single-outer-curly-nested-straight-closer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < ‘He said “no" and left,’ she said.
-> ‘He said “no” and left,’ she said.
+> ‘He said “no’ and left,’ she said.
 
 @ r2-2-en-GB-single-outer-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
 < ‘He said “no" and left,’ she said.
-> ‘He said “no” and left,’ she said.
+> ‘He said “no’ and left,’ she said.
 
 @ r2-2-pl-curly-nested-straight-closer only=quotes,apostrophes,primes locale=pl
 < „Powiedział «nie" i wyszedł”.
-> „Powiedział «nie» i wyszedł”.
+> „Powiedział «nie” i wyszedł”.
 
 @ r2-2-pl-curly-nested-straight-closer-depth only=quotes,apostrophes,primes locale=pl config={"quoteNesting":"depth"}
 < „Powiedział «nie" i wyszedł”.
-> „Powiedział «nie» i wyszedł”.
+> „Powiedział «nie” i wyszedł”.
 
 @ r2-2-en-GB-single-outer-curly-outer-straight-closer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
 < ‘He said no,' she said.
@@ -1155,11 +1157,11 @@
 
 @ r2-2-en-US-curly-single-closed-by-a-straight-double only=quotes,apostrophes,primes
 < “He said ‘no" today.”
-> “He said ‘no’ today.”
+> “He said ‘no” today.”
 
 @ r2-2-en-US-curly-single-closed-by-a-straight-double-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
 < “He said ‘no" today.”
-> “He said ‘no’ today.”
+> “He said ‘no” today.”
 
 @ r2-2-straight-opened-quotation-keeps-its-kind only=quotes,apostrophes,primes
 < "He's from the 'hood," she said. "Yes," he said.
@@ -1226,3 +1228,128 @@
 @ r2-6-es-guillemets-outer-depth-closer-with-nothing-of-its-kind-open only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
 < <p>'Dijo 'ven acá" y se fue.</p>
 > <p>«Dijo “ven acá’ y se fue.</p>
+
+# ---- Fix round 3 (R3-1 to R3-4, D843) ----
+
+# R3-1: a wrong-way curly apostrophe (the word processor’s ‘90s, ‘em, ‘s, ‚n) inside a quotation
+# typed straight does not take its closing mark, and the quotations after it keep their level.
+
+@ r3-1-en-US-wrong-way-apostrophe-90s only=quotes,apostrophes,primes
+< <p>"Back in the ‘90s we had fun," she said. "Yes," he said.</p>
+> <p>“Back in the ‘90s we had fun,” she said. “Yes,” he said.</p>
+
+@ r3-1-en-US-wrong-way-apostrophe-90s-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< <p>"Back in the ‘90s we had fun," she said. "Yes," he said.</p>
+> <p>“Back in the ‘90s we had fun,” she said. “Yes,” he said.</p>
+
+@ r3-1-en-US-wrong-way-apostrophe-hood only=quotes,apostrophes,primes
+< <p>"He’s from the ‘hood," she said. "Yes," he said.</p>
+> <p>“He’s from the ‘hood,” she said. “Yes,” he said.</p>
+
+@ r3-1-en-US-wrong-way-apostrophe-hood-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< <p>"He’s from the ‘hood," she said. "Yes," he said.</p>
+> <p>“He’s from the ‘hood,” she said. “Yes,” he said.</p>
+
+@ r3-1-en-US-wrong-way-apostrophe-til only=quotes,apostrophes,primes
+< <p>"Stay ‘til morning," she said. "I will," he said.</p>
+> <p>“Stay ‘til morning,” she said. “I will,” he said.</p>
+
+@ r3-1-en-US-wrong-way-apostrophe-til-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< <p>"Stay ‘til morning," she said. "I will," he said.</p>
+> <p>“Stay ‘til morning,” she said. “I will,” he said.</p>
+
+@ r3-1-en-GB-wrong-way-apostrophe-em only=quotes,apostrophes,primes locale=en-GB
+< <p>"Give ‘em a chance," he said. "They’re only young."</p>
+> <p>“Give ‘em a chance,” he said. “They’re only young.”</p>
+
+@ r3-1-en-GB-wrong-way-apostrophe-em-depth only=quotes,apostrophes,primes locale=en-GB config={"quoteNesting":"depth"}
+< <p>"Give ‘em a chance," he said. "They’re only young."</p>
+> <p>“Give ‘em a chance,” he said. “They’re only young.”</p>
+
+@ r3-1-nl-double-outer-wrong-way-apostrophe-s-avonds only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"}}
+< <p>"We gingen ‘s avonds uit", zei ze. "Elke week."</p>
+> <p>“We gingen ‘s avonds uit”, zei ze. “Elke week.”</p>
+
+@ r3-1-nl-double-outer-wrong-way-apostrophe-s-avonds-depth only=quotes,apostrophes,primes locale=nl config={"variants":{"nl":"double-outer"},"quoteNesting":"depth"}
+< <p>"We gingen ‘s avonds uit", zei ze. "Elke week."</p>
+> <p>“We gingen ‘s avonds uit”, zei ze. “Elke week.”</p>
+
+@ r3-1-de-wrong-way-apostrophe-n only=quotes,apostrophes,primes locale=de
+< <p>"So ‚n Quatsch", sagte er. "Ja", sagte sie.</p>
+> <p>„So ‚n Quatsch“, sagte er. „Ja“, sagte sie.</p>
+
+@ r3-1-de-wrong-way-apostrophe-n-depth only=quotes,apostrophes,primes locale=de config={"quoteNesting":"depth"}
+< <p>"So ‚n Quatsch", sagte er. "Ja", sagte sie.</p>
+> <p>„So ‚n Quatsch“, sagte er. „Ja“, sagte sie.</p>
+
+# R3-2: in fi and sv a straight mark after a digit that ends a curly ”…” closes it when the marks of
+# that pair still to come are even in number (another quotation follows), as at the end.
+
+@ r3-2-sv-digit-closes-before-another-quotation only=quotes,apostrophes,primes locale=sv
+< <p>”Det kostar 5", sa han. ”Billigt.”</p>
+> <p>”Det kostar 5”, sa han. ”Billigt.”</p>
+
+@ r3-2-sv-digit-closes-before-another-quotation-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>”Det kostar 5", sa han. ”Billigt.”</p>
+> <p>”Det kostar 5”, sa han. ”Billigt.”</p>
+
+@ r3-2-sv-room-number-closes-before-another-quotation only=quotes,apostrophes,primes locale=sv
+< <p>”Det är rum 101", sa hon, ”eller 102”.</p>
+> <p>”Det är rum 101”, sa hon, ”eller 102”.</p>
+
+@ r3-2-sv-room-number-closes-before-another-quotation-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>”Det är rum 101", sa hon, ”eller 102”.</p>
+> <p>”Det är rum 101”, sa hon, ”eller 102”.</p>
+
+@ r3-2-fi-digit-closes-before-another-quotation only=quotes,apostrophes,primes locale=fi
+< <p>”Se maksoi 5", hän sanoi. ”Halpa.”</p>
+> <p>”Se maksoi 5”, hän sanoi. ”Halpa.”</p>
+
+@ r3-2-fi-digit-closes-before-another-quotation-depth only=quotes,apostrophes,primes locale=fi config={"quoteNesting":"depth"}
+< <p>”Se maksoi 5", hän sanoi. ”Halpa.”</p>
+> <p>”Se maksoi 5”, hän sanoi. ”Halpa.”</p>
+
+# R3-3: a plural possessive later in the paragraph (players’ bus) is not the closing mark still to
+# come, so a straight ' after a digit that ends a curly ‘…’ closes it; the look-ahead may end inside
+# a character (coach—).
+
+@ r3-3-en-US-digit-closes-before-a-plural-possessive only=quotes,apostrophes,primes
+< <p>‘The final score was 3' and the players’ bus left early.</p>
+> <p>‘The final score was 3’ and the players’ bus left early.</p>
+
+@ r3-3-en-US-digit-closes-before-a-plural-possessive-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< <p>‘The final score was 3' and the players’ bus left early.</p>
+> <p>‘The final score was 3’ and the players’ bus left early.</p>
+
+@ r3-3-en-GB-room-number-closes-before-a-plural-possessive only=quotes,apostrophes,primes locale=en-GB
+< <p>‘It was room 101' and the guests’ rooms were empty.</p>
+> <p>‘It was room 101’ and the guests’ rooms were empty.</p>
+
+@ r3-3-en-GB-room-number-closes-before-a-plural-possessive-depth only=quotes,apostrophes,primes locale=en-GB config={"quoteNesting":"depth"}
+< <p>‘It was room 101' and the guests’ rooms were empty.</p>
+> <p>‘It was room 101’ and the guests’ rooms were empty.</p>
+
+@ r3-3-possessive-look-ahead-ending-inside-a-character only=quotes,apostrophes,primes
+< <p>‘The score was 3' and the players’ coach—Mr. Hart—was furious.</p>
+> <p>‘The score was 3’ and the players’ coach—Mr. Hart—was furious.</p>
+
+# R3-4: branch pins. A curly quotation of the other kind innermost is the one whose closer decides an
+# inch mark (Q2); a quotation opened straight is found as the nearest of its kind (Q4); the
+# possessive look-ahead drops a cut 4-byte character (Q8); a fi/sv pair counts no openers after the
+# run (Q9).
+
+@ r3-4-inch-inside-curly-single-with-no-outer-closer only=quotes,apostrophes,primes
+< <p>“He said ‘it is 6" long’ and went on</p>
+> <p>“He said ‘it is 6″ long’ and went on</p>
+
+@ r3-4-straight-opened-quotation-is-the-nearest-of-its-kind only=quotes,apostrophes,primes
+< <p>“a "b 'c 6" d' e”</p>
+> <p>“a ‘b “c 6’ d’ e”</p>
+
+@ r3-4-de-possessive-look-ahead-cuts-a-4-byte-character only=quotes,apostrophes,primes locale=de
+< <p>‚Hans' boot😀 ist weg‘</p>
+> <p>‚Hans’ boot😀 ist weg‘</p>
+
+@ r3-4-fi-inch-across-a-tag only=quotes,apostrophes,primes locale=fi
+< <p>”Näyttö on <b>27"</b> leveä”</p>
+> <p>”Näyttö on <b>27″</b> leveä”</p>
