@@ -53,3 +53,9 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
   *Schreibweisungen*) and `es` `guillemets-outer` (`«…»` `“…”` `‘…’`, RAE *Ortografía*), beside `en-GB`
   `single-outer`.
 - After updating Sorts, run `php craft up` or clear compiled templates (README, Known limits).
+- German defaults to book style `»…« ›…‹` (decision D844), the only place Sorts departs from CLDR by default; `de-AT` and `de-DE` follow it and `de-CH` keeps CLDR’s marks. CLDR’s `„…“ ‚…‘` is the `de` variant `low-high`; the variant name `book` is retired (it is the default).
+- US English variant `spaced-en-dash` (D855, Bringhurst §5.2.1): `--`, `---` and a hyphen with a space each side become a spaced en dash. The default stays the closed em dash.
+- A no-break space after an honorific written without its period (`Dr Smith`, `Mr`, `Mrs`, `Ms`, `St`, `Msgr`, `Fr`; D858), leaving `Main St Louis` (a street) alone.
+- The engine reports, and never changes, a numerical plural with an apostrophe (`1930's`; D859): `Engine::findings()`, shown by the audit under *Flagged, not changed*.
+- A word-initial apostrophe with nothing to close it is an apostrophe (`'Áshįįh` gives `’Áshįįh`); a precomposed fraction counts as a number before an x (`8½ x 11`); `8 1/2` joins to `8½`; clock-time ranges (`4:30-5:00`) take an en dash when ranges are on. The corpus pins each: `10 1/2` now gives `10½` (was `10 ½`), and `10:30-11:00` is a range when ranges are on.
+- Pro setting *Fine typography (Bringhurst)* (`fineTypography`, D817): the spaced en dash for breaks and for typed em dashes, a dash and a thin space opening dialogue, ranges, fractions and multiplication, spaced ellipses in English, and thin spaces inside guillemets (not in German), each cited to *The Elements of Typographic Style*, 3rd ed., chapter 5. A rule switch moved off its default, and a variant you choose, still win. Off, output is byte for byte what it was.

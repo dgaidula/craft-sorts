@@ -69,7 +69,7 @@ punctuation, number formatting.
 
 Rules are **data**: one rule set per locale (quote pairs, nested pairs, dash style, spacing). The page pass
 picks the set from the site’s language and from any `lang` attribute on an element (nearest ancestor wins).
-First release: `en-US`, `en-GB` (single quotes outermost), `de` (`„…“ ‚…‘`), `de-CH`/`fr-CH` (`«…» ‹…›`), `fr`
+First release: `en-US`, `en-GB` (single quotes outermost), `de` (`»…« ›…‹`, book style, by D844; CLDR’s `„…“ ‚…‘` is the variant `low-high`), `de-CH`/`fr-CH` (`«…» ‹…›`), `fr`
 (`« … »` with narrow no-break spaces), `es`, `it`, `pt`, `nl`, `sv`/`fi` (`”…”`), `da`/`no`, `pl`
 (`„…”`), `cs`. The examples above are a guide only: take each locale’s quote pairs from Unicode CLDR’s
 `delimiters` data and its spacing from CLDR or the locale’s style authority, and record the CLDR version in
@@ -220,6 +220,13 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
   - **An inch mark, foot mark or possessive** is judged against one quotation, not every open one: the innermost,
     or past one opened straight of the other kind the nearest of the mark’s kind; checking all of them turned real
     closing marks into primes (`“He said ‘I was 6' then.”`).
+- **D817 — Bringhurst preset: decided and built 2026-11-06 (Dan: y).** Pro setting `fineTypography` (engine preset `bringhurst`): the `spaced-en-dash` variant (§5.2.1), `typed-dashes` (§5.2.1), `dialogue-dash` (§5.2.3), ranges with clock times (§5.2.2), fractions with the join (§5.2.5), multiplication (§5.2.6), `ellipsis-spacing` in English (§5.2.7), thin spaces inside guillemets except German (§5.4.1), cited to *The Elements of Typographic Style*, 3rd ed. A rule switch moved off its default and a chosen variant win over it. The proposal text under D817 above is superseded.
+- **D844 — German defaults to book style: decided 2026-11-06 (Dan: y), built.** `de` `»…« ›…‹`; CLDR’s `„…“ ‚…‘` is the variant `low-high`; `de-AT`, `de-DE` inherit, `de-CH` keeps CLDR’s. The one default departure from CLDR (an exception to D816); the generator records the reason.
+- **D855 — spaced en dash variant: decided 2026-11-06 (Dan: a), built.** `en-US` `spaced-en-dash` for `--`, `---` and a spaced hyphen; the default stays Chicago’s closed em dash.
+- **D856 — typed em dashes in the Bringhurst preset: built** as rule `typed-dashes` (preset only), except a dash opening a block, a dash run and a dash touching a quotation mark.
+- **D857 — thin spaces inside guillemets in the preset: built**, German excepted (Duden, D823).
+- **D858 — period-less honorific: built** in `nbsp`, in every preset, with a guard for `St` as Street.
+- **D859 — numerical plurals: built** as `Engine::findings()` and the audit’s *Flagged, not changed*; never changed.
 - **D814 — editions and price: decided 2026-11-05 (Dan: y).** Lite free; Pro **$39 + $19/yr** at launch (paid
   installs are flat across price bands, and freemium newcomers out-install paid-only ones; both prices can rise
   later, since Craft honours only the renewal price in the 30-day reminder).

@@ -168,12 +168,15 @@ and the options: a rule that is on runs everywhere; any rule also runs inside
 |---|---|---|---|
 | 10 | `symbols` | on | (c) (r) (tm) |
 | 20 | `ellipsis` | on | |
-| 30 | `dashes` | on | `--` by locale; `---` is an em dash |
-| 40 | `fractions` | off | the Unicode set only |
-| 50 | `ranges` | off | plain number pairs only |
-| 60 | `multiplication` | off | |
+| 21 | `ellipsis-spacing` | off | word spaces round an ellipsis, English only; the Bringhurst preset turns it on |
+| 25 | `dialogue-dash` | off | `-- ` or `— ` at the start of a block gives `—` and U+202F; the preset turns it on |
+| 30 | `dashes` | on | `--` by locale; `---` is an em dash; with a locale dash that sets `allBreaks` (en-US `spaced-en-dash`) `---` and a spaced hyphen take the same dash as `--` |
+| 31 | `typed-dashes` | off | a typed em dash takes the locale’s break dash; the preset turns it on |
+| 40 | `fractions` | off | the Unicode set only; a whole number of one to three digits joins its fraction (`8 1/2` → `8½`) |
+| 50 | `ranges` | off | plain number pairs and clock times (`4:30-5:00`) |
+| 60 | `multiplication` | off | a number may end in a precomposed fraction (`8½ x 11`) |
 | 70, 80, 90 | `primes`, `apostrophes`, `quotes` | on | one shared scan (`QuoteScanner`) |
-| 100 | `nbsp` | on | units, initials, honorifics, § |
+| 100 | `nbsp` | on | units, initials, honorifics with a period or without (`Dr Smith`; `St` after a street name is left), § |
 | 110 | `locale-spacing` | on | only for locales whose data has `spacing` (French) |
 | 120 | `widows` | on | headings only (option `tags`, `minWords`) |
 | 130 | `ordinals` | off | writes markup; English only |
@@ -196,7 +199,7 @@ curly mark already in the text counts as the level its glyph has in the locale a
 variant. A glyph that is in both pairs (`fr`, `nl`) counts as primary. A curly mark next
 to a straight one is classed by its role in the locale, not its shape (`QuoteScanner::marks()`):
 the locale’s opening marks are openers and its closing marks closers, so German “ ‘ and
-the `book` style’s « ‹ close; marks the locale does not use keep their English shape.
+the German book style’s (the default) « ‹ close; marks the locale does not use keep their English shape.
 That holds across an inline tag too, where the mark before the run is the scan’s own
 output. A mark that both opens and closes (`fi`, `sv` `”` and `’`) is told by its
 sides, as a straight one is: after a space, an opening bracket, a dash or the start and
@@ -215,6 +218,62 @@ differs; what is a quotation, an apostrophe or a prime is decided before it and 
 same in both. The Pro setting `normalizeQuotes` selects `depth`; `EngineService::options()`
 builds it into every path, `applyWith()` forces Lite’s options on Lite (`typed`, no
 variants, Lite’s rules), and an audit job carries it in its options like the variants.
+
+### Findings: what the engine will not change
+
+`Engine::findings(string $input, ?Options $options = null): list<Finding>` reads the text
+`apply()` would edit and returns notes instead of edits. It is read-only: no rule runs, nothing is
+written, and no rule switch, locale or variant changes the answer. It takes the same input as
+`apply()` (HTML or, with `Options(mode: 'text')`, plain text), skips what `apply()` skips (code,
+attributes, scripts, comments, `data-sorts="off"`, the skip tags and classes of the options), and
+returns [] for a string that is not UTF-8.
+
+A `Finding` has `code` (a stable string to switch on), `offset` (bytes into the input where the match
+starts), `match` (the input’s own text, an entity included), `suggestion` and `message` (plain text).
+The one code so far is `Finding::NUMERICAL_PLURAL` (D859): a digit, an apostrophe in any form
+the engine reads (`'`, `’`, `‘`, `ʼ`, `&#39;`, `&apos;`) and an s ending the word, as in `1930's` or
+`2 × 4's`, with `suggestion` `1930s`. It is a note and never an edit because `1930's best film` is a
+possessive; Bringhurst §5.4.3 asks for `1930s`. The checks live in `Findings`, one method per code
+when more come.
+
+```php
+$engine = new Engine();
+foreach ($engine->findings($html) as $f) {
+    echo "{$f->code} at byte {$f->offset}: {$f->match} → {$f->suggestion}\n";
+}
+```
+
+The Craft layer shows them in the audit: `ContentFixer::findings($element)` reads the same title and
+field values `changes()` does, `AuditScanner::scan()` returns them as `flagged`, and the utility lists
+them under *Flagged, not changed* with no tick box. `prose-typeset check` is meant to call
+`Engine::findings()` the same way and report each finding with its line (count the newlines before
+`offset`); it needs nothing else from the engine. A finding is not a rule: it has no setting, runs in
+every edition the engine runs in, and the engine never acts on one.
+
+### Presets
+
+`Options::$preset` names a coherent set of choices that sits above the rule switches, as a locale
+variant does for quotation marks (`Presets`, one so far: `bringhurst`, D817). The engine resolves
+it in three places and nowhere else: a rule in `Options::$rules` wins over the preset’s answer for that
+rule, which wins over the rule’s `defaultEnabled()` (`Engine::ruleSet()`); a variant in
+`Options::$variants` wins over the preset’s variant for that locale (`Engine::withVariant()`); and a
+locale gets the preset’s space inside its guillemets (`DataLocale::withGuillemetSpace()`, every locale that
+uses guillemets except German). `Options::$allowed` caps it like any other way of turning a rule on, a
+scope (`data-sorts-rules`, a rule named in a call) works as it always did, and with no preset (`''`, or a name
+that is not one) nothing differs from before, byte for byte (the fuzz and the `bp-off-*` corpus cases pin it).
+
+The Craft layer passes `Options(preset: 'bringhurst')` when the Pro setting `fineTypography` is on, in
+`EngineService::options()`. The settings hold every rule switch, so `options()` leaves out a switch that
+is at its default (`Settings::RULE_DEFAULTS`), which is how a preset can tell a switch the site moved from
+one it did not touch; a side effect, written up in the README, is that a switch moved *off* when its
+default is off (ranges, multiplication, fractions) cannot veto the preset. Lite ignores the setting
+(`applyWith()` resets it). Stored content takes only `STORED_RULES` (which now includes
+`typed-dashes`), so the preset’s spacing rules never write to the database. CKEditor’s as-you-type
+fractions are off while the preset is on (`CkeditorSupport::narrow()`).
+
+The rules behind the preset that exist only for it are `typed-dashes`, `dialogue-dash` and
+`ellipsis-spacing` (off by default, no setting of their own). Each cites the section of Bringhurst, *The Elements of
+Typographic Style*, 3rd ed., chapter 5, in its docblock and in `Presets::rules()`.
 
 ### Settled characters
 
@@ -238,21 +297,31 @@ node bin/cldr-locales.mjs generate cldr/package --go
 
 Quote pairs come from CLDR 49.0.0; dash style and spacing come from the style
 authority named in each file. To depart from CLDR for a locale outright, set
-`PAIR_OVERRIDES` in the generator and regenerate.
+`PAIR_OVERRIDES` in the generator, with the `reason` that is written into the locale
+file’s header, and regenerate. There is one: `de` defaults to the book style `»…« ›…‹`
+(Dan’s taste, D844; `de-AT` and `de-DE` inherit it, `de-CH` keeps CLDR’s), and CLDR’s
+own pair is its variant `low-high` (`cldr: true` in the generator reads the pair from the
+package). `low-high` is named for the marks’ shape, as `guillemets` is for its glyphs and
+`single-outer` for the level that is outermost; `book`, the first name of the book style,
+is retired (it is the default now, and an unknown name falls back to the default).
 
 **Variants.** CLDR is always the default. Where a respected style authority
 disagrees, the other convention is a named variant: the locale’s `variants`
-entry lists only the keys it changes (`quotes`, `nested`, `apostrophe`, `dash`,
-`spacing`) and cites its authority in a comment. The generator’s `LOCALES`
+entry lists only the keys it changes (`quotes`, `nested`, `third`, `apostrophe`, `dash`,
+`spacing`) and cites its authority in a comment. A `dash` is `['mark' => '–', 'spaced' => true]`
+and may add `'allBreaks' => true`: then `---` and a hyphen with a space each side are
+breaks too and take the same dash (`DashesRule`). The generator’s `LOCALES`
 table is where they are declared (`variants: { 'single-outer': … }` on `en-GB`).
 A caller picks one per locale with `new Options(variants: ['en-GB' =>
 'single-outer'])`; an unknown name, or a locale without that variant, means the
-CLDR default and never an error. Built: `en-GB` `single-outer`, `de` `book`
-(`»…«` `›…‹`), `de-CH` `guillemets`, `es` `guillemets-outer` and `nl`
+default and never an error. Built: `en-GB` `single-outer`, `en-US` `spaced-en-dash`
+(Bringhurst §5.2.1, D855; the default stays Chicago’s closed em dash), `de` `low-high`
+(CLDR’s `„…“ ‚…‘`), `de-CH` `guillemets`, `es` `guillemets-outer` and `nl`
 `double-outer`. A variant is added only after its authority is named in the locale
-file. `de` `book` rests on Dan’s decision as a typographer (D823) and on Duden Band 9,
-cited via a secondary source; Duden’s online rules (D 5–D 12, §79 of the official rules)
-give only „…“ ‚…‘, so CLDR’s marks stay `de`’s default. `nl` `double-outer` follows
+file. `de`’s default book style rests on Dan’s decision as a typographer (D823, made the
+default by D844) and on Duden Band 9, cited via a secondary source; Duden’s online rules
+(D 5–D 12, §79 of the official rules) give only „…“ ‚…‘, which is why CLDR’s marks were
+`de`’s default until D844. `nl` `double-outer` follows
 taaladvies.net (Taalunie, 12 May 2021), which says there is no fixed rule but a traditional
 preference for double marks around a literal quotation (D824). Proposed in D819 and not
 built: `fr`/`fr-CH` with `“…”` nested, because the Imprimerie nationale’s *Lexique* (3rd ed.,
@@ -274,7 +343,11 @@ output. See the header of `tests/engine/corpus.php` for the format.
 `13-quote-nesting.txt` holds the quote-type cases (every locale and variant, typed and
 `depth`); its `-depth` copies of earlier cases keep the expectations from before D818.
 `14-same-type-nesting.txt` holds the D822 cases: same-kind nesting, three deep, and a curly
-parent, for every locale and variant.
+parent, for every locale and variant. German cases written before D844 run on the `low-high` variant
+(`config={"variants":{"de":"low-high"}}`), so CLDR’s marks stay covered; the same cases on the book
+default are the `-book-` ones. `16-bringhurst-preset.txt` holds the D817 cases (`preset=bringhurst`
+in a case’s header), a block for every choice the preset makes and one that pins the preset off.
+The fuzz runs the preset too: all rules off, nothing convertible, and twice equal to once.
 
 ## The editions model
 
@@ -305,6 +378,7 @@ half-finishes content.
 | `@sorts` GraphQL directive | `gql\directives\Sorts::apply()` | The directive is in the schema and returns the value unchanged, so queries survive a downgrade. |
 | Fix on save | `ContentFixer::onBeforeSave()` | Does nothing. |
 | Audit utility | `Plugin::registerUtility()` (not listed) and `AuditController::beforeAction()` (403), at enqueue | Not listed; a post is refused. A job already queued finishes (it runs without asking the edition) with the options it was queued with, per site, on an engine with every built-in locale (`EngineService::applyStored()`), so a French entry is still fixed in French. |
+| Fine typography (Bringhurst) | `EngineService::options()` (reads the setting only in Pro) and `applyWith()` (resets the preset on Lite) | Ignored: the setting is stored, and never read. |
 | Pro settings screen | `settings.twig` (`isPro`) | Shown locked and marked Pro; stored values are carried through a Lite save in hidden inputs. |
 
 Not gated: the `|sorts` filter and CKEditor as-you-type quotes (Lite), and anything that

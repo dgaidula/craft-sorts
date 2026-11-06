@@ -50,18 +50,19 @@ Sorts is a typography engine (plain PHP, no Craft code, in `src/engine/`) with a
 | Rule | Example | Default |
 | --- | --- | :---: |
 | Quotation marks, nested | `"She said 'no'"` → `“She said ‘no’”` | on |
-| Apostrophes, including leading | `don't`, `'90s`, `rock 'n' roll` → `don’t`, `’90s`, `rock ’n’ roll` | on |
+| Apostrophes, including leading | `don't`, `'90s`, `rock 'n' roll`, `'Áshįįh` → `don’t`, `’90s`, `rock ’n’ roll`, `’Áshįįh` | on |
 | Primes | `5'10"` → `5′10″`; `45°30'` → `45°30′` | on |
 | Dashes | `--` → `—` (or a spaced `–`, by language); `---` → `—` | on |
 | Ellipsis | `...` → `…` | on |
 | Symbols | `(c)` `(r)` `(tm)` → `©` `®` `™` | on |
-| Number ranges | `1-5` → `1–5` | off |
-| Multiplication | `3x4`, `1920 x 1080` → `3×4`, `1920 × 1080` | off |
-| Fractions | `1/2` → `½` (the Unicode set only; never dates or URLs) | off |
+| Number ranges | `1-5`, `4:30-5:00` → `1–5`, `4:30–5:00` | off |
+| Multiplication | `3x4`, `1920 x 1080`, `8½ x 11` → `3×4`, `1920 × 1080`, `8½ × 11` | off |
+| Fractions | `1/2` → `½`, `8 1/2` → `8½` (the Unicode set only; never dates or URLs) | off |
 | Ordinals | `1st` → `1` and a superscript `st` | off |
 | Widows | a no-break space between the last two words of a heading | on |
-| No-break spaces | number and unit (`10 kg`), initials, `Dr. Smith`, `§ 5` | on |
+| No-break spaces | number and unit (`10 kg`), initials, `Dr. Smith` and `Dr Smith`, `§ 5` | on |
 | Locale spacing | French narrow no-break space before `; : ! ?` and inside `« »` | by language |
+| Typed em dash, dialogue dash, ellipsis spacing | the rules behind [Fine typography](#fine-typography-bringhurst) | with that setting |
 | Styling hooks | `&` in `<span class="amp">`, runs of capitals in `<span class="caps">`, an opening quote in `<span class="dquo">` | off |
 
 ### Which quotation marks a quote gets
@@ -80,9 +81,38 @@ A quotation already set in curly marks counts as the level its marks have in the
 
 Apostrophes, primes and the rules that tell an apostrophe or a prime from a quotation (`don't`, `'90s`, `5'10"`) do not depend on this; only the choice of marks for a quotation Sorts has recognised does.
 
+A `'` at the start of a word, before a letter, is an apostrophe when nothing later in the text could close it and no quotation is open: Navajo `'Áshįįh 'Asdzáán` becomes `’Áshįįh ’Asdzáán` (the case Robert Bringhurst gives, *The Elements of Typographic Style*, 3rd ed., §5.5.2, along with Dutch `’s-Hertogenbosch`, which Sorts already set right). Inside an open quotation, or with a closing mark later in the text, it stays an opening quotation mark.
+
+An honorific written without its period (`Mr`, `Mrs`, `Ms`, `Dr`, `St`, `Msgr`, `Fr`: the Oxford spelling, §5.4.4) is joined to the capitalised word after it with a no-break space, as `Dr. Smith` is. `St` after a capitalised word or a number that does not open its sentence is a street (`Main St Louis`, `42nd St Station`) and is left alone.
+
 Pro has a setting, *Normalize quotes to house style* (`normalizeQuotes`, off by default), that sets every quotation by its nesting depth instead: the primary marks outermost, the secondary marks inside them, then alternating, whichever mark was typed. With it on, `'She said "no"'` becomes `“She said ‘no’”` in en-US. It applies to the page pass, the filter, `@sorts`, fix on save and the audit. Lite always keeps the quote type typed.
 
 Ranges, multiplication and fractions are off because they would catch phone numbers, ISBNs, SKUs and dates. Ordinals and the styling hooks write markup, so they never run in plain-text mode and are never written into stored content.
+
+## Fine typography (Bringhurst) <sup>PRO</sup>
+
+One Pro setting, *Fine typography (Bringhurst)* (`fineTypography`, off by default), switches Sorts to the choices of Robert Bringhurst, *The Elements of Typographic Style*, 3rd ed., chapter 5. Each choice is a rule or a variant that exists on its own; the setting turns on the set:
+
+| Section | What it sets |
+| --- | --- |
+| §5.2.1 | A break in US English is a spaced en dash (` – `), not a closed em dash: the `spaced-en-dash` variant, so `--`, `---` and a spaced hyphen all give it, and a closed or spaced em dash the writer typed (`a—b`) is restyled too (rule `typed-dashes`). A dash that opens a block, a run of em dashes and a dash that touches a quotation mark are left. Spanish, Polish and Portuguese keep their own dash. |
+| §5.2.2 | Number ranges are on, clock times included (`4:30–5:00`). |
+| §5.2.3 | A line of dialogue opens with an em dash and a narrow no-break space: `-- So this` or `— So this` at the start of a block gives `—` U+202F `So this`, in every language (rule `dialogue-dash`). |
+| §5.2.5 | Fractions are on, and join their whole number: `8 1/2` gives `8½`. Dates and URLs keep the virgule. |
+| §5.2.6 | Multiplication is on: `26 x 42`, `8½ x 11`. |
+| §5.2.7 | An ellipsis between two words has a word space either side, and one that meets a full stop, comma, exclamation mark or question mark closes up to the word before it (rule `ellipsis-spacing`). English only, never French. |
+| §5.4.1 | Thin spaces (U+202F) inside guillemets, in every language that uses them, German excepted: the book style sets none (Duden), nor does the Swiss federal guillemet style. |
+
+`Dr Smith` with a no-break space (§5.4.4) and the word-initial apostrophe (§5.5.2) are not part of it: they hold in every setting.
+
+**How it combines with your other settings.** The preset sits above the individual rule switches, as a quotation variant does for quotation marks, and a choice of yours wins over it:
+
+- A rule switch you have moved off its default is your word, and wins: switch *Em and en dashes* off and the preset leaves the dashes off. A switch still at its default follows the preset. Because the ranges, multiplication and fractions switches are off by default, turning one of those *off* does not veto it under the preset; leave *Fine typography* off, or wrap the text in `data-sorts="off"`, to keep one off.
+- A quotation or dash variant you choose for a language wins over the preset’s (the preset’s only choice is `spaced-en-dash` for `en-US`).
+- The Pro rules cannot be reached from Lite, so Lite ignores the setting. `data-sorts="off"` and `data-sorts-lang` work as always.
+- It applies to the page pass, the filter, `@sorts`, fix on save and the audit. Stored content only gets the choices that swap one character for another (dashes, a typed em dash, ranges, fractions, multiplication); the spaces (dialogue, ellipsis, guillemets) belong to the page, and are never written to the database.
+
+With the setting off, output is byte for byte what it was before.
 
 ## Install
 
@@ -138,8 +168,9 @@ CP → Settings → Plugins → Sorts, stored in project config, with every key 
 | Largest page to fix, in bytes | `maxPageBytes` | 1000000 | Pro |
 | Rule switches (a map of rule handle to on or off) | `rules` | the table above | Pro |
 | Fewest words in a heading before widows are joined | `widowsMinWords` | 3 | Pro |
-| Quotation style per language | `variants` | CLDR | Pro |
+| Style per language (quotation marks, the US English dash) | `variants` | CLDR (German: book style) | Pro |
 | Normalize quotes to house style (set every quotation by depth, not by the mark typed) | `normalizeQuotes` | off | Pro |
+| Fine typography (Bringhurst) | `fineTypography` | off | Pro |
 | Extra tags to skip | `skipTags` | none | Pro |
 | Extra classes to skip | `skipClasses` | none | Pro |
 | Request paths to skip (`*` matches any run of characters) | `skipUris` | none | Pro |
@@ -180,17 +211,18 @@ In settings <sup>PRO</sup>: extra tags, classes and request paths to skip. A pat
 
 Sorts sets quotation marks, nested quotation marks, dashes and spacing by language: `en-US`, `en-GB`, `de`, `de-CH`, `fr`, `fr-CH`, `es`, `it`, `pt`, `nl`, `sv`, `fi`, `da`, `nb` (also `no`), `pl` and `cs`. The quotation marks come from Unicode CLDR **49.0.0**; dash style and spacing come from each language’s style authority, named in its locale file. A `lang` attribute on any element switches the language for everything inside it, and an unknown language falls back to the site’s language, then to `en-US`. Lite has `en-US` and `en-GB`.
 
-CLDR is the default for every language. Where a style authority writes it differently, that convention is a named variant you can choose per language <sup>PRO</sup>. Built so far:
+CLDR is the default for every language but one: German defaults to book style `»…« ›…‹`, by the author’s taste (decision D844), and CLDR’s `„…“ ‚…‘` is the variant `low-high`. Where a style authority writes any other language differently, that convention is a named variant you can choose per language <sup>PRO</sup>. Built so far:
 
 | Language | Variant | Marks | Authority |
 | --- | --- | --- | --- |
 | `en-GB` | `single-outer` | ‘…’ outermost, “…” inside | New Hart’s Rules (Oxford University Press), 2nd ed. |
 | `de-CH` | `guillemets` | «…» outermost, ‹…› inside | Schweizerische Bundeskanzlei, *Schreibweisungen*, 2nd ed. 2013, section 2.1.1 |
 | `es` | `guillemets-outer` | «…» outermost, “…” inside, ‘…’ inside that | Real Academia Española, *Ortografía de la lengua española* (2010), “Las comillas” |
-| `de` | `book` | »…« outermost, ›…‹ inside | Dan Gaidula, typographer (decision D823); Duden Band 9, *Richtiges und gutes Deutsch*, 5th ed. 2001 (via a secondary source) |
+| `de` | `low-high` | „…“ outermost, ‚…‘ inside | Unicode CLDR 49.0.0, the marks CLDR gives German. Not the default: the default is the book style »…« ›…‹ (Dan Gaidula, typographer, decision D844; Duden Band 9, *Richtiges und gutes Deutsch*, 5th ed. 2001, via a secondary source) |
+| `en-US` | `spaced-en-dash` | a break is ` – `: an en dash with a word space each side | Robert Bringhurst, *The Elements of Typographic Style*, 3rd ed., §5.2.1 (decision D855). The default stays The Chicago Manual of Style’s closed em dash |
 | `nl` | `double-outer` | “…” outermost, ‘…’ inside | Taalunie, taaladvies.net, “Dubbele of enkele aanhalingstekens bij een citaat” (12 May 2021): no fixed rule, but a traditional preference for double marks around a literal quotation |
 
-A variant changes only the quotation marks it names; the spacing and the dash stay the language’s own (the German book style sets no space inside » « or › ‹, as German practice has it). A variant chosen for `de` or `nl` also applies to the regional forms that fall back to them (`de-AT`, `de-DE`, `nl-BE`); `de-CH` has its own. The variant sets which marks are the primary and secondary pair, and the quote type typed picks between them (see above). An unknown variant name falls back to CLDR. The authority for each is in its locale file (`src/engine/locales/`).
+A quotation variant changes only the quotation marks it names; the spacing and the dash stay the language’s own (the German book style sets no space inside » « or › ‹, as German practice has it). The dash variant changes only the dash: `--`, `---` and a hyphen with a space each side (`25 December - 3 January`) all become ` – `; a hyphen at the start of a line or block (a typed list bullet), a minus in an equation (`5 - 3 = 2`) and anything in code stay as typed, and ranges stay closed (`10–12`). A variant chosen for `de` or `nl` also applies to the regional forms that fall back to them (`de-AT`, `de-DE`, `nl-BE`), and `de-AT` and `de-DE` take `de`’s book-style default; `de-CH` has its own CLDR default and its own variant. The retired name `book` is no longer a variant of `de` (it is the default); a setting that still names it is refused when saved, and the engine reads it as the default. The variant sets which marks are the primary and secondary pair, and the quote type typed picks between them (see above). An unknown variant name falls back to CLDR. The authority for each is in its locale file (`src/engine/locales/`).
 
 ## CKEditor
 
@@ -204,7 +236,7 @@ What CKEditor allows, and what Sorts makes of it:
   - Both keys, “…” for `"` and ‘…’ for `'`: `en-US`, `en-GB`, `da`, `es`, `pt`, and `nl` set to `double-outer`.
   - `'` only, as ‘…’: `nb` (its primary «…» is not one of CKEditor’s) and `nl` by default (‘…’ on both levels; CKEditor’s `"` gives “…”).
   - `"` only, as „…”: `pl` (its nested «…» is not one of CKEditor’s).
-  - Neither, left straight as typed: `de`, `de-CH`, `cs`, `fr`, `fr-CH`, `it`, `fi`, `sv`, and the variants `single-outer`, `book`, `guillemets` and `guillemets-outer`.
+  - Neither, left straight as typed: `de` (German is book style `»…«` by default, which CKEditor cannot produce; so is its `low-high` variant `„…“`), `de-AT`, `de-DE`, `de-CH`, `cs`, `fr`, `fr-CH`, `it`, `fi`, `sv`, and the variants `single-outer`, `guillemets` and `guillemets-outer`.
 
   CKEditor’s config cannot carry a pair it does not know by name, so marks left straight are set by the page pass or fix on save later. CKEditor’s `en-GB` pairs put ‘…’ on `'`, which is not what `single-outer` does (it puts ‘…’ on `"`), so Sorts does not use them. On Lite the editor is always English, with both keys.
 
@@ -214,7 +246,7 @@ What CKEditor allows, and what Sorts makes of it:
 
 - With *Normalize quotes to house style* on, only `"` is converted while typing: a typed `'` may be an outermost quotation, which depth sets in the primary marks, and CKEditor cannot know that. So `nb` and `nl` (by default) convert nothing while typing.
 
-- Dashes, ellipsis and symbols follow the rules that are on. `--` becomes an en dash only for languages where Sorts’ `--` is a spaced en dash.
+- Dashes, ellipsis and symbols follow the rules that are on. `--` becomes an en dash only for languages where Sorts’ `--` is a spaced en dash (US English with the `spaced-en-dash` variant included, where `---` is left for Sorts too, since CKEditor would make it an em dash). With *Fine typography* on, CKEditor’s fractions are off, for it would turn the `1/2` of `8 1/2` into `½` and leave the space.
 
 - Not available in CKEditor: apostrophes, primes, ranges, no-break spaces, widows. Pasted text and existing content are never changed by the editor.
 
@@ -316,7 +348,7 @@ Both follow the same quote setting as the page (the quote type typed, or *Normal
 
 **Fix on save** (off by default) changes the title and the Plain Text and CKEditor values on the element as it is saved, so there is no second save. It skips revisions, drafts Craft autosaves while someone types, saves that propagate to other sites, and resaves and migrations (`craft up` included) unless *Also fix when resaving and while migrations run* is on.
 
-**The audit** (CP → Utilities → Sorts) scans entries a hundred at a time, lists those with something to fix with a before and after, and fixes the ones you tick through the queue. The scan only reads. The fix is saved the way Craft’s own resave command saves, so it creates no revision and leaves each entry’s Date Updated alone, unless you tick *Create a revision for each entry and update its Date Updated*. The edition is checked when the job is queued, not when it runs, so a job already queued finishes after a downgrade; it carries the language and rules each site was to be fixed with, so a French entry is still fixed in French. The job also carries the user who queued it and skips any entry that user may not save on that site (Craft’s own `canSave()` check).
+**The audit** (CP → Utilities → Sorts) scans entries a hundred at a time, lists those with something to fix with a before and after, and fixes the ones you tick through the queue. It also lists, without a tick box, what Sorts will not change but you may want to: a number with an apostrophe before the s (`1930’s`), under *Flagged, not changed*. The scan only reads. The fix is saved the way Craft’s own resave command saves, so it creates no revision and leaves each entry’s Date Updated alone, unless you tick *Create a revision for each entry and update its Date Updated*. The edition is checked when the job is queued, not when it runs, so a job already queued finishes after a downgrade; it carries the language and rules each site was to be fixed with, so a French entry is still fixed in French. The job also carries the user who queued it and skips any entry that user may not save on that site (Craft’s own `canSave()` check).
 
 ## What Sorts assumes
 
@@ -328,6 +360,10 @@ HTML pages rendered by Craft templates. Not handled: JSON and XML responses, ema
 
 - **An outermost single-quoted quotation gets the secondary marks.** Because `'` is always the secondary pair at the outermost level, `'No,' she said.` becomes `‘No,’ she said.` in en-US, and `“No,” she said.` in en-GB `single-outer`. Switch on *Normalize quotes to house style* to have the nesting depth decide instead.
 - **A second pass with apostrophes or primes switched off.** With the apostrophes rule (or the primes rule) off, a straight mark Sorts reads as an apostrophe (or a prime) stays straight, and a second pass reads it beside the curly marks the first pass wrote, so it can take it for a quotation mark. This can happen in any language. In one generated sweep of 1,500 mixed inputs per language, 4 to 15 inputs per language and mode changed on a second pass with apostrophes off (38 to 43 in French and Swiss French), and at most one with primes off; with the default rules, none did. The inputs found are machine-made, most with a straight `'` right beside a curly ’ or ”.
+- **A lone mark at the start of a word inside a quotation.** The word-initial apostrophe rule applies only where no quotation is open, so a lone `'` opening a word inside a quotation (`"He's from the 'hood," she said`) is still read as a quotation that was never closed, and gets an opening mark (‘hood). Type ’ (U+2019) for it, or wrap the text in `data-sorts="off"`.
+- **A numerical plural keeps its apostrophe.** `1930's` becomes `1930’s`, and Sorts does not take the apostrophe out: it cannot tell a plural (the 1930s) from a possessive (1930’s best film). The audit lists them under *Flagged, not changed*, and the engine reports them (see [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)). Bringhurst §5.4.3 asks for `1930s`.
+- **A spaced hyphen between numbers is a break in the dash variant.** With *US English* set to `spaced-en-dash`, `5 - 3` becomes `5 – 3`; only an equation (`5 - 3 = 2`) is recognised as a minus. Wrap other arithmetic in `data-sorts="off"`.
+- **A whole number in another element does not join its fraction.** `<b>8</b> 1/2` gives `8 ½`; the fraction joins only a number in the same run of text.
 - **A straight mark closing a curly quotation of another shape.** A straight mark that closes a quotation opened with a curly mark of another shape can get the wrong glyph: Italian `«Disse “sì" e partì»` becomes `«Disse “sì» e partì»`. Type both marks the same way.
 
 - **Misnested markup inside code.** Sorts reads the page as it is written and does not rebuild HTML5’s tree: an end tag closes the nearest open element of that name, and Sorts does not run the browser’s repair of misnested formatting (the adoption agency and the reopening of formatting elements). In well-formed pages this changes nothing. In misnested ones, text that a browser would still show inside `code`, `kbd`, `samp` or `var` (after, say, a stray `</figcaption>` inside a `<code>`) can be typeset. Sorts assumes well-formed markup inside code-like elements.
