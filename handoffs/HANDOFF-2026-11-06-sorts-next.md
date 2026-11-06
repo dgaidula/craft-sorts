@@ -26,9 +26,19 @@
 2. **Done 2026-11-06 (`76de41b`):** the responsive icon is `src/icon.svg`; its preview and build script are kept in `docs/icon/`. Still to check by eye in the testbed CP (Settings → Plugins at 44 px, the Settings grid at 40 px). Original step: **Install the icon:** the responsive SVG is at `…/scratchpad/icon/sorts-icon-c-responsive.svg` if the designer finished (else its `sorts-icon-c-archive.svg`); copy to `src/icon.svg`, check it renders in the testbed CP (Settings → Plugins), commit. If the scratchpad is gone, re-brief from §2. Acceptance: Store readiness complete (CLAUDE.md list).
 3. **G32 phase 4:** `web-standards-check typography` (D847) and the one-line G29g allowance for `hanging-punctuation` and `text-wrap: pretty` (D849), in `~/sw/github-private/web-standards-check`; link `prose-typeset` onto PATH. Acceptance: working-mode gate closed.
 
-## 4. Decisions still Dan’s
+## Update, later on 2026-11-06
 
-None open from this session. (Republishing the specimen after the build, so its “engine pending” rows go live, is a courtesy, not a decision.)
+- **The build landed:** `7b362d6`, `230fbbc`, `4153b5e`, `4b04db1`, `abc79de`, `b007985`, effort row `cb57d6a`. The orchestrator re-ran `composer test-engine`: 5131/0. German now defaults to `»…«` (CLDR’s `„…“` is variant `low-high`; `book` is retired); en-US variant `spaced-en-dash`; the Bringhurst preset is setting `fineTypography`, engine preset `bringhurst`, Pro only.
+- **A release gate at `xhigh` was launched** over `0bb7844..cb57d6a`; its receipt will be `gates/2026-11-06-sorts-d844-d859-gate.json`. Step 1 above becomes: read that receipt, run the fix rounds, then renew the Hardened line and push.
+- **The house preset needs one edit after the gate:** `gaidula-standards/presets/typeset-house.json` sets `de` → `book`, which is now retired. Remove that line (book style is the default), and add `en-US` → `spaced-en-dash` (D855).
+
+## 4. Decisions still Dan’s (the builder’s questions, 2026-11-06)
+
+1. **B38, a word-initial apostrophe:** it is narrowed to apply only where no quotation is open, so `'hood` inside a quotation stays `‘hood`. The broad rule is one condition away, but it flipped three existing correct cases. Keep the narrow rule? (Recommend yes.)
+2. **The preset against per-rule switches:** a site can't veto ranges, multiplication or fractions while the preset is on, because the settings store a plain on/off where "off" is also their default. Allowing a veto needs a three-state switch (on, off, follow the preset), which is a UI change. Build it? (Recommend later.)
+3. **Swiss German guillemets:** under the preset they get no inner thin space, following the Bundeskanzlei. Keep? (Recommend yes.)
+4. **D856:** the preset restyles spaced em dashes (`a — b`) as well as closed ones. Keep? (Recommend yes.)
+5. **FU2** (en-GB `single-outer`: a straight `'` after `s` or a digit inside `‘…’` inside an open `“…”` closes the `“`): fix it, or document it as a Known limit? (Republishing the specimen after the build, so its “engine pending” rows go live, is a courtesy, not a decision.)
 
 ## 5. Unverified beliefs and known gaps
 
