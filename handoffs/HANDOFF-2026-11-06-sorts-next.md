@@ -36,7 +36,18 @@
 
 Dan answered §4 below as **D863–D867** (claude-ops `38545845`): 1 y, 2 y (tonight), 3 y, 4 y, 5 fix overnight if it can be fixed. Run these in order in a fresh `clorchestrate` session in this repo, with fable-mode, release mode throughout:
 
-- **First, check whether the gate is still running.** The old session’s release gate (launched about 2026-11-06 evening, 1.5–2 hours) works in this repo’s working tree. Until `gates/2026-11-06-sorts-d844-d859-gate.json` exists on `main`, **don’t edit or commit anything in `craft-sorts`, and don’t start another gate**. Do W5 first (it lives in `gaidula-standards`), then wait for the receipt: use the Monitor tool with an until-loop on that file, never a sleep loop or a load test. Re-run the gate only if no receipt has appeared about 3 hours after launch and no `gate` process is working in the repo.
+- **The gate finished: FAIL** (`gates/2026-11-06-sorts-d844-d859-gate.json`, commit `184baa0`; the receipt holds every repro). The blocking findings are F1–F7:
+  - **F1:** second-pass instability with the preset or `spaced-en-dash`. 2,731 of 168k rig rows; in Craft, fix-on-save changes stored content again on the next save.
+  - **F2:** D858's `St` check reads stale bytes and can start inside a multibyte character; `Visit St Ives` is unstable even under the default rules.
+  - **F3:** the B15 fraction join skips its date and decimal guards at the start of a run.
+  - **F4:** B9 shifts the URL positions.
+  - **F5:** see Dan's question below.
+  - **F6:** the preset plus fix-on-save loses the dialogue dash.
+  - **F7:** the preset-only rules can't be switched off, and `dashes` off doesn't stop the typed-dash rule.
+
+  Ten mutants survived; the follow-ups are FU1–FU10. W1 runs the fix rounds for these, folding in D864 (W2, which also settles F7's switches) and D867 (W3).
+- **F5 needs Dan before it is fixed:** B38 turns the `'` that opens each paragraph of a multi-paragraph quotation (the convention: every paragraph opens, only the last closes) into an apostrophe. The orchestrator's recommendation: a `'` at the very start of a block stays an opening quote, and B38 applies inside running text only. A Navajo-style word at the start of a block is then a hand fix, documented. Ask him, as `D868` or the next free ID, before W1 touches B38.
+- **(Superseded: the gate has finished.) First, check whether the gate is still running.** The old session’s release gate (launched about 2026-11-06 evening, 1.5–2 hours) works in this repo’s working tree. Until `gates/2026-11-06-sorts-d844-d859-gate.json` exists on `main`, **don’t edit or commit anything in `craft-sorts`, and don’t start another gate**. Do W5 first (it lives in `gaidula-standards`), then wait for the receipt: use the Monitor tool with an until-loop on that file, never a sleep loop or a load test. Re-run the gate only if no receipt has appeared about 3 hours after launch and no `gate` process is working in the repo.
 - **W1.** Read the gate receipt `gates/2026-11-06-sorts-d844-d859-gate.json` (launched at `cb57d6a`; if it is missing, the gate did not finish, so re-run it from the brief recorded in §2 of this update: `0bb7844..cb57d6a`, `xhigh`, mutants). Run fix rounds per the casting rules (at most two; a fix-introduced regression goes to Dan, or past the cap only under `:you`).
 - **W2. D864:** the three-state per-rule setting (on, off, follow the preset), so a site can veto a preset rule. Engine `Options`, the Craft settings screen (Pro, locked in Lite), project config, the README. Cast `dgbuilder`, release mode.
 - **W3. D867:** fix FU2 if it can be fixed without regressions (the R4-1 re-check receipt `gates/2026-11-06-sorts-r4-1-recheck.json` has the repro); otherwise add it to the README’s Known limits with the repro. Cast `fixer` (it is a gate follow-up).
