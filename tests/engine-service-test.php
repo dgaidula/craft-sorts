@@ -117,7 +117,9 @@ sortsTry('fine typography, the Bringhurst preset (D817)', function () {
     $svc = sorts()->engine;
     $o = $svc->storedOptions('en-US', 'text');
     sortsEq('fine, stored: characters only (a typed em dash, fractions, ranges), no spacing', 'a – b and 8½ and 4:30–5:00 wait…then', $svc->applyStored('a—b and 8 1/2 and 4:30-5:00 wait...then', $o));
-    sortsEq('fine, stored: a dialogue line keeps its typed -- for the page (F6), and no guillemet spaces', ['-- So.', '«Sì»'], [$svc->applyStored('-- So.', $svc->storedOptions('en-US', 'text')), $svc->applyStored('«Sì»', $svc->storedOptions('it', 'text'))]);
+    sortsEq('fine, stored: a dialogue line opens with the em dash and its space (D897), and no guillemet spaces', ['— So.', '«Sì»'], [$svc->applyStored('-- So.', $svc->storedOptions('en-US', 'text')), $svc->applyStored('«Sì»', $svc->storedOptions('it', 'text'))]);
+    $dialogue = $svc->applyStored('<p>-- So this is it.</p>', $svc->storedOptions('en-GB', 'html'));
+    sortsEq('fine, stored twice: the dialogue line is stored once and then left alone, in a spaced-en-dash language too (D897)', ['<p>— So this is it.</p>', '<p>— So this is it.</p>'], [$dialogue, $svc->applyStored($dialogue, $svc->storedOptions('en-GB', 'html'))]);
     sortsEq('fine, stored then the page: the dialogue dash, as for text never stored (F6)', ["<p>—\u{202F}So this is it.</p>", "<p>—\u{202F}So this is it.</p>"], [$svc->apply($svc->applyStored('<p>-- So this is it.</p>', $svc->storedOptions('en-US', 'html'))), $svc->apply('<p>-- So this is it.</p>')]);
     $stored = $svc->applyStored('"Yes" - she said', $o);
     sortsEq('fine, stored: one pass gives what two would (F1)', ['“Yes” – she said', '“Yes” – she said'], [$stored, $svc->applyStored($stored, $o)]);

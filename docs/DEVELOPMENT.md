@@ -170,7 +170,7 @@ and the options: a rule that is on runs everywhere; any rule also runs inside
 | 20 | `ellipsis` | on | |
 | 21 | `ellipsis-spacing` | off | word spaces round an ellipsis, English only; the Bringhurst preset turns it on |
 | 25 | `dialogue-dash` | off | `-- ` or `— ` at the start of a block gives `—` and U+202F; the preset turns it on |
-| 30 | `dashes` | on | `--` by locale; `---` is an em dash; with a locale dash that sets `allBreaks` (en-US `spaced-en-dash`) `---` and a spaced hyphen take the same dash as `--`; option `keepDialogue` (set for stored content where the page runs `dialogue-dash`) leaves a block-opening `-- ` as typed |
+| 30 | `dashes` | on | `--` by locale; `---` is an em dash; with a locale dash that sets `allBreaks` (en-US `spaced-en-dash`) `---` and a spaced hyphen take the same dash as `--`; option `keepDialogue` (set for stored content where the page runs `dialogue-dash`) writes a block-opening `-- ` as `— `, the em dash and the typed space, for the page’s dialogue dash (D897) |
 | 31 | `typed-dashes` | off | a typed em dash takes the locale’s break dash; the preset turns it on |
 | 40 | `fractions` | off | the Unicode set only; a whole number of one to three digits joins its fraction (`8 1/2` → `8½`) |
 | 50 | `ranges` | off | plain number pairs and clock times (`4:30-5:00`) |

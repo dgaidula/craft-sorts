@@ -42,6 +42,18 @@ sortsTry('pro, spaced em dashes round a short word and a block that opens with w
     sortsConfigure('pro');
 });
 
+sortsTry('pro, fine typography: a dialogue line as fix on save stores it (D897)', function () use ($body, $has) {
+    sortsClean();
+    sortsConfigure('pro', ['fineTypography' => true]);
+    $stored = sorts()->engine->applyStored('<p>-- So this is it.</p>', sorts()->engine->storedOptions('en-US', 'html'));
+    sortsEq('fine: what is stored opens with the em dash and its space', '<p>— So this is it.</p>', $stored);
+    $e = sortsEntry(['sortsBody' => $stored . "\n<p>-- So it was.</p>", 'slug' => 'd897-dialogue']);
+    $html = $body(sortsHttp()->get('/sorts-test/' . $e->slug));
+    sortsCheck('fine: the page reads the stored line as dialogue, as it does a typed one', $has($html, "<p>—\u{202F}So this is it.</p>\n<p>—\u{202F}So it was.</p>"), $html);
+    sortsClean();
+    sortsConfigure('pro');
+});
+
 sortsTry('pro, on', function () use ($body, $has, $curly) {
     sortsConfigure('pro');
     $http = sortsHttp();

@@ -111,10 +111,16 @@ sortsTry('fine typography: one save is the whole fix (F1, F6, F7)', function () 
     sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true]);
     $e = $edited(['title' => '"Yes" - she said', 'sortsPlain' => 'He came---and went; the word "foo" - which means bar', 'sortsBodySite' => '<p>-- So this is it.</p><p>The word "foo" - which means bar</p>']);
     $f = sortsFresh($e->id);
-    sortsEq('fine: one save stores the fix whole', ['“Yes” – she said', 'He came – and went; the word “foo” – which means bar', '<p>-- So this is it.</p><p>The word “foo” – which means bar</p>'], [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
+    sortsEq('fine: one save stores the fix whole, the dialogue line as the em dash and its space (D897)', ['“Yes” – she said', 'He came – and went; the word “foo” – which means bar', '<p>— So this is it.</p><p>The word “foo” – which means bar</p>'], [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
     $scan = sorts()->auditScanner->scan($section, $site, 0);
     sortsEq('fine: the audit finds nothing left to fix after it', [], array_values(array_filter($scan['items'], fn ($i) => $i['id'] === (int) $e->id)));
     sortsEq('fine: the page sets the dialogue dash the save left for it', "<p>—\u{202F}So this is it.</p><p>The word “foo” – which means bar</p>", sorts()->engine->apply(sortsRaw($f, 'sortsBodySite')));
+    $stored = [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')];
+    if (!Craft::$app->getElements()->saveElement($f)) {
+        throw new \RuntimeException('The second save did not save: ' . json_encode($f->getErrors()));
+    }
+    $f = sortsFresh($e->id);
+    sortsEq('fine: a second save changes nothing (D897)', $stored, [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
     sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true, 'rules' => ['dashes' => false]]);
     $f = sortsFresh($edited(['title' => 'Dashes off: a—b and c — d', 'sortsPlain' => 'Typed em dash: a—b'])->id);
     sortsEq('fine, dashes off: a typed em dash is stored as typed', ['Dashes off: a—b and c — d', 'Typed em dash: a—b'], [$f->title, sortsRaw($f, 'sortsPlain')]);
@@ -133,7 +139,7 @@ sortsTry('a veto of a preset rule reaches stored content (D864)', function () us
     $values = ['title' => '"Yes" pages 10-12 and a—b', 'sortsPlain' => '8 1/2 x 11 -- ok', 'sortsBodySite' => '<p>-- So this is it.</p>'];
     sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true]);
     $f = sortsFresh($edited($values)->id);
-    sortsEq('follow: the preset reaches stored content (ranges, a typed em dash; the dialogue line kept for the page)', ['“Yes” pages 10–12 and a – b', '8½ × 11 – ok', '<p>-- So this is it.</p>'], [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
+    sortsEq('follow: the preset reaches stored content (ranges, a typed em dash; the dialogue line opens with the em dash, D897)', ['“Yes” pages 10–12 and a – b', '8½ × 11 – ok', '<p>— So this is it.</p>'],[$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
     sortsClean();
     sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true, 'rules' => ['ranges' => 'off', 'typed-dashes' => 'off', 'dialogue-dash' => 'off']]);
     $e = $edited($values);

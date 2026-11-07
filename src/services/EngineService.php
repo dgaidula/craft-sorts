@@ -161,7 +161,8 @@ class EngineService extends Component
             $rules[$handle] = in_array($handle, self::STORED_RULES, true) && $onPage[$handle];
         }
         $allowed = array_values(array_intersect(self::STORED_RULES, $options->allowed ?? self::STORED_RULES));
-        // A `-- ` that opens a block is the page’s dialogue dash where that rule runs: storage leaves it as typed.
+        // A `-- ` that opens a block is the page’s dialogue dash where that rule runs: storage writes it `— ` (D897),
+        // which the page reads as it does `-- `, and leaves the narrow space to the page.
         $ruleOptions = $options->ruleOptions;
         if ($onPage['dialogue-dash'] ?? false) {
             $ruleOptions['dashes']['keepDialogue'] = true;

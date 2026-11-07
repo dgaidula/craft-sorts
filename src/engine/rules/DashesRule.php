@@ -18,7 +18,8 @@ use iceboxind\sorts\engine\Run;
  * The dashes it writes, and the spaces it adds, are not settled: `typed-dashes` restyles the
  * em dash `---` gives as it does a typed one, and widows can join the word after a dash, all
  * in the pass a second one would. Rule option `keepDialogue` (true for stored content when the
- * page reads dialogue, see {@see DialogueDashRule}) leaves a `-- ` that opens a block for the page.
+ * page reads dialogue, see {@see DialogueDashRule}) writes a `-- ` that opens a block as `— ` in
+ * every language, the opening the page’s dialogue dash reads (D897), and leaves its space for the page.
  */
 final class DashesRule extends AbstractRule
 {
@@ -71,7 +72,7 @@ final class DashesRule extends AbstractRule
                     return null;
                 }
                 if ($keepDialogue && $offset === 0 && $length === 2 && $before === '' && preg_match('/^--\x20\S/', $text)) {
-                    return null;
+                    return '—';
                 }
                 if ($length === 3 && !$allBreaks) {
                     return '—';
