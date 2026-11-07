@@ -1,4 +1,5 @@
 // Glyph helper for build-icon.mjs: reads Jost (variable, OFL) with fontkit and emits SVG paths.
+// fontkit is the repo’s one devDependency: run `npm ci` at the repo root before building the icon.
 import * as fontkit from 'fontkit';
 import { fileURLToPath } from 'node:url';
 const base = fontkit.openSync(fileURLToPath(new URL('./jost.ttf', import.meta.url)));

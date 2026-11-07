@@ -263,12 +263,26 @@
 > <p>— So this is it.</p><p>a — b</p><p>Text <em>— So</em></p><p>— So</p>
 
 @ d-keep-dialogue-em-dash-in-a-spaced-en-dash-language only=dashes locale=en-GB config={"ruleOptions":{"dashes":{"keepDialogue":true}}}
-< <p>-- So this is it.</p><p>a -- b</p>
-> <p>— So this is it.</p><p>a – b</p>
+< <p>-- So this is it.</p><p>a -- b</p><p>Text <em>-- So</em></p>
+> <p>— So this is it.</p><p>a – b</p><p>Text <em>– So</em></p>
 
 @ d-keep-dialogue-stored-rules-under-the-preset preset=bringhurst only=symbols,ellipsis,dashes,typed-dashes,fractions,ranges,multiplication,primes,apostrophes,quotes config={"ruleOptions":{"dashes":{"keepDialogue":true}}}
 < <p>-- So this is it.</p><p>— So it was.</p>
 > <p>— So this is it.</p><p>— So it was.</p>
+
+# A Unicode space after `-- ` is not a dialogue line on the page (DialogueDashRule wants a word space and a
+# character), so storage writes the locale’s dash there, as for text never stored.
+@ d-keep-dialogue-not-before-a-unicode-space-en-US preset=bringhurst only=symbols,ellipsis,dashes,typed-dashes,fractions,ranges,multiplication,primes,apostrophes,quotes config={"ruleOptions":{"dashes":{"keepDialogue":true}}}
+< <p>-- \u{A0}So</p><p>-- \u{2009}So</p><p>-- \u{202F}So</p><p>-- \u{3000}So</p>
+> <p>– \u{A0}So</p><p>– \u{2009}So</p><p>– \u{202F}So</p><p>– \u{3000}So</p>
+
+@ d-keep-dialogue-not-before-a-unicode-space-en-GB only=dashes locale=en-GB config={"ruleOptions":{"dashes":{"keepDialogue":true}}}
+< <p>-- \u{A0}So</p><p>-- \u{2009}So</p><p>-- \u{202F}So</p><p>-- \u{3000}So</p>
+> <p>– \u{A0}So</p><p>– \u{2009}So</p><p>– \u{202F}So</p><p>– \u{3000}So</p>
+
+@ d-keep-dialogue-not-before-a-unicode-space-fr only=dashes locale=fr config={"ruleOptions":{"dashes":{"keepDialogue":true}}}
+< <p>-- \u{A0}So</p><p>-- \u{2009}So</p><p>-- \u{202F}So</p><p>-- \u{3000}So</p>
+> <p>– \u{A0}So</p><p>– \u{2009}So</p><p>– \u{202F}So</p><p>– \u{3000}So</p>
 
 @ dv-across-inline-tags only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
 < <b>word</b> - <i>word</i>

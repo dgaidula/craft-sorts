@@ -336,6 +336,9 @@ check('context: em is not an ancestor of one', false, $seen['one ']['em']);
 check('context: ancestors include the inline element', ['div', 'p', 'em'], $seen['two']['ancestors']);
 check('context: textAfter is the rest of the flow', ' three', $seen['two']['after-all']);
 check('context: a new flow does not see the last', ['', 'en-US'], [$seen['four']['before'], $seen['four']['locale']]);
+// Characters, not bytes: `ßß` is four bytes, and a walk that counted bytes would stop there.
+$e4->apply('<p><b>éé</b><i>ßß</i>ŵŵ</p>', [], new Options(rules: array_fill_keys($handles, false)));
+check('context: before counts characters across inline tags', 'éßß', $seen['ŵŵ']['before']);
 
 // ---- The tokenizer: everything not changed comes out byte for byte -----------
 

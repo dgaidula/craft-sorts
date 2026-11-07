@@ -71,7 +71,8 @@ final class DashesRule extends AbstractRule
                 if ($blankBefore && $after !== '' && preg_match('/^[A-Za-z0-9]$/', $after)) {
                     return null;
                 }
-                if ($keepDialogue && $offset === 0 && $length === 2 && $before === '' && preg_match('/^--\x20\S/', $text)) {
+                // In /u, as DialogueDashRule reads the line: a byte `\S` took the first byte of a no-break space.
+                if ($keepDialogue && $offset === 0 && $length === 2 && $before === '' && preg_match('/^--\x20\S/u', $text)) {
                     return '—';
                 }
                 if ($length === 3 && !$allBreaks) {

@@ -139,7 +139,7 @@ sortsTry('a veto of a preset rule reaches stored content (D864)', function () us
     $values = ['title' => '"Yes" pages 10-12 and a—b', 'sortsPlain' => '8 1/2 x 11 -- ok', 'sortsBodySite' => '<p>-- So this is it.</p>'];
     sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true]);
     $f = sortsFresh($edited($values)->id);
-    sortsEq('follow: the preset reaches stored content (ranges, a typed em dash; the dialogue line opens with the em dash, D897)', ['“Yes” pages 10–12 and a – b', '8½ × 11 – ok', '<p>— So this is it.</p>'],[$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
+    sortsEq('follow: the preset reaches stored content (ranges, a typed em dash; the dialogue line opens with the em dash, D897)', ['“Yes” pages 10–12 and a – b', '8½ × 11 – ok', '<p>— So this is it.</p>'], [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
     sortsClean();
     sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true, 'rules' => ['ranges' => 'off', 'typed-dashes' => 'off', 'dialogue-dash' => 'off']]);
     $e = $edited($values);

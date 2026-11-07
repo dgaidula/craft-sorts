@@ -2,7 +2,7 @@
   "name": "craft-sorts-dev",
   "private": true,
   "type": "module",
-  "description": "Dev tooling only (docs/icon build); not shipped with the plugin.",
+  "description": "Dev tooling only (docs/icon build); it ships in the package with the rest of the repo, but the plugin never reads it.",
   "devDependencies": {
     "fontkit": "^2.0.4"
   }
