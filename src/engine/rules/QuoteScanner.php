@@ -453,7 +453,9 @@ final class QuoteScanner
             // 'Áshįįh 'Asdzáán: at the start of a word, with nothing later that could close it, it opens
             // no quotation (Bringhurst 5.5.2). Only where no quotation is open: inside one, a lone mark is
             // as likely a nested quotation left open ('hood in dialogue reads either way) and keeps its old reading.
-            if ($opening && $noneOpen && self::singleClosersAfter($text, $tokens, $k, $context, $html, $roles, $suffix) === 0) {
+            // In running text only: a mark that opens its block opens a quotation, since a quotation over several
+            // paragraphs opens each one and closes only the last (D876).
+            if ($opening && $prevClass !== self::START && $noneOpen && self::singleClosersAfter($text, $tokens, $k, $context, $html, $roles, $suffix) === 0) {
                 return self::D_APOSTROPHE;
             }
             return self::D_OPEN;

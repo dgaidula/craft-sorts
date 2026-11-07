@@ -172,9 +172,15 @@
 < in 's-Hertogenbosch
 > in ’s-Hertogenbosch
 
-@ a-word-initial-apostrophe-at-the-start-of-the-text only=quotes,apostrophes,primes
+# D876: a mark that opens its block opens a quotation (a quotation over several paragraphs opens
+# each one), so a word-initial apostrophe there is a hand fix (README, Known limits).
+@ a-word-initial-apostrophe-at-the-start-of-a-block-opens-a-quotation only=quotes,apostrophes,primes
 < 'Aiea is on Oahu.
-> ’Aiea is on Oahu.
+> ‘Aiea is on Oahu.
+
+@ a-word-initial-apostrophe-after-the-start-of-a-block only=quotes,apostrophes,primes
+< In 'Aiea, on Oahu.
+> In ’Aiea, on Oahu.
 
 @ a-word-initial-apostrophe-before-a-double-quotation only=quotes,apostrophes,primes
 < The 'Asdzáán said "yes"
@@ -185,8 +191,29 @@
 > Navajo ’Áshįįh and ’Asdzáán
 
 @ a-word-initial-apostrophe-across-inline-tags only=quotes,apostrophes,primes
-< <p>'Áshįįh <b>and</b> 'Asdzáán</p>
-> <p>’Áshįįh <b>and</b> ’Asdzáán</p>
+< <p>Navajo 'Áshįįh <b>and</b> 'Asdzáán</p>
+> <p>Navajo ’Áshįįh <b>and</b> ’Asdzáán</p>
+
+@ a-word-initial-mark-opening-a-block-after-an-inline-tag-opens-a-quotation only=quotes,apostrophes,primes
+< <p><em>'Áshįįh</em> and 'Asdzáán</p>
+> <p><em>‘Áshįįh</em> and “Asdzáán</p>
+
+# F5 (gate 2026-11-06), D876: a quotation over several paragraphs opens each and closes only the last.
+@ a-multi-paragraph-quotation-opens-every-paragraph only=quotes,apostrophes,primes
+< <p>'It was a dark night. I walked home.</p><p>'Then I saw it,' she said.</p>
+> <p>‘It was a dark night. I walked home.</p><p>‘Then I saw it,’ she said.</p>
+
+@ a-multi-paragraph-quotation-opens-every-paragraph-en-GB only=quotes,apostrophes,primes locale=en-GB
+< <p>'It was a dark night. I walked home.</p><p>'Then I saw it,' she said.</p>
+> <p>‘It was a dark night. I walked home.</p><p>‘Then I saw it,’ she said.</p>
+
+@ a-multi-paragraph-quotation-opens-every-paragraph-en-GB-single-outer only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>'It was a dark night.</p><p>'Then I saw it,' she said.</p>
+> <p>“It was a dark night.</p><p>“Then I saw it,” she said.</p>
+
+@ a-multi-paragraph-quotation-in-entity-form only=quotes,apostrophes,primes
+< <p>&#39;It was dark.</p><p>&#39;Then,&#39; she said.</p>
+> <p>‘It was dark.</p><p>‘Then,’ she said.</p>
 
 @ a-word-initial-apostrophe-in-en-GB only=quotes,apostrophes,primes locale=en-GB
 < Navajo 'Áshįįh 'Asdzáán

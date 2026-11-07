@@ -1227,10 +1227,10 @@
 
 @ r2-6-es-guillemets-outer-depth-closer-with-nothing-of-its-kind-open only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
 < <p>'Dijo 'ven acá" y se fue.</p>
-> <p>’Dijo ’ven acá» y se fue.</p>
+> <p>«Dijo “ven acá’ y se fue.</p>
 
-# B38 (Bringhurst 5.5.2) reads the two lone ' above as apostrophes, so the case no longer has a single quotation
-# open when the " arrives. The same shape with a closing ' keeps what the case was written for.
+# The first ' opens its block, so it opens a quotation (D876) and B38 does not apply. The same shape with a
+# closing ' as well.
 
 @ r2-6-es-guillemets-outer-depth-closer-with-nothing-of-its-kind-open-closed only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
 < <p>'Dijo 'ven acá" y se fue.'</p>
