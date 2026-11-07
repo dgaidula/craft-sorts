@@ -1,0 +1,113 @@
+{
+ "tool": "craft-sorts",
+ "run": "2026-11-07 second closure re-check (release mode, high) of fix round 2: re-check 234c99f (NOT CLOSED R1-1; FU1, FU2) → fix fbbd2af, effort row 6618a1e. W1 S5 re-check 2, overnight run 2026-11-06/07.",
+ "suite": "tests/engine/run.php: RESULT: 5225 passed, 0 failed (Homebrew PHP 8.5.12; also 5225/0 under PHP 8.4.27, PCRE2 10.46, in the craft5-testbed web container); composer check (/opt/homebrew/bin/php /usr/local/bin/composer) exit 0: composer.json valid, lint ok, cs 0 of 68, PHPStan no errors (.php-cs-fixer.cache restored); node tests/run-all.mjs exit 0: audit 66, ckeditor 40, engine-service 83, extension-api 16, fix-on-save 75, graphql 23, page-pass 83, settings 118, smoke 2, twig 77 (583 ok), testbed isolation ok, queue 0 → 0; prose-typeset node --test with PROSE_TYPESET_SORTS unset: 40 of 40 pass.",
+ "verdict": "CLOSED WITH FOLLOW-UPS",
+ "verdictLine": "CLOSED WITH FOLLOW-UPS: R1-1, FU1 and FU2 of 2026-11-07-sorts-release-recheck are closed and nothing regressed (the gate rig’s 1,784,290 rows over all.jsonl and cfg0-2, both passes, are byte-identical to 234c99f, so to e574efb). Three low follow-ups: the indent perf guard inverts under the e574efb regex (FU1), a split &#160; tail is unpinned (FU2), and &#0160; is not read as a no-break space (FU3, pre-existing).",
+ "closure": {
+  "R1-1": {
+   "status": "closed",
+   "evidence": "scale.php (best of 3, n=800 → 4n) on a git archive of fbbd2af, machine otherwise idle: dialogue HTML 2.5 → 10.1 ms 4.0× (234c99f 28.5 → 426.1 ms 15.0×); dialogue text 2.5 → 10.1 ms 3.9× (234c99f 14.4×); indented dialogue 4.0× (234c99f 15.8×); &nbsp; indent then dialogue 3.9×, space indent then dialogue 3.9×, text-mode indent then dialogue 4.0×, runs opening with a mark 4.0×, runs indent-then-mark 4.0×, <br> lines 4.0×, Navajo 3.9×. big.php one dialogue paragraph: 500 KB 97 ms, 1 MB 186 ms, 2 MB 372 ms. A mark after 50k/200k/800k blank inline runs: 50/184/735 ms. Perf guards (gate-kit, jobs 1): M1 (the e574efb per-mark regex restored) killed: dialogue HTML 15.1×, dialogue text 15.2×; M2 (memo removed, run re-measured per mark) killed: the indent guard 15.8×. The indent guard is green under M1 (FU1 of this re-check). Code read: $suffix is a local [] per QuoteScanner::scan() call, scan runs once per run ($context->once('quote-scan')), and $text is assigned once, so the memo cannot outlive or cross a run."
+  },
+  "recheck/FU1": {
+   "status": "closed",
+   "evidence": "fu1.php at 100,000 and 1,000,000 of spaces, newline+tab, &nbsp;, &#160;, &#xA0;, U+00A0, a mix, an earlier run of spaces, an earlier run of &nbsp;, 5k/50k blank runs, text-mode spaces and U+00A0: every case opens with ‘, input intact, lastError null, under pcre.jit=1 and 0 (worst 611 ms, 1M &nbsp; in an earlier run, no JIT). At 234c99f the same inputs give ’ silently with no error. The negatives (a word before the long indent, in the run or an earlier run) stay ’."
+  },
+  "recheck/FU2": {
+   "status": "closed",
+   "evidence": "The fixer’s 12 mutants re-run by me (gate-kit, baseline 5225/0): R1, U1, X2, X4, N1, N2, N3, N4, N5, M6, M8, N9 all killed, each by the new corpus or unit case it names; the seven named in FU2 (M1, M3, M4, M5, M6, M8, M9 → N1, N3, N4, N5, M6, M8, N9) red against the behaviour. FU2’s cases are present: 02-apostrophes.txt:252, 256, 260, 264, 270; 16-bringhurst-preset.txt:110, 114."
+  }
+ },
+ "differential": {
+  "rig": "w1-s5/rig.php over w1-s5/all.jsonl (9,391 inputs) and cfg0, cfg1, cfg2, idem (second pass kept as \"u\" where it differs), on git archives of 234c99f (base) and fbbd2af (head)",
+  "rows": {
+   "cfg0": 601024,
+   "cfg1": 591633,
+   "cfg2": 591633,
+   "total": 1784290
+  },
+  "unstable": {
+   "cfg0": 1733,
+   "cfg1": 9750,
+   "cfg2": 7299,
+   "sameInBoth": true
+  },
+  "result": "cmp: all three output files byte-identical (0 changed rows, first and second pass)",
+  "headSha256": [
+   "72fc6f1b8078d53c656d7f8b60bfffb31d1688de31f6a06dd284bbd9d07c0ec4",
+   "4828099d1f95d19992106dd876c09bfd3e5962ecced4e8418ea05400767952d4",
+   "15bf840cc88fa6d44720caf0220bf4f6f2599405447cebeebb753a7ea55d1107"
+  ],
+  "baseEqualsE574efb": "git diff e574efb 234c99f -- src tests is empty"
+ },
+ "probes": {
+  "script": "probe.php: 51 inputs × en-GB, en-US, default rules, both passes",
+  "classes": "newline mid-paragraph, <em>x</em> 'It, comments (alone and after text), <br> + newline (+ indent), <pre>, nested wrappers, <img> (src, alt), entity forms (&nbsp;, &#160;, &#xA0;, &#x00a0;, &#0160;, &NBSP;, U+00A0, &nbsp without ;, &amp;, thin space, &#39;, &apos;, &rsquo;), leak cases (a mark in a later run after text, a second mark in the same run, two runs whose marks sit at the same offset, a second paragraph, table cells, list items, blockquote, a quotation over two paragraphs), text mode (leading space, second paragraph, newline mid, &nbsp;, tab), the F2 repros, invalid UTF-8",
+  "result": "103 lines byte-identical between 234c99f and fbbd2af, lastError null everywhere; no block-start carried across runs or flows (e.g. <p>'Hi,' she said. <b>x</b> 'Áshįįh → ’Áshįįh; <td>x 'Áshįįh</td><td> 'It → ’ then ‘). F1 repros (f1.php, Bringhurst preset, en-US and en-GB, four-, two- and three-byte letters): identical, stable on a second pass."
+ },
+ "mutants": {
+  "spec": {
+   "perf": "/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/99861db7-fa3f-4b40-86cb-a972518f2500/scratchpad/w1-s5-recheck2/perf-mutants.json",
+   "behaviour": "/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/99861db7-fa3f-4b40-86cb-a972518f2500/scratchpad/w1-s5-recheck2/mutants.json"
+  },
+  "perf": "M1 killed (48.0 s), M2 killed (13.4 s); real tree: 143 files + git unchanged",
+  "behaviour": "fix2-R1, fix2-U1, fix2-X2, fix2-X4, fix2-N1, fix2-N2, fix2-N3, fix2-N4, fix2-N5, fix2-M6, fix2-M8, fix2-N9 killed; this re-check’s M3 (one blank match, no loop), M6 (cut tail must stand alone), M7 (start of flow always opens), M8 (memo key collides with single-closers), M9 (memo static across scans) killed; survivors M4 (U+00A0 dropped from the HTML class: equivalent, PHP’s /u sets UCP so \\s already matches it; the literal U+00A0 probes still open), M5 (++ → +: equivalent, no PCRE error at 1,000,000 under JIT on or off), M10 (memo per flow: equivalent, a run that set it holds a mark so the earlier-runs read refuses first; probes identical), M11 (FU2 of this re-check). Real tree: 143 files + git unchanged (summary ok=19 warn=4)."
+ },
+ "findings": [],
+ "notBlocking": [
+  {
+   "id": "FU1",
+   "summary": "The third new perf guard (single-quoted dialogue after an indent) does not go red under the e574efb per-mark regex: the old regex gives up on the larger page’s 38 KB indent (the PCRE limit of the earlier FU1) and returns at once, so the small page is the slow one and the ratio inverts. It is red under its own mutant (the once-per-run memo removed, 15.8×), and the e574efb regression is still caught by the other two guards (15.1×, 15.2×).",
+   "location": "tests/engine/unit.php:460-463",
+   "repro": "php guard3.php on a copy of fbbd2af with this re-check’s M1 applied: n=1600 11879.2 ms, n=6400 359.9 ms, ratio 0.0× (green); on fbbd2af 5.3 → 21.2 ms, 4.0×. gate-kit M1 tail lists only the two dialogue guards as FAIL.",
+   "acceptance": "The indent guard also fails under the e574efb regex (pages under the old pattern’s limit, or a check that the small page is not far slower than the plain-dialogue page of the same size), or its comment says it guards the memo only.",
+   "blocking": false,
+   "severity": "low",
+   "confidence": "high",
+   "likelihood": "unlikely",
+   "cause": "a ratio-only guard passes when the small input is the pathological one",
+   "needsDesign": false
+  },
+  {
+   "id": "FU2",
+   "summary": "A decimal or hex no-break-space entity split by the 16-character cut just after its & (the tail starts with #) is not pinned: dropping # from the tail pattern keeps the suite green and turns the mark after it from an opening quote into an apostrophe.",
+   "location": "src/engine/rules/QuoteScanner.php:413 (preg_match('/^[#A-Za-z0-9]*;/', …)); tests/engine/corpus/02-apostrophes.txt:258-261",
+   "repro": "Mutant M11 (/^[#A-Za-z0-9]*;/ → /^[A-Za-z0-9]*;/) survives 5225/0; on that mutant <p><b>&#160;&nbsp;     </b>'It was dark.</p> gives ’It (fbbd2af gives ‘It); the same with &#xA0;.",
+   "acceptance": "A corpus case with an earlier run of &#160;&nbsp; and five spaces before the mark (and the &#xA0; form), expecting ‘; M11 then fails the suite.",
+   "blocking": false,
+   "severity": "low",
+   "confidence": "high",
+   "likelihood": "unlikely",
+   "cause": "the FU2 corpus split case covers only the bsp; tail",
+   "needsDesign": false
+  },
+  {
+   "id": "FU3",
+   "summary": "Pre-existing, unchanged since e574efb: &#0160; (decimal with a leading zero) is not read as a no-break space at a block start, while &#x00a0; is, so the mark after it becomes an apostrophe.",
+   "location": "src/engine/rules/QuoteScanner.php:426 (&(?:nbsp|#160|#[xX]0*[aA]0);)",
+   "repro": "probe.php en-GB: <p>&#0160;'It was dark.</p> → <p>&#0160;’It was dark.</p>; <p>&#x00a0;'It was dark.</p> → ‘It. Same at 234c99f.",
+   "acceptance": "#0*160 in the HTML blank pattern (and a corpus case), or a README Known limit naming the zero-padded decimal form.",
+   "blocking": false,
+   "severity": "low",
+   "confidence": "high",
+   "likelihood": "unlikely",
+   "cause": "the decimal branch has no 0* where the hex branch does",
+   "needsDesign": false
+  }
+ ],
+ "carriedForward": [
+  "2026-11-07-sorts-release-recheck FU3 (Craft mutant runner and opcache) and FU4 (’Tis) were not in this fix pass and are not re-checked; 2026-11-07-sorts-release-gate FU3 to FU10 likewise."
+ ],
+ "knownLimits": [],
+ "confirmedSound": [
+  "blankLength() and the new earlier-runs test decide as the e574efb regexes did on every input tried (entities are &-led and blanks never contain &, so a left-to-right and a $-anchored parse agree); invalid UTF-8 never reaches it (engine output unchanged).",
+  "Scope: 234c99f..6618a1e touches only QuoteScanner.php, tests/engine/unit.php, corpus 02 and 16, and EFFORT.md."
+ ],
+ "sources": "Read directly: the diff 234c99f..6618a1e, QuoteScanner.php :81-135 and :336-435, Context::before() and countAfter(), tests/engine/unit.php’s perf guard helper and the new checks, RUN-RULES.md, the repo CLAUDE.md, and every tool output quoted here. From an earlier report, read after my findings were set: the acceptance lines of 2026-11-07-sorts-release-recheck (R1-1, FU1–FU4) and its receipt shape; the fixer’s mutant specs in w1-s5-fix2 were re-run, not trusted.",
+ "notDone": [
+  "run-all.mjs was run once; the previous re-check’s Craft mutants and one-craft.mjs probes were not re-run (no Craft-layer file changed).",
+  "The 234c99f scale numbers for the indent cases were not finished (each took minutes; the n=1,600 indent page alone took 11.9 s under the old code)."
+ ],
+ "decisions": "D876 (a mark at the very start of a block opens a quotation; the word-initial apostrophe rule applies in running text only) is the behaviour pinned; R1-1 is about cost, and the rig shows the decisions unchanged.",
+ "sideEffects": "Created files only under /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/99861db7-fa3f-4b40-86cb-a972518f2500/scratchpad/w1-s5-recheck2/ (git-archive snapshots base/ and head/, scripts, logs). The six rig outputs (about 630 MB) and the five mutant tree copies were deleted after use (head output sha256s kept). craft-sorts: .php-cs-fixer.cache, rewritten by composer check, restored from the start copy (sha256 matches); tracked-file sha256s and git status --ignored equal start. Testbed: git status --ignored equals start; run-all reported isolation ok; one ddev exec of the engine suite, read-only. prose-typeset: status clean after node --test. gate-kit ran its mutants in its own isolated copies and reported the real tree unchanged both runs. The only repo change is this receipt."
+}
