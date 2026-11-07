@@ -1,0 +1,68 @@
+{
+ "tool": "craft-sorts",
+ "run": "2026-11-07 closure re-check (release mode) of 3edd0b1 on 17e4708, against gates/2026-11-07-sorts-d897-d898-gate.json (FIX FIRST F1; FU1, FU2, FU4, FU6)",
+ "mode": "release",
+ "verdict": "CLOSED WITH FOLLOW-UPS",
+ "verdictLine": "CLOSED WITH FOLLOW-UPS: F1, FU1, FU2, FU4 and FU6 closed, nothing regressed; R1-FU1 (README:120 and the changelog still say every block-opening `-- ` is stored as an em dash, which is not so under a dialogue-dash veto) and R1-FU2 (a pre-existing byte-mode guard in the same file) are non-blocking.",
+ "suite": "tests/engine/run.php: “RESULT: 5238 passed, 0 failed” (Homebrew PHP 8.5.12, load 19, one run, no timing flake); node tests/run-all.mjs exit 0: audit 66, ckeditor 40, engine-service 84, extension-api 16, fix-on-save 76, graphql 23, page-pass 85, settings 118, smoke 2, twig 77 (587 ok), “testbed isolation (clean tree, no pending project config, queue 0 → 0)”; composer check exit 0 (composer.json valid, 68 files no syntax error, cs 0 of 68, PHPStan [OK] No errors).",
+ "closure": {
+  "F1": {
+   "status": "closed",
+   "evidence": [
+    "DashesRule.php:75 now reads `preg_match('/^--\\x20\\S/u', $text)`, the same `\\S` class in /u as DialogueDashRule.php:40 `/^(?:--|—)\\x20(?=\\S)/u`.",
+    "The gate’s pagestored.php over its 12 inputs (`<p>-- ` + U+00A0, U+2009, U+202F or U+3000 + `So it was.</p>`; en-US, en-GB, fr; preset bringhurst): git archive of 90a232f 12/12 “DIFFERENT” (stored `— `), 3edd0b1 12/12 “same” (stored the locale dash `– `, page(stored) = page(typed)).",
+    "My own shapes (scratchpad w8recheck/p2.php): `-- ` + U+200A, U+2007, U+0085, U+2028, U+1680, U+200B, U+0301, an emoji, an accented letter, CJK; `--` + U+00A0 (no ASCII space); a typed `— ` + U+00A0 and + U+2009; `<em>-- ` + U+00A0 at a block start; a plain `-- So`; html and text mode; en-US, en-GB, fr: 90a232f “rows=87 different=33” (every Unicode-space shape), 3edd0b1 “rows=87 different=0”.",
+    "Through Craft (craft5-testbed, PHP 8.4, plugin bind-mounted at 3edd0b1): the gate’s f1-probe.txt gives stored `<p>– ⍽So it was.</p>` = page(stored) = page(typed) in en-US, en-GB and fr, and `<p>-- So it was.</p>` still stored `— So` (D897 kept); my f1-probe-mine.txt (U+200A, U+2007, U+0085, U+1680, `<em>-- ⍽`, `--⍽`, U+0301, an emoji; three languages) “MYPROBE rows=24 different=0”; isolation ok both times."
+   ]
+  },
+  "FU1": {"status": "closed", "evidence": "corpus 04:265 en-GB keepDialogue case now holds `<p>Text <em>-- So</em></p>` → `Text <em>– So</em>`; M16 killed in corpus (“FAIL 04-dashes-ellipsis-symbols.txt:265 d-keep-dialogue-em-dash-in-a-spaced-en-dash-language”, 1718/1)."},
+  "FU2": {"status": "closed", "evidence": "unit.php:339–341 `<p><b>éé</b><i>ßß</i>ŵŵ</p>`, before(3) = `éßß`; M10 killed in run.php unit (“FAIL context: before counts characters across inline tags”, 2007/1) with a green baseline, so not a perf-guard flake."},
+  "FU4": {"status": "closed", "evidence": "docs/icon/lib.mjs:2 says to run `npm ci` at the repo root; in a git archive of 3edd0b1 the build fails with ERR_MODULE_NOT_FOUND, then `npm ci --ignore-scripts --prefer-offline` and the build `| cmp - src/icon.svg` → identical. package.json’s new description is accurate: no .gitattributes, no composer `archive` key, nothing in src/ reads package.json or docs/icon."},
+  "FU6": {"status": "closed (as its acceptance words it); see R1-FU1", "evidence": "README:120 now opens “Where *Em and en dashes* runs” and adds “With *Em and en dashes* off, it is stored as typed” (pinned by fix-on-save “dashes off, dialogue-dash on …”, green); fix-on-save-test.php:142 has its space back (`], [$f->title`)."}
+ },
+ "mutants": {
+  "corpusSpec": "scratchpad/w8recheck/mutants-corpus.json, gate-kit mutants --jobs 2 --brief -- php tests/engine/run.php corpus: “ok green in 229ms baseline”, “ok killed … R1-MF1” (keepDialogue back to byte mode), “ok killed … R1-MF2” (`[^\\x20]` in place of `\\S`), “ok killed … M16”, “warn survived … M10” (corpus cannot see it; unit kills it), “ok 996 files + git unchanged real tree”.",
+  "R1-MF1": "--only R1-MF1 --json: exactly the three new cases fail: 04:275 …-unicode-space-en-US, 04:279 …-en-GB, 04:283 …-fr (“RESULT: 1716 passed, 3 failed”).",
+  "unitSpec": "scratchpad/w8recheck/mutants-unit.json, --jobs 1 -- php tests/engine/run.php unit: “ok green in 2.4s baseline”, “ok killed … M16”, “ok killed … M10”, “ok 996 files + git unchanged real tree”."
+ },
+ "differential": {
+  "how": "Full run, not a sample: the gate’s drig.php over its in/all.jsonl (sha256 8e3c9b34…79fc) and cfg/cfg-all.json (sha256 332317b7…b9cb), copied to scratchpad/w8recheck, on git archives of 90a232f and 3edd0b1, 10 shards each, both passes.",
+  "rows": "7,715,773 per tree (shard counts equal the gate’s), unstable rows per shard identical in both trees (11527, 5228, 5441, 5162, 7790, 18747, 4836, 14077, 7059, 11756).",
+  "result": "99 rows differ, all on pass 1, none on pass 2; key mismatches 0.",
+  "classification": "cls.php over the 99 rows dumped from both trees: “rows=99 f1-shape=99 other=0 stored=99”: every differing character is 90a232f’s `—` become the locale dash (`–` or `—`) before an ASCII space and a Unicode space, all in stored configs (stored-preset, stored-dialogue-only, spaced, typed-off, depth, xx; 16 languages). Page invariant: “head: page(stored)==page(typed)=99 base: page(stored)==page(typed)=0”.",
+  "ptrans": "The gate’s ptrans.php needs a head-without-D897 dump this re-check did not build; the check above (each changed row’s page over the stored value now equals the page over the typed input, and every other row is byte-identical in both passes) covers its acceptance."
+ },
+ "scope": "3edd0b1 touches 7 files, all named by F1, FU1, FU2, FU4 or FU6: README.md, docs/icon/lib.mjs, package.json, src/engine/rules/DashesRule.php, tests/engine/corpus/04-dashes-ellipsis-symbols.txt, tests/engine/unit.php, tests/fix-on-save-test.php. FU3 and FU5 untouched (not in this round).",
+ "findings": [],
+ "notBlocking": [
+  {
+   "id": "R1-FU1",
+   "summary": "README:120 and the changelog still say a block-opening `-- ` is stored as an em dash “in every language”; with Fine typography on and the dialogue dash vetoed (`'dialogue-dash' => 'off'`), Em and en dashes still runs and the line is stored as the locale dash (`<p>– So this is it.</p>` in en-US under the preset), because storedOptions() sets keepDialogue only where the page runs the dialogue dash.",
+   "location": "README.md:120; CHANGELOG.md Unreleased, the Fine typography item (“Fix on save stores a block-opening `-- ` as `— `”); src/services/EngineService.php:167–169",
+   "repro": "tests/fix-on-save-test.php:144–147 (green in this run) expects `<p>– So this is it.</p>` stored under `'rules' => ['ranges' => 'off', 'typed-dashes' => 'off', 'dialogue-dash' => 'off']`, against README:120 “Where *Em and en dashes* runs, a `-- ` that opens a block is stored as an em dash and its word space (`— So`), in every language”.",
+   "acceptance": "README:120 (and the changelog line) qualify the sentence by the dialogue dash as well (for example “Where the dialogue dash runs on the page, a `-- ` and a word that open a block …”), or say what a veto stores.",
+   "blocking": false,
+   "severity": "low",
+   "confidence": "high",
+   "cause": "FU6’s acceptance named only the dashes-off case; the veto case is the same sentence’s other exception",
+   "needsDesign": false
+  },
+  {
+   "id": "R1-FU2",
+   "summary": "Pre-existing, outside the diff: the spaced-hyphen equation guard in the same rule is byte mode, `preg_match('/^\\S{1,12}\\s?=/', …)`, so it counts bytes: `x - abcdefg = 2` is left as an equation, `x - αβγδεζη = 2` (seven letters, 14 bytes) gets a dash.",
+   "location": "src/engine/rules/DashesRule.php:108",
+   "repro": "php scratchpad/w8recheck/eq.php <3edd0b1 tree> (en-US, spaced-en-dash): “x - abcdefg = 2 -> <p>x - abcdefg = 2</p>”, “x - αβγδεζη = 2 -> <p>x – αβγδεζη = 2</p>”, “x - αβγδεζ = 2 -> <p>x - αβγδεζ = 2</p>”.",
+   "acceptance": "the guard counts characters (/u, with a 16-character slice), or a corpus case records the byte limit as intended",
+   "blocking": false,
+   "severity": "low",
+   "confidence": "high",
+   "cause": "the same byte-mode `\\S` class F1 had, in an older guard",
+   "needsDesign": false
+  }
+ ],
+ "sources": "Read directly: the 3edd0b1 diff and message; DashesRule.php, DialogueDashRule.php, Context::before(), EngineService::storedOptions(), the new corpus and unit cases, fix-on-save-test.php:136–150, README:108–122, CHANGELOG Unreleased, docs/icon/lib.mjs and build-icon.mjs, package.json, CLAUDE.md, RUN-RULES.md; every tool output quoted here. The gate receipt was read for its findings, acceptance and repro commands; its probes (pagestored.php, ptrans.php, drig.php, f1-probe.txt, inputs and configs) were copied and re-run, not taken. The fixer’s mutants.out was glanced at only after these results were in.",
+ "startEqualsEnd": "craft-sorts: `git status --porcelain --ignored` identical before and after, and the sha256 of all 147 tracked files identical; gate-kit real-tree item “ok 996 files + git unchanged” on every mutant run. craft5-plugin-testbed: git status identical (clean) before and after; the suites’ own isolation check ok.",
+ "sideEffects": "Created only in scratchpad/w8recheck/ (tree archives, rig outputs, probes, logs; left for the briefer). In the repo: .php-cs-fixer.cache (git-ignored, pre-existing) rewritten by composer check, as every check run does; not restorable to its earlier bytes, harmless. This receipt is the one file committed.",
+ "refused": "none",
+ "notDone": "The gate’s ptrans.php itself (needs a head-without-D897 dump); covered by the page-invariant check in differential.classification. No re-gate of the wider release, per the brief."
+}
