@@ -66,6 +66,8 @@ final class NonBreakingSpacesRule extends AbstractRule
             );
         }
         if (preg_match('/(?:Mrs?|Ms|Msgr|Dr|St|Fr)\x20/', $text)) {
+            // The passes above have edited the run: the street guard reads it as it is now.
+            $text = $run->text();
             $run->replaceAll(
                 '~(?<![A-Za-z0-9\x80-\xFF])(' . self::PERIODLESS . ')\K\x20(?=' . self::CAPITAL . ')~',
                 fn (array $m, int $offset): ?string => $m[1] === 'St' && self::afterStreetName($text, $offset - 2, $context) ? null : "\u{00A0}"
@@ -83,6 +85,8 @@ final class NonBreakingSpacesRule extends AbstractRule
     private static function afterStreetName(string $text, int $offset, Context $context): bool
     {
         $head = $offset >= 48 ? substr($text, $offset - 48, 48) : $context->before(48) . substr($text, 0, $offset);
+        // The window can start inside a character; drop its stray continuation bytes.
+        $head = preg_replace('/^[\x80-\xBF]+/', '', $head) ?? '';
         if (!preg_match('/(?<![\p{L}\p{N}’\'-])([\p{Lu}\p{N}][\p{L}\p{N}’\'-]*) $/u', $head, $m, PREG_OFFSET_CAPTURE)) {
             return false;
         }

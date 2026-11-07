@@ -249,6 +249,26 @@
 < On <b>Main</b> St Louis is far.
 > On <b>Main</b> St Louis is far.
 
+# F2 (gate 2026-11-06): the street guard reads the run as the earlier passes left it, and a
+# window that starts inside a character.
+@ nb-honorific-st-street-after-a-unit only=nbsp
+< It weighs 10 kg at Main St Louis
+> It weighs 10\u{A0}kg at Main St Louis
+
+@ nb-honorific-st-street-after-a-period-honorific only=nbsp
+< Dr. Watson met them at Main St Louis
+> Dr.\u{A0}Watson met them at Main St Louis
+
+@ nb-honorific-st-street-with-a-multibyte-letter-at-the-window-edge only=nbsp
+< aaaaaébbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb Main St Louis
+
+# Gate input 102: a capitalised word after a line break reads as a street name, on every pass.
+@ nb-honorific-st-after-multibyte-text-is-stable
+< Mrs Ñúñez —and then
+< Visit St Ives
+> Mrs\u{A0}Ñúñez —and then
+> Visit St Ives
+
 @ nb-honorific-needs-a-capital-after only=nbsp
 < Dr who? Mr smith St louis
 
