@@ -255,7 +255,8 @@ every edition the engine runs in, and the engine never acts on one.
 `Options::$preset` names a coherent set of choices that sits above the rule switches, as a locale
 variant does for quotation marks (`Presets`, one so far: `bringhurst`, D817). The engine resolves
 it in three places and nowhere else: a rule in `Options::$rules` wins over the preset’s answer for that
-rule, which wins over the rule’s `defaultEnabled()` (`Engine::ruleSet()`); a variant in
+rule, which wins over the rule’s `defaultEnabled()` (`Engine::ruleSet()`; a rule has three states, true, false, and
+absent, which follows: D864); a variant in
 `Options::$variants` wins over the preset’s variant for that locale (`Engine::withVariant()`); and a
 locale gets the preset’s space inside its guillemets (`DataLocale::withGuillemetSpace()`, every locale that
 uses guillemets except German). `Options::$allowed` caps it like any other way of turning a rule on, a
@@ -263,16 +264,19 @@ scope (`data-sorts-rules`, a rule named in a call) works as it always did, and w
 that is not one) nothing differs from before, byte for byte (the fuzz and the `bp-off-*` corpus cases pin it).
 
 The Craft layer passes `Options(preset: 'bringhurst')` when the Pro setting `fineTypography` is on, in
-`EngineService::options()`. The settings hold every rule switch, so `options()` leaves out a switch that
-is at its default (`Settings::RULE_DEFAULTS`), which is how a preset can tell a switch the site moved from
-one it did not touch; a side effect, written up in the README, is that a switch moved *off* when its
-default is off (ranges, multiplication, fractions) cannot veto the preset. Lite ignores the setting
+`EngineService::options()`. Every rule in the settings is `on`, `off` or `follow` (D864, `Settings::RULE_ON`,
+`RULE_OFF`, `RULE_FOLLOW`; a rule that follows has no entry), and `options()` hands the engine the first two
+only (`Settings::ruleSwitches()`): that is how a site vetoes a rule the preset turns on, or turns on one it leaves
+off. Em and en dashes off also hands over `typed-dashes` and `dialogue-dash` as off under the preset, where the
+site did not name them, because the engine keeps its rules independent and the dash rules belong to one choice for
+a site. A boolean stored before the three states reads as it did (`Settings::coerceRuleState()`): one at its rule’s
+default (`RULE_DEFAULTS`) follows, one off it is on or off. Lite ignores the setting
 (`applyWith()` resets it). Stored content takes only `STORED_RULES` (which now includes
 `typed-dashes`), so the preset’s spacing rules never write to the database. CKEditor’s as-you-type
 fractions are off while the preset is on (`CkeditorSupport::narrow()`).
 
 The rules behind the preset that exist only for it are `typed-dashes`, `dialogue-dash` and
-`ellipsis-spacing` (off by default, no setting of their own). Each cites the section of Bringhurst, *The Elements of
+`ellipsis-spacing` (off by default; each has its own three-state setting, D864). Each cites the section of Bringhurst, *The Elements of
 Typographic Style*, 3rd ed., chapter 5, in its docblock and in `Presets::rules()`.
 
 ### Settled characters

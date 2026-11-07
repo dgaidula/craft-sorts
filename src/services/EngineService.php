@@ -11,7 +11,6 @@ use iceboxind\sorts\engine\Options;
 use iceboxind\sorts\engine\Presets;
 use iceboxind\sorts\engine\RuleInterface;
 use iceboxind\sorts\events\RegisterRulesEvent;
-use iceboxind\sorts\models\Settings;
 use iceboxind\sorts\Plugin;
 use Throwable;
 
@@ -125,15 +124,13 @@ class EngineService extends Component
         }
         $settings = $plugin->getSettings();
         $preset = $settings->fineTypography ? Options::PRESET_BRINGHURST : Options::PRESET_NONE;
-        $rules = $settings->rules;
-        if ($preset !== Options::PRESET_NONE) {
-            // The settings hold every switch, so a switch counts as the site’s own word only when it is off its
-            // default; the rest are left to the preset (see Presets).
-            $rules = array_filter($rules, static fn (bool $on, string $handle): bool => $on !== (Settings::RULE_DEFAULTS[$handle] ?? $on), ARRAY_FILTER_USE_BOTH);
-            // typed-dashes has no switch of its own: with *Em and en dashes* off, it is off too (README).
-            if (($rules['dashes'] ?? true) === false) {
-                $rules['typed-dashes'] = false;
-            }
+        // A rule the site switched on or off is its own word; a rule that follows is left out, so the preset (and then the
+        // rule’s default) answers for it (see Presets).
+        $rules = $settings->ruleSwitches();
+        if ($preset !== Options::PRESET_NONE && ($rules['dashes'] ?? true) === false) {
+            // *Em and en dashes* off takes the preset’s two dash rules off with it, typed-dashes and dialogue-dash, wherever
+            // they follow (README). A site that switched either one on keeps it: `+=` leaves a named rule as it is.
+            $rules += ['typed-dashes' => false, 'dialogue-dash' => false];
         }
         return new Options(
             locale: $language,

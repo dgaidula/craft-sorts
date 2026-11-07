@@ -124,5 +124,58 @@ sortsTry('fine typography, the Bringhurst preset (D817)', function () {
     sortsEq('fine, stored: the options a queued job carries keep the preset', 'bringhurst', (new \iceboxind\sorts\engine\Options(...get_object_vars($svc->storedOptions('en-US', 'html'))))->preset);
 });
 
+// D864: every rule is on, off or follows the preset; the preset-only ones have a switch of their own.
+sortsTry('rule states: on, off, follow the preset (D864)', function () {
+    $page = 'pages 10-12 and 8 1/2 x 11 and a—b and wait…then';
+    $apply = static fn (string $text): string => sorts()->engine->apply($text);
+    sortsConfigure('pro', ['fineTypography' => true]);
+    sortsEq('follow: the preset decides every rule', 'pages 10–12 and 8½ × 11 and a – b and wait … then', $apply($page));
+    sortsEq('follow: the engine is handed no switch at all', [], sorts()->engine->options()->rules);
+
+    foreach ([
+        'ranges' => 'pages 10-12 and 8½ × 11 and a – b and wait … then',
+        'fractions' => 'pages 10–12 and 8 1/2 × 11 and a – b and wait … then',
+        'multiplication' => 'pages 10–12 and 8½ x 11 and a – b and wait … then',
+        'typed-dashes' => 'pages 10–12 and 8½ × 11 and a—b and wait … then',
+        'ellipsis-spacing' => 'pages 10–12 and 8½ × 11 and a – b and wait…then',
+    ] as $handle => $expected) {
+        sortsConfigure('pro', ['fineTypography' => true, 'rules' => [$handle => 'off']]);
+        sortsEq("off vetoes {$handle} under the preset and leaves the rest of the preset running", $expected, $apply($page));
+        sortsEq("off hands the engine {$handle} => false, and nothing else", [$handle => false], sorts()->engine->options()->rules);
+    }
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dialogue-dash' => 'off']]);
+    sortsEq('off vetoes dialogue-dash under the preset: the dashes rule sets the dash as it does anywhere', '<p>– So it ends.</p>', $apply('<p>-- So it ends.</p>'));
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dialogue-dash' => 'follow', 'typed-dashes' => 'on']]);
+    sortsEq('on under the preset is following it', ["<p>—\u{202F}So it ends.</p>", 'a – b'], [$apply('<p>-- So it ends.</p>'), $apply('a—b')]);
+
+    sortsConfigure('pro');
+    sortsEq('follow with no preset: the three preset-only rules are off', '<p>— So it ends.</p> a—b wait…then', $apply('<p>-- So it ends.</p> a—b wait…then'));
+    sortsConfigure('pro', ['variants' => ['en-US' => 'spaced-en-dash'], 'rules' => ['typed-dashes' => 'on', 'dialogue-dash' => 'on', 'ellipsis-spacing' => 'on']]);
+    sortsEq('on with no preset turns on a rule the preset would have: typed dashes, the dialogue dash, ellipsis spacing', ['a – b', "<p>—\u{202F}So it ends.</p>", 'wait … then'], [$apply('a—b'), $apply('<p>-- So it ends.</p>'), $apply('wait…then')]);
+    sortsConfigure('pro', ['rules' => ['ranges' => 'on', 'quotes' => 'off']]);
+    sortsEq('on turns on a rule that is off by default; off turns off one that is on', 'a "b" 1–5', $apply('a "b" 1-5'));
+    sortsConfigure('lite', ['fineTypography' => true, 'rules' => ['typed-dashes' => 'on', 'ranges' => 'on']]);
+    sortsEq('lite: the states are stored and never read', 'a—b 1-5', $apply('a—b 1-5'));
+});
+
+// D864 and F7: Em and en dashes off takes the preset’s two dash rules with it, wherever they follow.
+sortsTry('rule states: dashes off and the dash rules that follow (D864)', function () {
+    $apply = static fn (string $text): string => sorts()->engine->apply($text);
+    $text = '<p>-- So it ends.</p><p>a—b and c--d</p>';
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dashes' => 'off']]);
+    sortsEq('dashes off, the rest follow: no dash is touched, a dialogue line included', $text, $apply($text));
+    sortsEq('dashes off, the rest follow: the engine is handed typed-dashes and dialogue-dash as off', ['dashes' => false, 'typed-dashes' => false, 'dialogue-dash' => false], sorts()->engine->options()->rules);
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dashes' => 'off', 'dialogue-dash' => 'on']]);
+    sortsEq('dashes off, dialogue-dash on: the site named it, so the dialogue dash is set', "<p>—\u{202F}So it ends.</p><p>a—b and c--d</p>", $apply($text));
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dashes' => 'off', 'typed-dashes' => 'on']]);
+    sortsEq('dashes off, typed-dashes on: the site named it, so the typed em dash is set and -- is not', '<p>-- So it ends.</p><p>a – b and c--d</p>', $apply($text));
+    $svc = sorts()->engine;
+    sortsEq('dashes off, typed-dashes on: stored content gets the same', '<p>-- So it ends.</p><p>a – b and c--d</p>', $svc->applyStored($text, $svc->storedOptions('en-US', 'html')));
+    sortsConfigure('pro', ['rules' => ['dashes' => 'off']]);
+    sortsEq('dashes off with no preset: nothing to take off, and the options say so', ['dashes' => false], sorts()->engine->options()->rules);
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dashes' => 'on']]);
+    sortsEq('dashes on is following: the preset decides', "<p>—\u{202F}So it ends.</p><p>a – b and c – d</p>", $apply($text));
+});
+
 sortsDefaults();
 sortsDone();

@@ -22,13 +22,29 @@ use iceboxind\sorts\engine\LocaleRegistry;
  */
 class Settings extends Model
 {
-    /** Every built-in rule with the state SPEC §3 gives it out of the box. */
+    /** A rule switched on, whatever the preset says (D864). */
+    public const RULE_ON = 'on';
+
+    /** A rule switched off, whatever the preset says: a site's veto of a preset rule (D864). */
+    public const RULE_OFF = 'off';
+
+    /** A rule left to the preset, and with no preset to its default (D864). The default state, stored as no entry at all. */
+    public const RULE_FOLLOW = 'follow';
+
+    /**
+     * Every built-in rule with the state SPEC §3 gives it out of the box. This is what a rule does when it
+     * follows (no preset, nothing switched); the three preset-only rules (`typed-dashes`, `dialogue-dash`,
+     * `ellipsis-spacing`) are off until the preset or a site turns them on.
+     */
     public const RULE_DEFAULTS = [
         'quotes' => true,
         'apostrophes' => true,
         'primes' => true,
         'dashes' => true,
+        'typed-dashes' => false,
+        'dialogue-dash' => false,
         'ellipsis' => true,
+        'ellipsis-spacing' => false,
         'symbols' => true,
         'ranges' => false,
         'multiplication' => false,
@@ -63,8 +79,11 @@ class Settings extends Model
     /** Pro. The automatic whole-page pass. */
     public bool $pagePass = true;
 
-    /** @var array<string, bool> Pro. Rule handle => on or off. */
-    public array $rules = self::RULE_DEFAULTS;
+    /**
+     * @var array<string, string> Pro. Rule handle => {@see RULE_ON} or {@see RULE_OFF}. A rule with no entry follows the
+     * preset ({@see RULE_FOLLOW}), so a site that has switched nothing gets exactly what the preset, or the rule's default, gives.
+     */
+    public array $rules = [];
 
     /** @var array<string, string> Pro. Locale id => the name of the variant to use for it. */
     public array $variants = [];
@@ -211,6 +230,25 @@ class Settings extends Model
     }
 
     /**
+     * One rule's state: {@see RULE_ON}, {@see RULE_OFF} or {@see RULE_FOLLOW}.
+     */
+    public function ruleState(string $handle): string
+    {
+        return $this->rules[$handle] ?? self::RULE_FOLLOW;
+    }
+
+    /**
+     * The rules the site has switched on or off, as the engine's `Options::$rules` takes them. A rule that follows is
+     * left out, which is what lets the preset (and then the rule's own default) answer for it.
+     *
+     * @return array<string, bool>
+     */
+    public function ruleSwitches(): array
+    {
+        return array_map(static fn (string $state): bool => $state === self::RULE_ON, $this->rules);
+    }
+
+    /**
      * The extra tag names with the built-in `title` raw-text element added unless
      * the head is to be fixed too.
      *
@@ -221,19 +259,46 @@ class Settings extends Model
         return array_values(array_unique(array_merge($this->skipTags, $this->processHead ? [] : ['title'])));
     }
 
-    /** @return array<string, bool> */
+    /**
+     * Read the rule map from the control panel, project config or `config/sorts.php`, into the entries that are
+     * on or off. A rule not named, named with `follow`, or named with something unreadable follows the preset.
+     *
+     * @return array<string, string>
+     */
     private static function coerceRules(mixed $value): array
     {
-        $rules = self::RULE_DEFAULTS;
+        $rules = [];
         if (!is_array($value)) {
             return $rules;
         }
-        foreach ($rules as $handle => $default) {
+        foreach (self::RULE_DEFAULTS as $handle => $default) {
             if (array_key_exists($handle, $value)) {
-                $rules[$handle] = self::coerceBool($value[$handle], $default);
+                $state = self::coerceRuleState($value[$handle], $default);
+                if ($state !== self::RULE_FOLLOW) {
+                    $rules[$handle] = $state;
+                }
             }
         }
         return $rules;
+    }
+
+    /**
+     * The words `on`, `off` and `follow` are the three states. Anything else is a plain on or off as the
+     * settings stored them before there were three (a boolean, `1`, `''`, `true`), when a switch at its rule's
+     * default was no more than the default and only one moved off it was the site's own word: so it reads as the
+     * site's word on or off when it differs from the default, and as `follow` when it does not. A site that
+     * stored its switches then behaves exactly as it did.
+     */
+    private static function coerceRuleState(mixed $value, bool $default): string
+    {
+        if (is_string($value)) {
+            $word = strtolower(trim($value));
+            if (in_array($word, [self::RULE_ON, self::RULE_OFF, self::RULE_FOLLOW], true)) {
+                return $word;
+            }
+        }
+        $on = self::coerceBool($value, $default);
+        return $on === $default ? self::RULE_FOLLOW : ($on ? self::RULE_ON : self::RULE_OFF);
     }
 
     /** @return array<string, string> */

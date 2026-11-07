@@ -62,7 +62,7 @@ Sorts is a typography engine (plain PHP, no Craft code, in `src/engine/`) with a
 | Widows | a no-break space between the last two words of a heading | on |
 | No-break spaces | number and unit (`10 kg`), initials, `Dr. Smith` and `Dr Smith`, `§ 5` | on |
 | Locale spacing | French narrow no-break space before `; : ! ?` and inside `« »` | by language |
-| Typed em dash, dialogue dash, ellipsis spacing | the rules behind [Fine typography](#fine-typography-bringhurst) | with that setting |
+| Typed em dash, dialogue dash, ellipsis spacing | the rules behind [Fine typography](#fine-typography-bringhurst) | off, or on with that setting |
 | Styling hooks | `&` in `<span class="amp">`, runs of capitals in `<span class="caps">`, an opening quote in `<span class="dquo">` | off |
 
 ### Which quotation marks a quote gets
@@ -105,9 +105,16 @@ One Pro setting, *Fine typography (Bringhurst)* (`fineTypography`, off by defaul
 
 `Dr Smith` with a no-break space (§5.4.4) and the word-initial apostrophe (§5.5.2) are not part of it: they hold in every setting.
 
-**How it combines with your other settings.** The preset sits above the individual rule switches, as a quotation variant does for quotation marks, and a choice of yours wins over it:
+**How it combines with your other settings.** The preset sits above the individual rules, as a quotation variant does for quotation marks, and a choice of yours wins over it. Every rule in *Rules* (the three that exist only for the preset, `typed-dashes`, `dialogue-dash` and `ellipsis-spacing`, included) is **on**, **off** or **follows the preset**:
 
-- A rule switch you have moved off its default is your word, and wins: switch *Em and en dashes* off and the preset leaves the dashes off, a typed em dash included (rule `typed-dashes` follows that switch; a line of dialogue still opens with its dash, since rule `dialogue-dash` has no switch of its own). A switch still at its default follows the preset. Because the ranges, multiplication and fractions switches are off by default, turning one of those *off* does not veto it under the preset; leave *Fine typography* off, or wrap the text in `data-sorts="off"`, to keep one off.
+| State | What the rule does |
+| --- | --- |
+| Follow the preset (the default) | What the preset says; with *Fine typography* off, the rule’s own default (the table under [What it does](#what-it-does)). A site that has switched nothing gets exactly this. |
+| Off | Off, whatever the preset says: your veto of one rule in the set (ranges off while the rest of the preset runs, say). |
+| On | On, even when the preset leaves it off: with *Fine typography* off you can still have ranges, a dialogue dash or spaced ellipses. |
+
+- Em and en dashes off also takes the preset’s two dash rules off, wherever they follow the preset: with *Em and en dashes* off, `--` is left as typed, so a typed em dash (`typed-dashes`) is left as typed and a `-- ` that opens a line of dialogue (`dialogue-dash`) is not turned into an em dash and a thin space either. Switch either of those *on* and it runs, dashes off or not. `ellipsis-spacing` has no such tie to *Ellipsis*: it only spaces an ellipsis that is already there, and is its own switch.
+- A site’s settings from before there were three states (a plain on or off for every rule, kept in project config or `config/sorts.php`) read as they always did: a switch at its rule’s default was only the default and follows the preset; one moved off it is on or off. Nothing is rewritten until the settings are next saved. Write `'on'`, `'off'` or `'follow'` in new configuration, because a plain `false` for a rule that is off already follows the preset.
 - A quotation or dash variant you choose for a language wins over the preset’s (the preset’s only choice is `spaced-en-dash` for `en-US`).
 - The Pro rules cannot be reached from Lite, so Lite ignores the setting. `data-sorts="off"` and `data-sorts-lang` work as always.
 - It applies to the page pass, the filter, `@sorts`, fix on save and the audit. Stored content only gets the choices that swap one character for another (dashes, a typed em dash, ranges, fractions, multiplication); the spaces (dialogue, ellipsis, guillemets) belong to the page, and are never written to the database. A `-- ` that opens a block is stored as typed, for the page to set as dialogue.
@@ -166,7 +173,7 @@ CP → Settings → Plugins → Sorts, stored in project config, with every key 
 | Run the page pass | `pagePass` | on | Pro |
 | Fix the title and meta descriptions | `processHead` | off | Pro |
 | Largest page to fix, in bytes | `maxPageBytes` | 1000000 | Pro |
-| Rule switches (a map of rule handle to on or off) | `rules` | the table above | Pro |
+| Rules: each `on`, `off` or `follow` the preset (a map of rule handle to one of the three; a rule not named follows) | `rules` | follow | Pro |
 | Fewest words in a heading before widows are joined | `widowsMinWords` | 3 | Pro |
 | Style per language (quotation marks, the US English dash) | `variants` | CLDR (German: book style) | Pro |
 | Normalize quotes to house style (set every quotation by depth, not by the mark typed) | `normalizeQuotes` | off | Pro |
@@ -186,7 +193,7 @@ return [
         'skipClasses' => ['no-typography'],
         'skipUris' => ['/api/*', '/sitemap.xml'],
         'variants' => ['en-GB' => 'single-outer'],
-        'rules' => ['fractions' => true, 'ranges' => true],
+        'rules' => ['fractions' => 'on', 'ranges' => 'on', 'multiplication' => 'off'],
     ],
 ];
 ```

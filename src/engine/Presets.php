@@ -10,8 +10,9 @@ namespace iceboxind\sorts\engine;
  * How it combines with the options (Options::$rules, Options::$variants):
  *
  *  - A rule named in `Options::$rules`, on or off, wins over the preset. The preset only supplies
- *    the answer for a rule the options leave out. (The Craft layer leaves out a rule whose switch
- *    still has its default, so a switch moved off its default is the site’s own word.)
+ *    the answer for a rule the options leave out: that is the third state, follow (D864). The rules
+ *    don’t depend on one another here: *dashes* off leaves `typed-dashes` and `dialogue-dash` to
+ *    the preset, and it is the Craft layer that takes them off with it (`EngineService::options()`).
  *  - A variant chosen in `Options::$variants` wins over the preset’s variant for that locale.
  *  - A rule scope (`data-sorts-rules`, a rule named in a call) and `Options::$allowed` work as
  *    they always do: the preset never turns on a rule the options do not allow.

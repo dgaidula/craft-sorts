@@ -28,16 +28,16 @@ sortsTry('defaults', function () {
 
 sortsTry('coercion', function () use ($make) {
     $s = $make(['skipTags' => '', 'skipClasses' => '', 'skipUris' => '', 'rules' => '', 'variants' => '']);
-    sortsEq('empty strings become empty lists', [[], [], [], \iceboxind\sorts\models\Settings::RULE_DEFAULTS, []], [$s->skipTags, $s->skipClasses, $s->skipUris, $s->rules, $s->variants]);
+    sortsEq('empty strings become empty lists, and every rule follows the preset', [[], [], [], [], []], [$s->skipTags, $s->skipClasses, $s->skipUris, $s->rules, $s->variants]);
     $s = $make(['skipTags' => "figcaption\n blockquote ,figcaption\r\n\n", 'skipUris' => [' /api/* ', '', 7, ['nested'], null, '/api/*']]);
     sortsEq('a string splits on newlines and commas, trimmed and de-duplicated', ['figcaption', 'blockquote'], $s->skipTags);
     sortsEq('an array drops blanks, nested values and duplicates; numbers become strings', ['/api/*', '7'], $s->skipUris);
     $s = $make(['rules' => ['quotes' => '', 'fractions' => '1', 'ranges' => 'on', 'nonsense' => '1', 'hook-amp' => 'maybe']]);
-    sortsEq('rules: strings coerce, unknown keys drop, the rest keep their defaults', false, $s->rules['quotes']);
-    sortsEq('rules: "1" is on', true, $s->rules['fractions']);
-    sortsEq('rules: "on" is on', true, $s->rules['ranges']);
-    sortsEq('rules: an unreadable value keeps the default', false, $s->rules['hook-amp']);
-    sortsCheck('rules: unknown handles are dropped', !array_key_exists('nonsense', $s->rules));
+    sortsEq('rules: an old "" off a rule that is on by default is off', 'off', $s->ruleState('quotes'));
+    sortsEq('rules: an old "1" on a rule that is off by default is on', 'on', $s->ruleState('fractions'));
+    sortsEq('rules: the word "on" is on', 'on', $s->ruleState('ranges'));
+    sortsEq('rules: an unreadable value follows the preset', 'follow', $s->ruleState('hook-amp'));
+    sortsCheck('rules: unknown handles are dropped', !array_key_exists('nonsense', $s->rules) && $s->ruleState('nonsense') === 'follow');
     $s = $make(['fixOnSave' => '1', 'pagePass' => '', 'processHead' => 'true', 'fixTitles' => 0, 'widowsMinWords' => '5', 'pluginName' => "  Typeset \n"]);
     sortsEq('booleans and integers coerce', [true, false, true, false, 5, 'Typeset'], [$s->fixOnSave, $s->pagePass, $s->processHead, $s->fixTitles, $s->widowsMinWords, $s->pluginName]);
     sortsEq('normalizeQuotes: off by default, "1" is on, a word it cannot read keeps the default', [false, true, false], [$make([])->normalizeQuotes, $make(['normalizeQuotes' => '1'])->normalizeQuotes, $make(['normalizeQuotes' => 'maybe'])->normalizeQuotes]);
@@ -48,6 +48,71 @@ sortsTry('coercion', function () use ($make) {
     $s = $make(['widowsMinWords' => 'lots', 'pluginName' => ['x']]);
     sortsEq('a non-number widow count fails validation instead of throwing', false, $s->validate(['widowsMinWords']));
     sortsEq('a non-string plugin name becomes blank', '', $s->pluginName);
+});
+
+// D864: every rule is on, off or follows the preset; the three rules that exist for the preset have a switch too.
+sortsTry('rule states', function () use ($make) {
+    $S = \iceboxind\sorts\models\Settings::class;
+    sortsEq('every rule that was ever switchable, and the three preset-only rules, has a switch', true, count(array_intersect(['typed-dashes', 'dialogue-dash', 'ellipsis-spacing'], array_keys($S::RULE_DEFAULTS))) === 3);
+    $s = $make(['rules' => ['fractions' => 'on', 'dashes' => 'off', 'ranges' => 'follow', 'typed-dashes' => 'off', 'dialogue-dash' => ' ON ', 'ellipsis-spacing' => 'follow']]);
+    sortsEq('the three states are read, in any case and with spaces', ['on', 'off', 'follow', 'off', 'on', 'follow'], array_map($s->ruleState(...), ['fractions', 'dashes', 'ranges', 'typed-dashes', 'dialogue-dash', 'ellipsis-spacing']));
+    $kept = $s->rules;
+    ksort($kept);
+    sortsEq('only on and off are kept; a rule that follows is no entry', ['dashes' => 'off', 'dialogue-dash' => 'on', 'fractions' => 'on', 'typed-dashes' => 'off'], $kept);
+    $handed = $s->ruleSwitches();
+    ksort($handed);
+    sortsEq('the engine is handed on and off only, a rule that follows left out', ['dashes' => false, 'dialogue-dash' => true, 'fractions' => true, 'typed-dashes' => false], $handed);
+    sortsCheck('rules: a rule that follows has no switch handed on', !array_key_exists('ranges', $s->ruleSwitches()) && !array_key_exists('ellipsis-spacing', $s->ruleSwitches()));
+    sortsEq('a settings model with nothing switched has every rule following', [], (new $S())->ruleSwitches());
+    // Before there were three states the settings kept a plain on or off for every rule, and only one off its default
+    // counted as the site's word. Those values read as exactly that: nothing at its default is a switch.
+    $old = array_map(null, array_keys($S::RULE_DEFAULTS), array_values($S::RULE_DEFAULTS));
+    $s = $make(['rules' => array_column($old, 1, 0)]);
+    sortsEq('an old full map of defaults, as booleans, switches nothing', [], $s->rules);
+    $s = $make(['rules' => ['quotes' => false, 'dashes' => true, 'ranges' => false, 'fractions' => true, 'multiplication' => '1', 'ordinals' => '', 'widows' => 0, 'nbsp' => 'false']]);
+    sortsEq('an old boolean off its default is on or off, one at its default follows', ['off', 'follow', 'follow', 'on', 'on', 'follow', 'off', 'off'], array_map($s->ruleState(...), ['quotes', 'dashes', 'ranges', 'fractions', 'multiplication', 'ordinals', 'widows', 'nbsp']));
+    sortsEq('an old stored value and a new one validate', true, $s->validate());
+});
+
+// The same settings reach the engine from project config, written by an older Sorts or by this one, and survive a save.
+sortsTry('rule states in project config', function () {
+    $legacy = [];
+    foreach (\iceboxind\sorts\models\Settings::RULE_DEFAULTS as $handle => $default) {
+        if (!in_array($handle, ['typed-dashes', 'dialogue-dash', 'ellipsis-spacing'], true)) {
+            $legacy[$handle] = $default;
+        }
+    }
+    // As the testbed's committed YAML has it: sixteen plain booleans, with dashes moved off its default.
+    $legacy['dashes'] = false;
+    $legacy['fractions'] = true;
+    sortsConfigure('pro');
+    $pc = sortsRefresh();
+    $pc->set('plugins.sorts.settings.rules', $legacy);
+    $pc->saveModifiedConfigData();
+    sorts()->setSettings(sortsStored());
+    sorts()->engine->reset();
+    sortsEq('old booleans in project config: read as the same switches', ['off', 'on', 'follow', 'follow'], array_map(sorts()->getSettings()->ruleState(...), ['dashes', 'fractions', 'ranges', 'quotes']));
+    sortsEq('old booleans in project config: the engine behaves as before (dashes off, fractions on)', 'Use ½ cup “now” -- ok 1-5', sorts()->engine->apply('Use 1/2 cup "now" -- ok 1-5', [], 'en-US', \iceboxind\sorts\engine\Options::TEXT));
+    sortsEq('old booleans in project config: and the live page', true, str_contains((string) sortsHttp()->get('/sorts-lab')->getBody(), '“Hello” -- she said'));
+    // Old booleans and the preset: a rule off by default and stored off was never a veto, and still is not.
+    $legacy['ranges'] = false;
+    $pc = sortsRefresh();
+    $pc->set('plugins.sorts.settings.rules', $legacy);
+    $pc->set('plugins.sorts.settings.fineTypography', true);
+    $pc->saveModifiedConfigData();
+    sorts()->setSettings(sortsStored());
+    sorts()->engine->reset();
+    sortsEq('old booleans under the preset: ranges stored off is no veto, as before', 'pages 10–12', sorts()->engine->apply('pages 10-12'));
+
+    // The three states, written by this version.
+    sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['ranges' => 'off', 'fractions' => 'on', 'typed-dashes' => 'off', 'dialogue-dash' => 'follow', 'ellipsis-spacing' => 'on']]);
+    $stored = sortsStored()['rules'] ?? [];
+    ksort($stored);
+    sortsEq('saved: on and off are stored, a rule that follows is not', ['ellipsis-spacing' => 'on', 'fractions' => 'on', 'ranges' => 'off', 'typed-dashes' => 'off'], $stored);
+    sorts()->setSettings(sortsStored());
+    sortsEq('round trip: the states come back', ['off', 'on', 'off', 'follow', 'on', 'follow'], array_map(sorts()->getSettings()->ruleState(...), ['ranges', 'fractions', 'typed-dashes', 'dialogue-dash', 'ellipsis-spacing', 'quotes']));
+    sortsEq('round trip: a veto is a veto', 'pages 10-12 and a—b', sorts()->engine->apply('pages 10-12 and a—b'));
+    sortsConfigure('lite');
 });
 
 sortsTry('validation', function () use ($make) {
@@ -105,7 +170,7 @@ sortsTry('numbers from project config or config/sorts.php', function () {
 });
 
 sortsTry('the settings page, Lite', function () {
-    sortsConfigure('pro', ['skipTags' => ['figcaption'], 'skipUris' => ['/api/*'], 'rules' => ['fractions' => true], 'fixOnSave' => true, 'variants' => ['en-GB' => 'single-outer'], 'widowsMinWords' => 6, 'normalizeQuotes' => true, 'fineTypography' => true]);
+    sortsConfigure('pro', ['skipTags' => ['figcaption'], 'skipUris' => ['/api/*'], 'rules' => ['fractions' => 'on', 'ranges' => 'off', 'typed-dashes' => 'off'], 'fixOnSave' => true, 'variants' => ['en-GB' => 'single-outer'], 'widowsMinWords' => 6, 'normalizeQuotes' => true, 'fineTypography' => true]);
     sortsConfigure('lite', array_merge((array) sorts()->getSettings()->getAttributes(), []));
     $cp = sortsCpClient();
     $html = (string) $cp->get('/admin/settings/plugins/sorts')->getBody();
@@ -113,6 +178,7 @@ sortsTry('the settings page, Lite', function () {
     sortsCheck('lite page: marked Pro', substr_count($html, 'Needs Sorts Pro.') >= 5 && str_contains($html, '<span class="code">Pro</span>'));
     sortsCheck('lite page: and locked', (bool) preg_match('/<textarea[^>]*name="settings\[skipTags\]"[^>]*\bdisabled\b/', $html) || (bool) preg_match('/<textarea[^>]*\bdisabled\b[^>]*name="settings\[skipTags\]"/', $html), '');
     sortsCheck('lite page: CKEditor setting is live', (bool) preg_match('/name="settings\[ckeditorAsYouType\]"/', $html) && !preg_match('/<button[^>]*id="settings-ckeditorAsYouType"[^>]*disabled/', $html));
+    sortsCheck('lite page: every rule shows its state, locked', preg_match_all('/<select[^>]*name="settings\[rules\]\[[a-z-]+\]"[^>]*\bdisabled\b/', $html) >= 19 || preg_match_all('/<select[^>]*\bdisabled\b[^>]*name="settings\[rules\]\[[a-z-]+\]"/', $html) >= 19, (string) preg_match_all('/name="settings\[rules\]\[/', $html));
     sortsCheck('lite page: the normalize quotes switch is locked and marked Pro', (bool) preg_match('/<button[^>]*id="settings-normalizeQuotes"[^>]*\bdisabled\b/', $html) && (bool) preg_match('/id="settings-normalizeQuotes-warning"(?:(?!<\/p>).)*Needs Sorts Pro\./s', $html));
 
     // Save from Lite: the Pro values must survive.
@@ -124,7 +190,7 @@ sortsTry('the settings page, Lite', function () {
     sortsEq('lite save: the name changed', 'Typeset', $stored['pluginName'] ?? null);
     sortsEq('lite save: Pro skip tags survived', ['figcaption'], $stored['skipTags'] ?? null);
     sortsEq('lite save: Pro skip paths survived', ['/api/*'], $stored['skipUris'] ?? null);
-    sortsEq('lite save: Pro rules survived', true, $stored['rules']['fractions'] ?? null);
+    sortsEq('lite save: Pro rules survived, all three kinds (the veto of a preset rule too)', ['on', 'off', 'off', null], [$stored['rules']['fractions'] ?? null, $stored['rules']['ranges'] ?? null, $stored['rules']['typed-dashes'] ?? null, $stored['rules']['quotes'] ?? null]);
     sortsEq('lite save: fix-on-save survived', true, $stored['fixOnSave'] ?? null);
     sortsEq('lite save: variants survived', ['en-GB' => 'single-outer'], $stored['variants'] ?? null);
     sortsEq('lite save: the widow count survived', 6, $stored['widowsMinWords'] ?? null);
@@ -137,7 +203,8 @@ sortsTry('the settings page, Pro, saving through the form', function () {
     $cp = sortsCpClient();
     $html = (string) $cp->get('/admin/settings/plugins/sorts')->getBody();
     sortsCheck('pro page: nothing is marked as needing Pro', !str_contains($html, 'Needs Sorts Pro.'));
-    sortsCheck('pro page: every rule has a switch', substr_count($html, 'name="settings[rules][') >= 16, (string) substr_count($html, 'name="settings[rules]['));
+    sortsCheck('pro page: every rule, the three preset-only ones too, has a three-way choice', substr_count($html, '<select id="settings-rules-') + substr_count($html, 'name="settings[rules][') >= 19 && preg_match_all('/<option value="follow"/', $html) >= 19 && str_contains($html, 'name="settings[rules][typed-dashes]"') && str_contains($html, 'name="settings[rules][dialogue-dash]"') && str_contains($html, 'name="settings[rules][ellipsis-spacing]"'), (string) substr_count($html, 'name="settings[rules]['));
+    sortsCheck('pro page: each starts on follow the preset', substr_count($html, 'value="follow" selected') + substr_count($html, 'selected value="follow"') >= 19, (string) substr_count($html, 'selected'));
     sortsCheck('pro page: the variants are offered', str_contains($html, 'single-outer') && str_contains($html, 'value="guillemets"') && str_contains($html, 'value="guillemets-outer"') && str_contains($html, 'value="low-high"') && str_contains($html, 'value="spaced-en-dash"') && str_contains($html, 'value="double-outer"'));
     sortsCheck('pro page: the fine typography switch is there, off, and names the book', (bool) preg_match('/name="settings\[fineTypography\]"/', $html) && !preg_match('/<button[^>]*id="settings-fineTypography"[^>]*aria-checked="true"/', $html) && str_contains($html, 'Fine typography (Bringhurst)') && str_contains($html, 'The Elements of Typographic Style, 3rd ed.'));
     sortsCheck('pro page: the normalize quotes switch is there and off', (bool) preg_match('/name="settings\[normalizeQuotes\]"/', $html) && !preg_match('/<button[^>]*id="settings-normalizeQuotes"[^>]*aria-checked="true"/', $html));
@@ -146,8 +213,12 @@ sortsTry('the settings page, Pro, saving through the form', function () {
     $fields['settings[skipClasses]'] = 'no-typography';
     $fields['settings[skipUris]'] = "/api/*\n/feed.xml";
     $fields['settings[variants][en-GB]'] = 'single-outer';
-    $fields['settings[rules][fractions]'] = '1';
-    $fields['settings[rules][quotes]'] = '';
+    $fields['settings[rules][fractions]'] = 'on';
+    $fields['settings[rules][quotes]'] = 'off';
+    $fields['settings[rules][ranges]'] = 'off';
+    $fields['settings[rules][typed-dashes]'] = 'off';
+    $fields['settings[rules][ellipsis-spacing]'] = 'on';
+    $fields['settings[rules][multiplication]'] = '1';
     $fields['settings[widowsMinWords]'] = '4';
     $fields['settings[fixOnSave]'] = '1';
     $fields['settings[processHead]'] = '1';
@@ -160,7 +231,11 @@ sortsTry('the settings page, Pro, saving through the form', function () {
     sortsEq('pro save: classes', ['no-typography'], $stored['skipClasses'] ?? null);
     sortsEq('pro save: paths', ['/api/*', '/feed.xml'], $stored['skipUris'] ?? null);
     sortsEq('pro save: variant', ['en-GB' => 'single-outer'], $stored['variants'] ?? null);
-    sortsEq('pro save: rules', [true, false], [$stored['rules']['fractions'] ?? null, $stored['rules']['quotes'] ?? null]);
+    sortsEq('pro save: rules, a veto of a preset rule and a forced preset-only one among them', ['on', 'off', 'off', 'off', 'on', 'on', null], [$stored['rules']['fractions'] ?? null, $stored['rules']['quotes'] ?? null, $stored['rules']['ranges'] ?? null, $stored['rules']['typed-dashes'] ?? null, $stored['rules']['ellipsis-spacing'] ?? null, $stored['rules']['multiplication'] ?? null, $stored['rules']['dialogue-dash'] ?? null]);
+    $yaml = (string) @file_get_contents(Craft::$app->getPath()->getProjectConfigPath() . '/project.yaml');
+    sortsCheck('pro save: the states are in the project config YAML as words, and the veto is quoted, so a YAML 1.1 reader does not take it for a boolean', (bool) preg_match("/- typed-dashes\n\s+- ['\"]off['\"]\n/", $yaml) && (bool) preg_match('/- fractions\n\s+- [\'"]?on[\'"]?\n/', $yaml), (string) substr((string) strstr($yaml, 'rules:'), 0, 500));
+    $html2 = (string) $cp->get('/admin/settings/plugins/sorts')->getBody();
+    sortsCheck('pro save: the page shows the states chosen', substr_count($html2, 'value="off" selected') + substr_count($html2, 'selected value="off"') === 3 && substr_count($html2, 'value="on" selected') + substr_count($html2, 'selected value="on"') === 3, (string) substr_count($html2, 'selected'));
     sortsEq('pro save: widow count', 4, $stored['widowsMinWords'] ?? null);
     sortsEq('pro save: switches', [true, true, true, true], [$stored['fixOnSave'] ?? null, $stored['processHead'] ?? null, $stored['normalizeQuotes'] ?? null, $stored['fineTypography'] ?? null]);
 
@@ -186,6 +261,15 @@ sortsTry('config/sorts.php overrides', function () {
         $html = (string) sortsCpClient()->get('/admin/settings/plugins/sorts')->getBody();
         sortsCheck('override: the settings page says so', str_contains($html, 'This is being overridden by config/sorts.php.'));
         sortsCheck('override: and the plugin takes the name from the file', str_contains($html, 'From File'));
+    } finally {
+        unlink($file);
+    }
+    // The three states from the file too, a plain boolean beside them: dashes off by word, a stray true that is the default.
+    file_put_contents($file, "<?php\nreturn ['*' => ['rules' => ['dashes' => 'off', 'quotes' => true, 'typed-dashes' => 'on']]];\n");
+    try {
+        sortsCheck('override: the file sets dashes off by word, and the page keeps its --', str_contains((string) sortsHttp()->get('/sorts-lab')->getBody(), '“Hello” -- she said'));
+        $html = (string) sortsCpClient()->get('/admin/settings/plugins/sorts')->getBody();
+        sortsCheck('override: the rule choices are locked and say so', str_contains($html, 'This is being overridden by config/sorts.php.') && (bool) preg_match('/<select[^>]*name="settings\[rules\]\[dashes\]"[^>]*\bdisabled\b/', $html) || (bool) preg_match('/<select[^>]*\bdisabled\b[^>]*name="settings\[rules\]\[dashes\]"/', $html));
     } finally {
         unlink($file);
     }

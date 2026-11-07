@@ -121,6 +121,28 @@ sortsTry('fine typography: one save is the whole fix (F1, F6, F7)', function () 
     sortsClean();
 });
 
+sortsTry('a veto of a preset rule reaches stored content (D864)', function () use ($edited) {
+    sortsClean();
+    $section = Craft::$app->getEntries()->getSectionByHandle('sortsTest')->id;
+    $site = Craft::$app->getSites()->getPrimarySite()->id;
+    $values = ['title' => '"Yes" pages 10-12 and a—b', 'sortsPlain' => '8 1/2 x 11 -- ok', 'sortsBodySite' => '<p>-- So this is it.</p>'];
+    sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true]);
+    $f = sortsFresh($edited($values)->id);
+    sortsEq('follow: the preset reaches stored content (ranges, a typed em dash; the dialogue line kept for the page)', ['“Yes” pages 10–12 and a – b', '8½ × 11 – ok', '<p>-- So this is it.</p>'], [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
+    sortsClean();
+    sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true, 'rules' => ['ranges' => 'off', 'typed-dashes' => 'off', 'dialogue-dash' => 'off']]);
+    $e = $edited($values);
+    $f = sortsFresh($e->id);
+    sortsEq('veto: ranges, the typed em dash and the dialogue dash stay off in what is stored; the rest of the preset is stored', ['“Yes” pages 10-12 and a—b', '8½ × 11 – ok', '<p>– So this is it.</p>'], [$f->title, sortsRaw($f, 'sortsPlain'), sortsRaw($f, 'sortsBodySite')]);
+    $svc = sorts()->engine;
+    sortsEq('veto: the page leaves what was stored as it is, so the page and the save agree', [$f->title, '<p>– So this is it.</p>'], [$svc->apply($f->title), $svc->apply(sortsRaw($f, 'sortsBodySite'))]);
+    sortsEq('veto: the audit finds nothing left to fix after the save', [], array_values(array_filter(sorts()->auditScanner->scan($section, $site, 0)['items'], fn ($i) => $i['id'] === (int) $e->id)));
+    sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true, 'rules' => ['dashes' => 'off', 'dialogue-dash' => 'on']]);
+    $f = sortsFresh($edited($values)->id);
+    sortsEq('dashes off, dialogue-dash on: a dialogue line is still stored as typed, for the page to set', '<p>-- So this is it.</p>', sortsRaw($f, 'sortsBodySite'));
+    sortsClean();
+});
+
 sortsTry('quote type and normalizing by depth', function () use ($edited) {
     sortsClean();
     sortsConfigure('pro', ['fixOnSave' => true]);

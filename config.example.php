@@ -35,12 +35,15 @@ return [
         // memory for under PHP's memory_limit.
         'maxPageBytes' => 1000000,
 
-        // Rule switches by handle. Omitted handles keep their defaults:
+        // Rules by handle, each 'on', 'off' or 'follow' (the default: what Fine typography
+        // says, and with it off the rule's default). A handle left out follows. Off vetoes a
+        // rule that Fine typography turns on; on turns on one it leaves off. The defaults are
         // on: quotes, apostrophes, primes, dashes, ellipsis, symbols, widows, nbsp, locale-spacing
-        // off: ranges, multiplication, fractions, ordinals, hook-amp, hook-caps, hook-quotes
+        // off: typed-dashes, dialogue-dash, ellipsis-spacing (all three on with Fine typography),
+        //      ranges, multiplication, fractions (on with it too), ordinals, hook-amp, hook-caps, hook-quotes
         'rules' => [
-            // 'fractions' => true,
-            // 'ranges' => true,
+            // 'fractions' => 'on',
+            // 'ranges' => 'off',
         ],
 
         // The fewest words a heading needs before its last two words are joined.
@@ -64,8 +67,8 @@ return [
         // chapter 5: a spaced en dash for breaks (5.2.1), a dash and a thin space opening
         // dialogue (5.2.3), ranges including clock times (5.2.2), fractions joined to their whole
         // number (5.2.5), the multiplication sign (5.2.6), spaced ellipses in English (5.2.7)
-        // and thin spaces inside guillemets (5.4.1). A rule switch you have moved off its default
-        // still wins; one left at its default follows this setting.
+        // and thin spaces inside guillemets (5.4.1). A rule you have set to 'on' or 'off' in
+        // 'rules' above still wins; one that follows (the default) does what this setting says.
         'fineTypography' => false,
 
         // Exclusions: tag names, class names, and request paths (`*` matches any run

@@ -6,7 +6,9 @@ namespace iceboxind\sorts\engine;
  * What a call to the engine is told. Immutable; {@see with()} returns a changed copy.
  *
  * `rules` maps a rule handle to true or false to override that rule’s
- * `defaultEnabled()`. `ruleOptions` maps a handle to that rule’s own settings
+ * `defaultEnabled()`. Every rule has three states, and these are them (D864): true is on, false is off, and a
+ * handle left out follows the preset, and with no preset its `defaultEnabled()`. False is a site’s veto of a rule
+ * the preset turns on; true turns on a rule the preset leaves off. `ruleOptions` maps a handle to that rule’s own settings
  * (for example `widows` => ['tags' => ['h1', 'h2'], 'minWords' => 4]). `variants`
  * maps a locale id to the name of a variant to use for it (`['en-GB' => 'single-outer']`);
  * a name the locale does not have means the CLDR default.

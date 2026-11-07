@@ -19,6 +19,7 @@ use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\View;
 use iceboxind\sorts\ckeditor\CkeditorSupport;
+use iceboxind\sorts\engine\Presets;
 use iceboxind\sorts\gql\directives\Sorts as SortsDirective;
 use iceboxind\sorts\models\Settings;
 use iceboxind\sorts\services\AuditScanner;
@@ -169,6 +170,8 @@ class Plugin extends BasePlugin
             // Project config keeps a map in a packed form that remembers its key order; the template needs it as it was.
             'stored' => ProjectConfigHelper::unpackAssociativeArrays(Craft::$app->getProjectConfig()->get(ProjectConfig::PATH_PLUGINS . '.' . $this->handle . '.settings') ?? []),
             'variants' => $variants,
+            'ruleDefaults' => Settings::RULE_DEFAULTS,
+            'presetRules' => Presets::rules(Presets::BRINGHURST),
             'ckeditorInstalled' => class_exists(\craft\ckeditor\helpers\CkeditorConfig::class),
         ]);
     }

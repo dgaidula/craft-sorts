@@ -1,0 +1,65 @@
+# D864: every rule has three states, and the preset-only rules (typed-dashes, dialogue-dash, ellipsis-spacing) show all of them.
+# Follow is a rule the options leave out (the preset answers, then the rule's own default); on and off are `on=` and `off=`.
+# Each rule has four cases: follow under the preset (runs), off under the preset (the veto), on with no preset (forced),
+# follow with no preset (stays off). `rs-` is for rule state.
+
+@ rs-typed-dashes-follow-under-the-preset-runs preset=bringhurst
+< a—b
+> a – b
+
+@ rs-typed-dashes-off-under-the-preset-is-a-veto preset=bringhurst off=typed-dashes
+< a—b and c — d
+
+@ rs-typed-dashes-on-with-no-preset-is-forced on=typed-dashes config={"variants":{"en-US":"spaced-en-dash"}}
+< a—b
+> a – b
+
+@ rs-typed-dashes-follow-with-no-preset-stays-off config={"variants":{"en-US":"spaced-en-dash"}}
+< a—b
+
+@ rs-dialogue-dash-follow-under-the-preset-runs preset=bringhurst
+< -- So this.
+> —\u{202F}So this.
+
+@ rs-dialogue-dash-off-under-the-preset-is-a-veto preset=bringhurst off=dialogue-dash
+< -- So this.
+> – So this.
+
+@ rs-dialogue-dash-on-with-no-preset-is-forced on=dialogue-dash
+< -- So this.
+> —\u{202F}So this.
+
+@ rs-dialogue-dash-follow-with-no-preset-stays-off off=dashes
+< -- So this.
+
+@ rs-ellipsis-spacing-follow-under-the-preset-runs preset=bringhurst
+< wait…then
+> wait … then
+
+@ rs-ellipsis-spacing-off-under-the-preset-is-a-veto preset=bringhurst off=ellipsis-spacing
+< wait…then
+
+@ rs-ellipsis-spacing-on-with-no-preset-is-forced on=ellipsis-spacing
+< wait…then
+> wait … then
+
+@ rs-ellipsis-spacing-follow-with-no-preset-stays-off
+< wait…then
+
+# A veto is the site's word on one rule only: the others in the set still run.
+
+@ rs-a-veto-leaves-the-rest-of-the-preset-running preset=bringhurst off=typed-dashes
+< a—b and 8 1/2 and wait…then
+> a—b and 8½ and wait … then
+
+# A switch on beside a preset is the same as following it.
+
+@ rs-on-under-the-preset-is-follow preset=bringhurst on=typed-dashes,dialogue-dash,ellipsis-spacing
+< -- So a—b and wait…then
+> —\u{202F}So a – b and wait … then
+
+# A scope still reaches a rule that is off (data-sorts-rules, a rule named in a call), as it always has.
+
+@ rs-a-named-rule-runs-though-the-veto preset=bringhurst off=ellipsis-spacing named=ellipsis-spacing
+< wait…then
+> wait … then

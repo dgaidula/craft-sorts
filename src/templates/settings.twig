@@ -119,7 +119,7 @@
 {% set lockFine = ('fineTypography' in overrides) or not isPro %}
 {{ forms.lightswitchField({
     label: 'Fine typography (Bringhurst)'|t('sorts'),
-    instructions: 'After Robert Bringhurst, The Elements of Typographic Style, 3rd ed., chapter 5. Off by default. On: a spaced en dash for breaks in American English, also for typed em dashes (5.2.1); an em dash and a thin space to open dialogue (5.2.3); number ranges, including clock times (5.2.2); fractions joined to their whole number (5.2.5); the multiplication sign (5.2.6); a word space either side of an ellipsis in English (5.2.7); thin spaces inside guillemets, except in German (5.4.1). A rule switch below that you have moved off its default still wins, and a quotation style you choose for a language wins over this. Applies to the page pass, the filter, fix on save and the audit.'|t('sorts'),
+    instructions: 'After Robert Bringhurst, The Elements of Typographic Style, 3rd ed., chapter 5. Off by default. On: a spaced en dash for breaks in American English, also for typed em dashes (5.2.1); an em dash and a thin space to open dialogue (5.2.3); number ranges, including clock times (5.2.2); fractions joined to their whole number (5.2.5); the multiplication sign (5.2.6); a word space either side of an ellipsis in English (5.2.7); thin spaces inside guillemets, except in German (5.4.1). A rule you set to on or off below still wins (off keeps one of these rules off), and a quotation style you choose for a language wins over this. Applies to the page pass, the filter, fix on save and the audit.'|t('sorts'),
     id: 'fineTypography',
     name: 'fineTypography',
     on: settings.fineTypography,
@@ -137,7 +137,10 @@
     'apostrophes': 'Apostrophes, including leading ones',
     'primes': 'Primes for feet, inches, minutes and seconds',
     'dashes': 'Em and en dashes',
+    'typed-dashes': 'Typed em dashes take the language’s break dash',
+    'dialogue-dash': 'Dialogue dash: -- or — opening a block',
     'ellipsis': 'Ellipsis',
+    'ellipsis-spacing': 'Word spaces round an ellipsis (English)',
     'symbols': 'Symbols: (c) (r) (tm)',
     'ranges': 'Number ranges (1-5 to 1–5)',
     'multiplication': 'Multiplication signs (3x4 to 3×4)',
@@ -150,12 +153,21 @@
     'hook-caps': 'Wrap runs of capitals in a span with class caps',
     'hook-quotes': 'Wrap opening quotes in a span for hanging punctuation',
 } %}
+<p class="light">{{ 'Each rule is on, off, or follows the preset. Following is the default: the rule does what Fine typography says, and with that setting off, what the note beside it gives. Off keeps a rule off even when Fine typography turns it on; on turns on a rule that Fine typography leaves off. A rule that is off here still runs inside an element marked data-sorts-rules.'|t('sorts') }}</p>
 {% for handle, label in ruleLabels %}
-    {{ forms.lightswitchField({
+    {% set byDefault = (ruleDefaults[handle] ?? false) ? 'on'|t('sorts') : 'off'|t('sorts') %}
+    {% set presetTurnsOn = (presetRules[handle] ?? false) and not (ruleDefaults[handle] ?? false) %}
+    {{ forms.selectField({
         label: label|t('sorts'),
+        instructions: (presetTurnsOn ? 'Default: {state}. Fine typography turns it on.' : 'Default: {state}.')|t('sorts', { state: byDefault }),
         id: 'rules-' ~ handle,
         name: 'rules[' ~ handle ~ ']',
-        on: settings.rules[handle] ?? false,
+        value: settings.ruleState(handle),
+        options: [
+            { label: 'Follow the preset'|t('sorts'), value: 'follow' },
+            { label: 'On'|t('sorts'), value: 'on' },
+            { label: 'Off'|t('sorts'), value: 'off' },
+        ],
         disabled: lockRules,
     }) }}
 {% endfor %}

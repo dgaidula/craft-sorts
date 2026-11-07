@@ -42,7 +42,7 @@ content half-converted.
 
 ## 3. Rules (Pro covers all of them; Dan: “PRO covers all advanced typography problems”)
 
-Each rule has an on/off setting; the default column is the out-of-box state.
+Each rule has a setting: on, off, or follow the preset (D864); the default column is the out-of-box state, which is what following gives with no preset.
 
 | Rule | Example | Default |
 |---|---|---|
@@ -220,7 +220,8 @@ emails, PDFs, text inserted by JavaScript after load, hyphenation, CJK.
   - **An inch mark, foot mark or possessive** is judged against one quotation, not every open one: the innermost,
     or past one opened straight of the other kind the nearest of the mark’s kind; checking all of them turned real
     closing marks into primes (`“He said ‘I was 6' then.”`).
-- **D817 — Bringhurst preset: decided and built 2026-11-06 (Dan: y).** Pro setting `fineTypography` (engine preset `bringhurst`): the `spaced-en-dash` variant (§5.2.1), `typed-dashes` (§5.2.1), `dialogue-dash` (§5.2.3), ranges with clock times (§5.2.2), fractions with the join (§5.2.5), multiplication (§5.2.6), `ellipsis-spacing` in English (§5.2.7), thin spaces inside guillemets except German (§5.4.1), cited to *The Elements of Typographic Style*, 3rd ed. A rule switch moved off its default and a chosen variant win over it. The proposal text under D817 above is superseded.
+- **D817 — Bringhurst preset: decided and built 2026-11-06 (Dan: y).** Pro setting `fineTypography` (engine preset `bringhurst`): the `spaced-en-dash` variant (§5.2.1), `typed-dashes` (§5.2.1), `dialogue-dash` (§5.2.3), ranges with clock times (§5.2.2), fractions with the join (§5.2.5), multiplication (§5.2.6), `ellipsis-spacing` in English (§5.2.7), thin spaces inside guillemets except German (§5.4.1), cited to *The Elements of Typographic Style*, 3rd ed. A rule switch and a chosen variant win over it. The proposal text under D817 above is superseded.
+- **D864 — three-state rule settings: decided 2026-11-06 (Dan: “build the three-state per-rule setting (on, off, follow the preset), so a site can veto a preset rule”), built.** Every rule in §3, the preset-only ones included, is on, off or follows the preset (the default); the engine `Options::$rules` already held the three (true, false, absent), the settings now do. Em and en dashes off takes `typed-dashes` and `dialogue-dash` off with it under the preset unless either is switched on. Settings stored as plain booleans read as before.
 - **D844 — German defaults to book style: decided 2026-11-06 (Dan: y), built.** `de` `»…« ›…‹`; CLDR’s `„…“ ‚…‘` is the variant `low-high`; `de-AT`, `de-DE` inherit, `de-CH` keeps CLDR’s. The one default departure from CLDR (an exception to D816); the generator records the reason.
 - **D855 — spaced en dash variant: decided 2026-11-06 (Dan: a), built.** `en-US` `spaced-en-dash` for `--`, `---` and a spaced hyphen; the default stays Chicago’s closed em dash.
 - **D856 — typed em dashes in the Bringhurst preset: built** as rule `typed-dashes` (preset only), except a dash opening a block, a dash run and a dash touching a quotation mark.
