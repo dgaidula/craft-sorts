@@ -106,6 +106,15 @@
 < a — it's — x
 > a – it’s – x
 
+# FU2 (re-check 2026-11-07): the eighth byte after the dash cuts a four-byte letter, then a two-byte one.
+@ bp-typed-spaced-em-dashes-round-a-word-cut-in-a-four-byte-letter preset=bringhurst only=typed-dashes
+< She came — abcd𠀀 — at dawn.
+> She came – abcd𠀀 – at dawn.
+
+@ bp-typed-spaced-em-dashes-round-a-word-cut-in-a-two-byte-letter preset=bringhurst only=typed-dashes
+< She came — abcdefé — at dawn.
+> She came – abcdefé – at dawn.
+
 # F1 (gate 2026-11-06): one pass gives what two would. The em dash --- gives is restyled as a typed one is, and
 # widows can join the word after a dash a rule wrote.
 @ bp-f1-triple-hyphen-restyled-in-en-GB preset=bringhurst only=dashes,typed-dashes locale=en-GB

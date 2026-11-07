@@ -406,6 +406,12 @@ check('long script: the text around a 1.2 MB script is still converted', '<p>“
 check('long script: no error is reported', null, $engine->lastError());
 $longComment = '<p>"a"</p><!-- ' . str_repeat('"x" ', 300_000) . ' --><p>"b"</p>';
 check('long comment: the text around a 1.2 MB comment is still converted', '<p>“a”</p><!-- ' . str_repeat('"x" ', 300_000) . ' --><p>“b”</p>', $engine->apply($longComment));
+// A block that opens with any length of whitespace still opens with its mark: no pattern limit cuts the read short (FU1).
+$quotesOnly = new Options(locale: 'en-GB', rules: array_merge($allOff->rules, ['quotes' => true, 'apostrophes' => true, 'primes' => true]));
+foreach (['spaces' => str_repeat(' ', 100_000), 'no-break spaces' => str_repeat('&nbsp;', 100_000), 'earlier runs' => '&nbsp;<b>' . str_repeat(' ', 100_000) . '</b>'] as $what => $indent) {
+    check("long indent ($what): the mark after it opens a quotation", '<p>' . $indent . '‘It was dark.</p>', $engine->apply('<p>' . $indent . "'It was dark.</p>", [], $quotesOnly));
+}
+check('long indent (text mode): the mark after it opens a quotation', str_repeat(' ', 100_000) . '‘It was dark.', $engine->apply(str_repeat(' ', 100_000) . "'It was dark.", [], $quotesOnly->with(mode: Options::TEXT)));
 $limit = ini_get('pcre.backtrack_limit');
 foreach (['2' => 'tokenizing', '1' => 'UTF-8'] as $tight => $step) {
     // 2 lets the UTF-8 check through and stops the tokenizer (with or without JIT); 1 stops the UTF-8 check itself.
@@ -444,6 +450,17 @@ $slower = static function (string $small, string $large, ?Options $options = nul
 $page = static fn (int $n): string => "<p>'" . str_repeat("the dogs' bowls ", $n) . "'</p>";
 [$ratio, $a, $b] = $slower($page(3_200), $page(12_800));
 check(sprintf('perf guard: a possessive paragraph 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+
+// And on dialogue, every opening mark asking whether it opens the block (R1-1), in HTML and in plain text.
+$page = static fn (int $n): string => '<p>' . str_repeat("'Hello,' she said. ", $n) . '</p>';
+[$ratio, $a, $b] = $slower($page(1_600), $page(6_400), new Options(locale: 'en-GB'));
+check(sprintf('perf guard: a paragraph of single-quoted dialogue 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+[$ratio, $a, $b] = $slower(str_repeat("'Hello,' she said. ", 1_600), str_repeat("'Hello,' she said. ", 6_400), new Options(locale: 'en-GB', mode: Options::TEXT));
+check(sprintf('perf guard: single-quoted dialogue in plain text 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+// After an indent as long, which is measured once for the run, not once for each mark.
+$page = static fn (int $n): string => '<p>' . str_repeat('&nbsp;', $n) . str_repeat("'Hello,' she said. ", $n) . '</p>';
+[$ratio, $a, $b] = $slower($page(1_600), $page(6_400), new Options(locale: 'en-GB'));
+check(sprintf('perf guard: single-quoted dialogue after an indent, both 4× as long, takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
 
 // And on nesting: closing a quotation costs the quotations it closes, not the depth (F3).
 $page = static fn (int $n): string => '<p>' . str_repeat('"a \'b ', $n) . str_repeat('c\' d" ', $n) . '</p>';

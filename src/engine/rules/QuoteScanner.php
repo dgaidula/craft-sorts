@@ -391,26 +391,44 @@ final class QuoteScanner
     /**
      * Whether only whitespace comes before $offset in its flow. HTML does not show a newline and an indent
      * after `<p>` or `<br>`, or a `&nbsp;` there, so a mark after them opens its block as one with nothing
-     * before it does (D876).
+     * before it does (D876). Only the mark right after the run’s leading whitespace can, so that is measured
+     * once per run and the earlier runs are read for one mark at most (R1-1).
+     *
+     * @param array<string, array<int, int>> $suffix
      */
-    private static function opensBlock(string $text, int $offset, Context $context, bool $html): bool
+    private static function opensBlock(string $text, int $offset, Context $context, bool $html, array &$suffix): bool
     {
-        $blank = $html ? '/(?:\s|\x{00A0}|&(?:nbsp|#160|#[xX]0*[aA]0);)+$/u' : '/[\s\x{00A0}]+$/u';
-        if (preg_replace($blank, '', substr($text, 0, $offset)) !== '') {
+        $suffix['block-start'] ??= [self::blankLength($text, 0, $html)];
+        if ($offset !== $suffix['block-start'][0]) {
             return false;
         }
         // The earlier runs, read further back until a character that is not whitespace or the start of the flow.
         for ($length = 16; ; $length *= 4) {
             $before = $context->before($length);
-            $rest = preg_replace($blank, '', $before);
+            $blank = self::blankLength($before, 0, $html) === strlen($before);
             if (mb_strlen($before) < $length) {
-                return $rest === '';
+                return $blank;
             }
             // An entity the cut split (`bsp;`) is read again, whole, on the next round.
-            if ($rest !== '' && !preg_match('/^[#A-Za-z0-9]*;$/', (string) $rest)) {
+            if (!$blank && !(preg_match('/^[#A-Za-z0-9]*;/', $before, $cut)
+                && strlen($cut[0]) + self::blankLength($before, strlen($cut[0]), $html) === strlen($before))) {
                 return false;
             }
         }
+    }
+
+    /**
+     * How many bytes of whitespace (and in HTML `&nbsp;`, `&#160;` or `&#xA0;`) $text holds from $from on.
+     * One match per space run or entity, so no length of it meets a PCRE limit (FU1).
+     */
+    private static function blankLength(string $text, int $from, bool $html): int
+    {
+        $blank = $html ? '/\G(?:[\s\x{00A0}]++|&(?:nbsp|#160|#[xX]0*[aA]0);)/u' : '/\G[\s\x{00A0}]++/u';
+        $at = $from;
+        while (preg_match($blank, $text, $m, 0, $at)) {
+            $at += strlen($m[0]);
+        }
+        return $at - $from;
     }
 
     private static function decideDouble(
@@ -511,7 +529,7 @@ final class QuoteScanner
             // as likely a nested quotation left open ('hood in dialogue reads either way) and keeps its old reading.
             // In running text only: a mark that opens its block opens a quotation, since a quotation over several
             // paragraphs opens each one and closes only the last (D876).
-            if ($opening && $noneOpen && !self::opensBlock($text, $offset, $context, $html) && self::singleClosersAfter($text, $tokens, $k, $context, $html, $roles, $suffix) === 0) {
+            if ($opening && $noneOpen && !self::opensBlock($text, $offset, $context, $html, $suffix) && self::singleClosersAfter($text, $tokens, $k, $context, $html, $roles, $suffix) === 0) {
                 return self::D_APOSTROPHE;
             }
             return self::D_OPEN;

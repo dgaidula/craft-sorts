@@ -247,6 +247,30 @@
 > <p>She said
 > ’Áshįįh is here.</p>
 
+# FU2 (re-check 2026-11-07): each way of writing a no-break space, an indent in earlier runs read past its first
+# characters, and text mode.
+@ a-mark-after-a-decimal-no-break-space-entity-opens-a-quotation only=quotes,apostrophes,primes
+< <p>&#160;'It was dark.</p>
+> <p>&#160;‘It was dark.</p>
+
+@ a-mark-after-a-hex-no-break-space-entity-opens-a-quotation only=quotes,apostrophes,primes
+< <p>&#xA0;'It was dark.</p>
+> <p>&#xA0;‘It was dark.</p>
+
+@ a-mark-after-no-break-spaces-in-an-earlier-run-opens-a-quotation only=quotes,apostrophes,primes
+< <p><b>&nbsp;&nbsp;&nbsp;</b>'It was dark.</p>
+> <p><b>&nbsp;&nbsp;&nbsp;</b>‘It was dark.</p>
+
+@ a-word-initial-apostrophe-after-a-long-indent-in-an-earlier-run-is-running-text only=quotes,apostrophes,primes
+< <p>Text<span>
+<                     </span>'Áshįįh is here.</p>
+> <p>Text<span>
+>                     </span>’Áshįįh is here.</p>
+
+@ a-mark-after-a-space-at-the-start-in-text-mode-opens-a-quotation only=quotes,apostrophes,primes mode=text
+<  'It was dark.
+>  ‘It was dark.
+
 @ a-word-initial-apostrophe-in-en-GB only=quotes,apostrophes,primes locale=en-GB
 < Navajo 'Áshįįh 'Asdzáán
 > Navajo ’Áshįįh ’Asdzáán
