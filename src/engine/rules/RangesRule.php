@@ -43,7 +43,10 @@ final class RangesRule extends AbstractRule
     {
         $urls = self::urlSpans($run->text());
         if (strpos($run->text(), ':') !== false) {
-            $this->clockTimes($run, $urls);
+            // Clock ranges change the run's length, so the URL spans are found again after them.
+            if ($this->clockTimes($run, $urls) > 0) {
+                $urls = self::urlSpans($run->text());
+            }
         }
         $run->replaceAll(
             '/(?<![\p{L}\p{N}_.,\-\/:@#+=&%~])(' . self::NUMBER . ')-(' . self::NUMBER . ')(?![\p{L}\p{N}_\-\/:@#+=&~]|[.,]\d)/u',
@@ -75,11 +78,12 @@ final class RangesRule extends AbstractRule
      * since a range may run past midnight (22:00-06:00).
      *
      * @param list<array{int, int}> $urls
+     * @return int how many ranges it converted
      */
-    private function clockTimes(Run $run, array $urls): void
+    private function clockTimes(Run $run, array $urls): int
     {
         $text = $run->text();
-        $run->replaceAll(
+        return $run->replaceAll(
             '/(?<![\p{L}\p{N}_.,\-\/:@#+=&%~])((?:[01]?\d|2[0-4]):[0-5]\d)-((?:[01]?\d|2[0-4]):[0-5]\d)(?![\p{L}\p{N}_\-\/:@#+=&~]|[.,]\d)/u',
             static function (array $m, int $offset) use ($text, $urls): ?string {
                 if (self::inSpans($urls, $offset)) {

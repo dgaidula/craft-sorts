@@ -53,9 +53,11 @@ final class FractionsRule extends AbstractRule
                     return null;
                 }
                 // The whole number joins only when it is in this run, or what comes before the run allows it.
+                // One that may not join keeps its space, and the fraction still has to pass the checks below.
                 $offset = $matchOffset + ($whole === '' ? 0 : strlen($whole) + 1);
+                $lead = $whole;
                 if ($whole !== '' && $matchOffset === 0 && preg_match('~[\p{L}\p{N}/\\\\.,:;_@#=&%\~+-]~u', $context->before(1))) {
-                    return $whole . ' ' . self::MAP[$fraction];
+                    $lead = $whole . ' ';
                 }
                 $end = $offset + strlen($fraction);
                 $before = self::charBefore($text, $offset, $context);
@@ -73,7 +75,7 @@ final class FractionsRule extends AbstractRule
                 if (preg_match('/^[.,]\d/', $next2)) {
                     return null;
                 }
-                return $whole . self::MAP[$fraction];
+                return $lead . self::MAP[$fraction];
             }
         );
     }

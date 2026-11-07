@@ -398,6 +398,15 @@
 @ r-clock-glued-to-a-letter-stays only=ranges
 < a4:30-5:00 and 4:30-5:00b
 
+# F4 (gate 2026-11-06): clock ranges lengthen the run; a URL after them stays protected.
+@ r-clock-ranges-then-a-url only=ranges
+< Open 4:30-5:00 and 6:00-7:00 at https://x.com/a;1-2
+> Open 4:30–5:00 and 6:00–7:00 at https://x.com/a;1-2
+
+@ r-clock-three-ranges-then-a-url-ending-in-a-range only=ranges
+< Open 4:30-5:00, 6:00-7:00, 8:00-9:00 at https://x.com/p(1-2)
+> Open 4:30–5:00, 6:00–7:00, 8:00–9:00 at https://x.com/p(1-2)
+
 @ r-clock-in-a-url-stays only=ranges
 < https://example.com/at/4:30-5:00 and /at/4:30-5:00
 
@@ -524,6 +533,18 @@
 @ f-join-a-whole-number-in-another-run-does-not-join only=fractions
 < <b>8</b> 1/2
 > <b>8</b> ½
+
+# F3 (gate 2026-11-06): a whole number that opens a run and may not join still leaves a date
+# or a decimal after it alone.
+@ f-join-run-start-whole-number-before-a-date only=fractions
+< Date:<span>12 1/2/2024</span> and Rev.<b>2 1/2/2024</b>
+
+@ f-join-run-start-whole-number-before-a-decimal only=fractions
+< x<b>3 1/2.5</b>
+
+@ f-join-run-start-whole-number-keeps-its-space only=fractions
+< <b>x</b>8 1/2
+> <b>x</b>8 ½
 
 @ f-join-off-by-default only=dashes
 < 8 1/2
