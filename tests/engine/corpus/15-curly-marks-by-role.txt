@@ -1349,6 +1349,8 @@
 < <p>“He said ‘it is 6" long’ and went on</p>
 > <p>“He said ‘it is 6″ long’ and went on</p>
 
+# This one pins the branch (Q4), not a preferred output: the input is machine-made and its expected text is
+# what the branch gives, with the “c quotation left open and closed by ’ (R4-6). An improvement here may rewrite it.
 @ r3-4-straight-opened-quotation-is-the-nearest-of-its-kind only=quotes,apostrophes,primes
 < <p>“a "b 'c 6" d' e”</p>
 > <p>“a ‘b “c 6’ d’ e”</p>
@@ -1457,3 +1459,74 @@
 @ fu2-nl-foot-mark-inside-curly-single-straight-outer-unchanged only=quotes,apostrophes,primes locale=nl
 < <p>'Hij zei ‘het is 6' lang.</p>
 > <p>‘Hij zei ‘het is 6’ lang.</p>
+
+# ---- R4-2 to R4-4 (re-check 3) ----
+#
+# R4-2: in fi and sv the ’…’ pair's opener is the apostrophe too. The count of its marks still to come
+# takes a ’ before a word as an opener where the scan reads one (after a space, the start or an opening
+# mark, not ’90 or a leading word), in the run and after it, so a foot mark inside ’…’ followed by another
+# ’…’ quotation stays a prime. Expected: the foot mark is a prime.
+
+@ r4-2-sv-foot-mark-inside-single-before-another-quotation only=quotes,apostrophes,primes locale=sv
+< <p>’Han är 6' lång’, sa hon. ’Ja.’</p>
+> <p>’Han är 6′ lång’, sa hon. ’Ja.’</p>
+
+@ r4-2-sv-foot-mark-inside-single-before-another-quotation-depth only=quotes,apostrophes,primes locale=sv config={"quoteNesting":"depth"}
+< <p>’Han är 6' lång’, sa hon. ’Ja.’</p>
+> <p>’Han är 6′ lång’, sa hon. ’Ja.’</p>
+
+@ r4-2-sv-foot-mark-inside-nested-single only=quotes,apostrophes,primes locale=sv
+< <p>”Hon sa ’han är 6' lång’ och ’mycket snäll’”, berättade han.</p>
+> <p>”Hon sa ’han är 6′ lång’ och ’mycket snäll’”, berättade han.</p>
+
+@ r4-2-fi-foot-mark-inside-single-before-another-quotation only=quotes,apostrophes,primes locale=fi
+< <p>’Hän on 6' pitkä’, sanoi hän. ’Niin.’</p>
+> <p>’Hän on 6′ pitkä’, sanoi hän. ’Niin.’</p>
+
+@ r4-2-fi-foot-mark-inside-nested-single only=quotes,apostrophes,primes locale=fi
+< <p>”Hän sanoi ’olen 6' pitkä’ ja ’vahva’”</p>
+> <p>”Hän sanoi ’olen 6′ pitkä’ ja ’vahva’”</p>
+
+@ r4-2-sv-year-apostrophe-is-not-an-opener only=quotes,apostrophes,primes locale=sv
+< <p>’Han var 6' lång på ’90-talet’, sa hon.</p>
+> <p>’Han var 6′ lång på ’90-talet’, sa hon.</p>
+
+@ r4-2-sv-leading-word-is-not-an-opener only=quotes,apostrophes,primes locale=sv
+< <p>’Han är 6' lång’, sa hon ’cause han äter.</p>
+> <p>’Han är 6′ lång’, sa hon ’cause han äter.</p>
+
+@ r4-2-sv-opener-after-the-run only=quotes,apostrophes,primes locale=sv
+< <p>’Han är 6' lång’, sa hon. <em>’Ja.’</em></p>
+> <p>’Han är 6′ lång’, sa hon. <em>’Ja.’</em></p>
+
+# R4-3: an odd count of three or more marks of the same-glyph pair still to come is a closer ahead, so the
+# inch mark stays a double prime; and a ’ after an s that ends a quotation (before a comma, not a lowercase
+# word) is a real closer, so the foot mark before it stays a prime.
+
+@ r4-3-fi-inch-with-five-marks-of-the-pair-ahead only=quotes,apostrophes,primes locale=fi
+< <p>”Näyttö on 27" leveä”, hän sanoi. ”Se on iso.” ”Niin on.”</p>
+> <p>”Näyttö on 27″ leveä”, hän sanoi. ”Se on iso.” ”Niin on.”</p>
+
+@ r4-3-sv-inch-with-five-marks-of-the-pair-ahead only=quotes,apostrophes,primes locale=sv
+< <p>”Skärmen är 27" bred”, sa han. ”Den är stor.” ”Ja.”</p>
+> <p>”Skärmen är 27″ bred”, sa han. ”Den är stor.” ”Ja.”</p>
+
+@ r4-3-en-US-closer-after-s-before-a-comma-counts only=quotes,apostrophes,primes
+< <p>‘He is 6' tall, or so he says’, she wrote.</p>
+> <p>‘He is 6′ tall, or so he says’, she wrote.</p>
+
+# R4-4: the possessive test reads on past the end of the run and through a character entity, as the scan
+# reads the text beside a mark, so a plural possessive before a link or a no-break space is still not the
+# closer still to come. (A possessive inside a later element is a Known limit.)
+
+@ r4-4-en-US-possessive-before-a-tag only=quotes,apostrophes,primes
+< <p>‘The final score was 3' and the players’ <a href="/bus">bus</a> left early.</p>
+> <p>‘The final score was 3’ and the players’ <a href="/bus">bus</a> left early.</p>
+
+@ r4-4-en-US-possessive-before-a-tag-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
+< <p>‘The final score was 3' and the players’ <a href="/bus">bus</a> left early.</p>
+> <p>‘The final score was 3’ and the players’ <a href="/bus">bus</a> left early.</p>
+
+@ r4-4-en-US-possessive-before-an-entity only=quotes,apostrophes,primes
+< <p>‘The final score was 3' and the players’&nbsp;bus left early.</p>
+> <p>‘The final score was 3’ and the players’&nbsp;bus left early.</p>

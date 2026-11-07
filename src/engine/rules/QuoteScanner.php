@@ -323,9 +323,10 @@ final class QuoteScanner
      * flow after token $k: more of its closing marks than its opening ones. A closing mark that
      * is also the apostrophe counts only where it is not followed by a letter or digit, and, when
      * $skipPossessive is true, not after an s with a space and a lowercase word after it (a plural
-     * possessive, as decideSingle() reads one). A pair whose marks are the same glyph (fi, sv)
-     * cannot tell its openers from its closers, so an odd number of its marks still to come counts,
-     * as the straight-quote test counts its pairs.
+     * possessive, as decideSingle() reads one; see headAfter()). A pair whose marks are the same glyph
+     * (fi, sv) cannot tell its openers from its closers, so an odd number of its marks still to come
+     * counts, as the straight-quote test counts its pairs; when that glyph is also the apostrophe, a ’
+     * before a word counts where the scan would read it as an opener.
      *
      * $skipPossessive is true on the single-quote path, where a closing ’ after an s is more likely a
      * possessive than the end of the quotation (R4-1, D850 a), and false on the double-quote path,
@@ -352,17 +353,39 @@ final class QuoteScanner
                 } elseif ($raw === $close && ($close !== $apostrophe
                     || (self::classAfter($text, $at + strlen($raw), $context, $html, $roles)[0] !== self::WORD
                         && !($skipPossessive && preg_match('/[sS]$/', substr($text, max(0, $at - 1), 1))
-                            && preg_match('/^\s+\p{Ll}/u', preg_replace('/(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]?|[\xF0-\xF7][\x80-\xBF]{0,2})$/', '', substr($text, $at + strlen($raw), 8))))))) {
+                            && preg_match('/^\s+\p{Ll}/u', self::headAfter($text, $at + strlen($raw), $context, $html))))
+                    // fi, sv ’…’: the opener is the apostrophe too, so it is counted where the scan reads one (R4-2).
+                    || ($open === $close
+                        && in_array(self::classBefore($text, $at, $context, $html, $roles)[0], [self::START, self::SPACE, self::OPEN, self::DASH], true)
+                        && !(preg_match(self::LEADING_WORD, $head = substr($text, $at + strlen($raw), 16)) || preg_match(self::LEADING_YEAR, $head))))) {
                     $step = 1;
                 }
                 $sums[$i] = $sums[$i + 1] + $step;
             }
             $suffix[$key] = $sums;
         }
-        $closePattern = '/' . preg_quote($close, '/') . ($close === $apostrophe ? '(?![\p{L}\p{N}])/u' : '/');
+        // After the run a mark is counted by its shape; a same-glyph ’ after a space or the start and before a letter opens.
+        $closePattern = '/' . preg_quote($close, '/') . ($close === $apostrophe
+            ? '(?![\p{L}\p{N}])' . ($open === $close ? '|(?<!\S)' . preg_quote($open, '/') . '(?=\p{L})' : '') . '/u'
+            : '/');
         $opensAfter = $open === $close ? 0 : $context->countAfter('/' . preg_quote($open, '/') . '/');
         $ahead = $suffix[$key][$k + 1] + $context->countAfter($closePattern) - $opensAfter;
         return $open === $close ? $ahead % 2 === 1 : $ahead > 0;
+    }
+
+    /**
+     * The text after a mark for the possessive test, read as classAfter() reads it: on past the end of
+     * the run (players’ <a>bus</a>) and with a character entity as its character (players’&nbsp;bus).
+     * The bytes may end inside a character, which /u refuses, so that part is dropped (R4-4).
+     */
+    private static function headAfter(string $text, int $offset, Context $context, bool $html): string
+    {
+        $head = substr($text, $offset, 8);
+        if (strlen($head) < 8) {
+            $head .= $context->after(8);
+        }
+        $head = preg_replace('/(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]?|[\xF0-\xF7][\x80-\xBF]{0,2})$/', '', $head);
+        return $html && str_contains($head, '&') ? html_entity_decode($head, ENT_QUOTES | ENT_HTML5, 'UTF-8') : $head;
     }
 
     private static function decideDouble(
