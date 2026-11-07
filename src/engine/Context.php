@@ -84,11 +84,14 @@ final class Context
     /** The last $length characters before the run, looking through inline tags. Fewer, or '', at the start of the flow. */
     public function before(int $length = 1): string
     {
-        $text = '';
-        for ($i = $this->index - 1; $i >= 0 && mb_strlen($text) < $length; $i--) {
-            $text = ($this->flow->done[$i] ?? $this->flow->texts[$i]) . $text;
+        // The pieces are counted one by one and joined once, so the whole flow (widows) costs one walk over it.
+        $pieces = [];
+        $count = 0;
+        for ($i = $this->index - 1; $i >= 0 && $count < $length; $i--) {
+            $pieces[] = $piece = $this->flow->done[$i] ?? $this->flow->texts[$i];
+            $count += mb_strlen($piece);
         }
-        return mb_substr($text, -$length);
+        return mb_substr(implode('', array_reverse($pieces)), -$length);
     }
 
     /** The first $length characters after the run, looking through inline tags. */

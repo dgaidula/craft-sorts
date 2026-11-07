@@ -169,6 +169,31 @@
 < <title>Dan's "page" and more words</title>
 > <title>Dan’s “page” and more words</title>
 
+# D898: widows count the words of the text as it stands, so a second pass changes nothing.
+@ w-words-as-they-stand-after-a-dash locale=en-GB
+< <h2>pp. 3--5</h2>
+> <h2>pp. 3 –\u{A0}5</h2>
+
+@ w-words-as-they-stand-in-an-earlier-run locale=en-GB
+< <h2><em>3--5</em> pp</h2>
+> <h2><em>3 – 5</em>\u{A0}pp</h2>
+
+@ w-words-as-they-stand-after-a-typed-em-dash preset=bringhurst
+< <h2>came---and went</h2>
+> <h2>came – and\u{A0}went</h2>
+
+@ w-words-as-they-stand-fewer-once-a-fraction-joins on=fractions
+< <h2>8 1/2 So</h2>
+> <h2>8½ So</h2>
+
+@ w-after-a-spaced-multiplication-sign on=multiplication
+< <h2>Screen 1920 x 1080</h2>
+> <h2>Screen 1920 ×\u{A0}1080</h2>
+
+@ w-french-narrow-space-stays locale=fr
+< <h2>So … what?</h2><h2>Il a dit « oui »</h2>
+> <h2>So … what\u{202F}?</h2><h2>Il a dit «\u{202F}oui\u{202F}»</h2>
+
 @ w-last-space-at-start-of-inline only=widows
 < <h1>one two<b> three</b></h1>
 > <h1>one two<b>\u{A0}three</b></h1>

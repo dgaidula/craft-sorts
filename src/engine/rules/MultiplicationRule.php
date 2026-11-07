@@ -10,6 +10,9 @@ use iceboxind\sorts\engine\Run;
  * and the same spacing on both (all closed up, or a space each side); a number may end
  * in a Unicode fraction (8½ x 11, Bringhurst 5.2.6). It leaves hexadecimal (0x1F), a
  * number that is part of a word (a3x4, x86x64) and anything inside a URL or a path.
+ *
+ * What it writes is not settled, so widows can join the number after a spaced × in the
+ * pass a second one would (no later rule changes a ×).
  */
 final class MultiplicationRule extends AbstractRule
 {
@@ -65,7 +68,8 @@ final class MultiplicationRule extends AbstractRule
                     return null;
                 }
                 return $m[1] . '×' . $m[2];
-            }
+            },
+            false
         );
     }
 }

@@ -58,19 +58,18 @@ final class WidowsRule extends AbstractRule
         if (trim(substr($searchable, 0, $last[1])) === '' && trim($context->before(1)) === '') {
             return;
         }
+        // The words of the text as it stands (D898), not as the page had it: `3--5` is three words once
+        // it is `3 – 5`, and a second pass would count them so.
         $minWords = (int) $context->option('widows', 'minWords', self::DEFAULT_MIN_WORDS);
-        $words = $context->flowState('widows.words');
-        if ($words === null) {
-            $words = count(preg_split('/\s+/u', trim($context->flowText()), -1, PREG_SPLIT_NO_EMPTY) ?: []);
-            $context->setFlowState('widows.words', $words);
-        }
+        $words = count(preg_split('/\s+/u', trim($context->before(PHP_INT_MAX) . $text . $context->textAfter()), -1, PREG_SPLIT_NO_EMPTY) ?: []);
         if ($words < $minWords) {
             return;
         }
         if ($context->mode === Options::TEXT && preg_match('/[\r\n]/', $last[0])) {
             return;
         }
-        if ($last[0] !== "\u{00A0}") {
+        // A no-break space is already there: the locale’s narrow one (French `quoi ?`, `« oui »`) stays as it is.
+        if ($last[0] !== "\u{00A0}" && $last[0] !== "\u{202F}") {
             $run->replace($last[1], strlen($last[0]), "\u{00A0}");
         }
     }
