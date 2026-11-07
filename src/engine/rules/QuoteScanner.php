@@ -206,6 +206,12 @@ final class QuoteScanner
             $curlyPair = $target >= 0 && $curly[$target]
                 ? [$opening[$levels[$target]], $closing[$levels[$target]], $apostrophe, $html, $roles]
                 : null;
+            // en-GB single-outer: “ is the secondary pair, so a straight ' closes it by kind, even from inside a
+            // curly ‘…’ opened within it. A ' there has the shape of the ‘…’ it sits in, not of the “ it would
+            // close, so after a digit or as a possessive it stays a prime or an apostrophe (FU2, D867).
+            $pastCurlySingle = $kind === 's' && $top >= 0 && $curly[$top] && $stack[$top] === 'd'
+                && isset(self::SINGLE_MARKS[$opening[$levels[$top]]])
+                && $at['s'] !== [] && $curly[$at['s'][array_key_last($at['s'])]];
 
             if ($kind === 'd') {
                 $decision = self::decideDouble($text, $offset, $prevClass, $nextClass, $digitBefore, $openD > 0, $tokens, $k, $context, $suffix, $curlyPair);
@@ -227,7 +233,8 @@ final class QuoteScanner
                     $suffix,
                     $roles,
                     $curlyPair,
-                    $stack === []
+                    $stack === [],
+                    $pastCurlySingle
                 );
             }
 
@@ -412,7 +419,8 @@ final class QuoteScanner
         array &$suffix,
         array $roles,
         ?array $curlyPair,
-        bool $noneOpen
+        bool $noneOpen,
+        bool $pastCurlySingle
     ): int {
         if (isset($apostrophes[$offset])) {
             return self::D_APOSTROPHE;
@@ -431,7 +439,7 @@ final class QuoteScanner
         if ($digitBefore) {
             // 6' is a foot mark unless this is the quotation’s end; before a space or a word it is
             // not when the quotation was opened curly and its own closing mark still follows.
-            return $openS && !(($nextClass === self::SPACE || $nextClass === self::WORD)
+            return $openS && !$pastCurlySingle && !(($nextClass === self::SPACE || $nextClass === self::WORD)
                 && $curlyPair !== null && self::closerAhead($curlyPair, $text, $tokens, $k, $context, $suffix))
                 ? self::D_CLOSE
                 : self::D_PRIME;
@@ -469,7 +477,7 @@ final class QuoteScanner
             $possessive = preg_match('/[sS]$/', substr($text, max(0, $offset - 1), 1))
                 && $nextClass === self::SPACE
                 && preg_match('/^\s+\p{Ll}/u', preg_replace('/(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]?|[\xF0-\xF7][\x80-\xBF]{0,2})$/', '', substr($text, $end, 8)))
-                && (self::remaining(self::ANY_SINGLE, $tokens, $k, $context, $suffix) > 0
+                && ($pastCurlySingle || self::remaining(self::ANY_SINGLE, $tokens, $k, $context, $suffix) > 0
                     || ($curlyPair !== null && self::closerAhead($curlyPair, $text, $tokens, $k, $context, $suffix)));
             return $possessive ? self::D_APOSTROPHE : self::D_CLOSE;
         }

@@ -1406,3 +1406,54 @@
 @ fu1-cache-flag-foot-mark-then-inch-mark-depth only=quotes,apostrophes,primes config={"quoteNesting":"depth"}
 < <p>“He said ‘one ‘two I am 6' tall’ and the set is 27" wide in the players’ lounge.</p>
 > <p>“He said ‘one ‘two I am 6′ tall’ and the set is 27″ wide in the players’ lounge.</p>
+
+# ---- FU2 (re-check 4), D867: a straight ' inside a curly ‘…’ inside an open “…” in en-GB single-outer ----
+#
+# In single-outer “ is the secondary pair, so a straight ' closes it by kind (D843), even from inside a curly
+# ‘…’ opened within it. After a digit or as a plural possessive the ' there is a foot mark or an apostrophe,
+# not the end of the “ quotation, whether or not that quotation's ” is still to come. A ' that only ends
+# a quotation (after a comma) still closes the “ by kind: the Known limit for a straight mark closing a curly
+# quotation of another shape. The same text in en-US is read as before.
+
+@ fu2-en-GB-single-outer-possessive-inside-curly-single only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>“He said ‘the dogs' bowls are full,” she said. “And ‘the set is 27" wide in the players’ lounge.</p>
+> <p>“He said ‘the dogs’ bowls are full,” she said. “And ‘the set is 27″ wide in the players’ lounge.</p>
+
+@ fu2-en-GB-single-outer-possessive-inside-curly-single-depth only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
+< <p>“He said ‘the dogs' bowls are full,” she said. “And ‘the set is 27" wide in the players’ lounge.</p>
+> <p>“He said ‘the dogs’ bowls are full,” she said. “And ‘the set is 27″ wide in the players’ lounge.</p>
+
+@ fu2-en-GB-single-outer-foot-mark-inside-curly-single only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>“He said ‘I am 6' tall,” she said. “And ‘the set is 27" wide in the players’ lounge.</p>
+> <p>“He said ‘I am 6′ tall,” she said. “And ‘the set is 27″ wide in the players’ lounge.</p>
+
+@ fu2-en-GB-single-outer-foot-mark-inside-curly-single-depth only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
+< <p>“He said ‘I am 6' tall,” she said. “And ‘the set is 27" wide in the players’ lounge.</p>
+> <p>“He said ‘I am 6′ tall,” she said. “And ‘the set is 27″ wide in the players’ lounge.</p>
+
+@ fu2-en-GB-single-outer-foot-mark-nothing-closes only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>“He said ‘I own a 27" telly and I am 6' tall in the players’ lounge.</p>
+> <p>“He said ‘I own a 27″ telly and I am 6′ tall in the players’ lounge.</p>
+
+@ fu2-en-GB-single-outer-foot-mark-nothing-closes-depth only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"},"quoteNesting":"depth"}
+< <p>“He said ‘I own a 27" telly and I am 6' tall in the players’ lounge.</p>
+> <p>“He said ‘I own a 27″ telly and I am 6′ tall in the players’ lounge.</p>
+
+@ fu2-en-GB-single-outer-closer-after-comma-still-closes-by-kind only=quotes,apostrophes,primes locale=en-GB config={"variants":{"en-GB":"single-outer"}}
+< <p>“He said ‘no,' she said.</p>
+> <p>“He said ‘no,” she said.</p>
+
+@ fu2-en-US-foot-mark-inside-curly-single-unchanged only=quotes,apostrophes,primes
+< <p>“He said ‘I am 6' tall,” she said.</p>
+> <p>“He said ‘I am 6’ tall,” she said.</p>
+
+# The FU2 reading needs both shapes: a curly single inside, a curly quotation of the ' kind outside. A curly “
+# inside (en-US), or an outer quotation opened with a straight ' of the same shape (nl), keeps the old reading.
+
+@ fu2-en-US-foot-mark-inside-curly-double-unchanged only=quotes,apostrophes,primes
+< <p>‘He said “I am 6' tall.</p>
+> <p>‘He said “I am 6’ tall.</p>
+
+@ fu2-nl-foot-mark-inside-curly-single-straight-outer-unchanged only=quotes,apostrophes,primes locale=nl
+< <p>'Hij zei ‘het is 6' lang.</p>
+> <p>‘Hij zei ‘het is 6’ lang.</p>
