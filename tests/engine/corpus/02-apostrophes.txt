@@ -215,6 +215,38 @@
 < <p>&#39;It was dark.</p><p>&#39;Then,&#39; she said.</p>
 > <p>‘It was dark.</p><p>‘Then,’ she said.</p>
 
+# F2 (gate 2026-11-07): whitespace HTML does not show (a newline, an indent, &nbsp;) before the mark still leaves
+# it opening its block.
+@ a-mark-after-a-newline-at-the-start-of-a-paragraph-opens-a-quotation only=quotes,apostrophes,primes locale=en-GB
+< <p>
+< 'It was dark.</p><p>
+< 'Then,' she said.</p>
+> <p>
+> ‘It was dark.</p><p>
+> ‘Then,’ she said.</p>
+
+@ a-mark-after-an-indent-at-the-start-of-a-list-item-opens-a-quotation only=quotes,apostrophes,primes locale=en-GB
+< <li>
+<   'Hello there</li>
+> <li>
+>   ‘Hello there</li>
+
+@ a-mark-after-a-line-break-and-a-newline-opens-a-quotation only=quotes,apostrophes,primes locale=en-GB
+< <p>He wrote:<br>
+< 'It was dark.</p>
+> <p>He wrote:<br>
+> ‘It was dark.</p>
+
+@ a-mark-after-a-no-break-space-at-the-start-of-a-paragraph-opens-a-quotation only=quotes,apostrophes,primes
+< <p>&nbsp;'It was dark.</p>
+> <p>&nbsp;‘It was dark.</p>
+
+@ a-word-initial-apostrophe-after-a-newline-in-running-text only=quotes,apostrophes,primes
+< <p>She said
+< 'Áshįįh is here.</p>
+> <p>She said
+> ’Áshįįh is here.</p>
+
 @ a-word-initial-apostrophe-in-en-GB only=quotes,apostrophes,primes locale=en-GB
 < Navajo 'Áshįįh 'Asdzáán
 > Navajo ’Áshįįh ’Asdzáán

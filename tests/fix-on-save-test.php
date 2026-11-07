@@ -118,6 +118,11 @@ sortsTry('fine typography: one save is the whole fix (F1, F6, F7)', function () 
     sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true, 'rules' => ['dashes' => false]]);
     $f = sortsFresh($edited(['title' => 'Dashes off: a—b and c — d', 'sortsPlain' => 'Typed em dash: a—b'])->id);
     sortsEq('fine, dashes off: a typed em dash is stored as typed', ['Dashes off: a—b and c — d', 'Typed em dash: a—b'], [$f->title, sortsRaw($f, 'sortsPlain')]);
+    // Gate 2026-11-07 F1, F2: both dashes round a short word, and a mark after a newline that opens the paragraph.
+    sortsConfigure('pro', ['fineTypography' => true, 'fixOnSave' => true]);
+    $f = sortsFresh($edited(['title' => 'She came — alone — at dawn.', 'sortsBodySite' => "<p>\n'It was dark.</p>"])->id);
+    sortsEq('fine: both typed em dashes round a five-letter word are stored restyled', 'She came – alone – at dawn.', $f->title);
+    sortsEq('fine: a mark after a newline that opens the paragraph is stored opening', "<p>\n‘It was dark.</p>", sortsRaw($f, 'sortsBodySite'));
     sortsClean();
 });
 

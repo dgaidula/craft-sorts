@@ -388,6 +388,31 @@ final class QuoteScanner
         return $html && str_contains($head, '&') ? html_entity_decode($head, ENT_QUOTES | ENT_HTML5, 'UTF-8') : $head;
     }
 
+    /**
+     * Whether only whitespace comes before $offset in its flow. HTML does not show a newline and an indent
+     * after `<p>` or `<br>`, or a `&nbsp;` there, so a mark after them opens its block as one with nothing
+     * before it does (D876).
+     */
+    private static function opensBlock(string $text, int $offset, Context $context, bool $html): bool
+    {
+        $blank = $html ? '/(?:\s|\x{00A0}|&(?:nbsp|#160|#[xX]0*[aA]0);)+$/u' : '/[\s\x{00A0}]+$/u';
+        if (preg_replace($blank, '', substr($text, 0, $offset)) !== '') {
+            return false;
+        }
+        // The earlier runs, read further back until a character that is not whitespace or the start of the flow.
+        for ($length = 16; ; $length *= 4) {
+            $before = $context->before($length);
+            $rest = preg_replace($blank, '', $before);
+            if (mb_strlen($before) < $length) {
+                return $rest === '';
+            }
+            // An entity the cut split (`bsp;`) is read again, whole, on the next round.
+            if ($rest !== '' && !preg_match('/^[#A-Za-z0-9]*;$/', (string) $rest)) {
+                return false;
+            }
+        }
+    }
+
     private static function decideDouble(
         string $text,
         int $offset,
@@ -486,7 +511,7 @@ final class QuoteScanner
             // as likely a nested quotation left open ('hood in dialogue reads either way) and keeps its old reading.
             // In running text only: a mark that opens its block opens a quotation, since a quotation over several
             // paragraphs opens each one and closes only the last (D876).
-            if ($opening && $prevClass !== self::START && $noneOpen && self::singleClosersAfter($text, $tokens, $k, $context, $html, $roles, $suffix) === 0) {
+            if ($opening && $noneOpen && !self::opensBlock($text, $offset, $context, $html) && self::singleClosersAfter($text, $tokens, $k, $context, $html, $roles, $suffix) === 0) {
                 return self::D_APOSTROPHE;
             }
             return self::D_OPEN;

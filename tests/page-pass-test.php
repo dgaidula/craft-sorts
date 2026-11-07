@@ -27,6 +27,21 @@ sortsTry('pro, fine typography (D817)', function () use ($body, $has) {
     sortsConfigure('pro');
 });
 
+sortsTry('pro, spaced em dashes round a short word and a block that opens with whitespace (gate 2026-11-07 F1, F2)', function () use ($body, $has) {
+    foreach (['fine' => ['fineTypography' => true], 'defaults' => []] as $name => $settings) {
+        sortsClean();
+        sortsConfigure('pro', $settings);
+        $e = sortsEntry(['sortsBody' => "<p>She came — alone — at dawn.</p>\n<p>\n'It was a dark night.</p>", 'slug' => 'f1-f2-' . $name]);
+        $html = $body(sortsHttp()->get('/sorts-test/' . $e->slug));
+        sortsCheck($name . ': a mark after a newline that opens the paragraph opens a quotation', $has($html, "<p>\n‘It was a dark night.</p>"), $html);
+        if ($name === 'fine') {
+            sortsCheck('fine: both typed em dashes round a five-letter word are restyled', $has($html, 'She came – alone – at dawn.'), $html);
+        }
+    }
+    sortsClean();
+    sortsConfigure('pro');
+});
+
 sortsTry('pro, on', function () use ($body, $has, $curly) {
     sortsConfigure('pro');
     $http = sortsHttp();

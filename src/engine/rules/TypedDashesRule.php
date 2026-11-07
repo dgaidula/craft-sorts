@@ -67,10 +67,14 @@ final class TypedDashesRule extends AbstractRule
         return preg_replace('/^[\x80-\xBF]+/', '', $tail) ?? '';
     }
 
-    /** The two characters after $offset: the space and the one after it. */
+    /**
+     * The two characters after $offset: the space and the one after it. The bytes may end inside a
+     * character (` alone —`), which /u refuses, so that part is dropped, as tail() drops a leading one.
+     */
     private static function head(string $text, int $offset, Context $context): string
     {
         $head = substr($text, $offset, 8);
-        return strlen($head) < 8 ? $head . $context->after(8 - strlen($head)) : $head;
+        $head = strlen($head) < 8 ? $head . $context->after(8 - strlen($head)) : $head;
+        return preg_replace('/(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]?|[\xF0-\xF7][\x80-\xBF]{0,2})$/', '', $head) ?? '';
     }
 }

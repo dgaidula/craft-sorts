@@ -76,6 +76,36 @@
 < a—b
 > a – b
 
+# F1 (gate 2026-11-07): the eight bytes after a dash can end inside the next dash (` alone —`); both dashes
+# round a four- or five-letter word convert in one pass.
+@ bp-typed-spaced-em-dashes-round-a-five-letter-word preset=bringhurst only=typed-dashes
+< She came — alone — at dawn.
+> She came – alone – at dawn.
+
+@ bp-typed-spaced-em-dashes-round-a-five-letter-word-en-GB preset=bringhurst only=typed-dashes locale=en-GB
+< She came — alone — at dawn.
+> She came – alone – at dawn.
+
+@ bp-typed-spaced-em-dashes-round-a-four-letter-word preset=bringhurst only=typed-dashes
+< The plan — that — failed.
+> The plan – that – failed.
+
+@ bp-typed-spaced-em-dashes-round-a-four-letter-word-en-GB preset=bringhurst only=typed-dashes locale=en-GB
+< The plan — that — failed.
+> The plan – that – failed.
+
+@ bp-typed-spaced-em-dashes-round-a-four-letter-word-fr preset=bringhurst only=typed-dashes locale=fr
+< Il est venu — seul — à l’aube.
+> Il est venu – seul – à l’aube.
+
+@ bp-typed-spaced-em-dashes-stored-content-options preset=bringhurst only=symbols,ellipsis,dashes,typed-dashes,fractions,ranges,multiplication,primes,apostrophes,quotes config={"ruleOptions":{"dashes":{"keepDialogue":true}}}
+< She came — alone — at dawn.
+> She came – alone – at dawn.
+
+@ bp-typed-spaced-em-dashes-round-a-contraction-in-one-pass preset=bringhurst only=apostrophes,typed-dashes
+< a — it's — x
+> a – it’s – x
+
 # F1 (gate 2026-11-06): one pass gives what two would. The em dash --- gives is restyled as a typed one is, and
 # widows can join the word after a dash a rule wrote.
 @ bp-f1-triple-hyphen-restyled-in-en-GB preset=bringhurst only=dashes,typed-dashes locale=en-GB
