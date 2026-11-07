@@ -344,7 +344,7 @@
 < <p>3x4 / 1/2 cup</p>
 > <p>3×4 / ½ cup</p>
 
-# ---- B9 (Bringhurst 5.2.2): clock-time ranges take a close-set en dash ----
+# ---- BR9 (Bringhurst 5.2.2): clock-time ranges take a close-set en dash ----
 
 @ r-clock-simple only=ranges
 < 4:30-5:00
@@ -419,7 +419,7 @@
 @ r-clock-date-and-isbn-stay only=ranges
 < 2024-01-15 and ISBN 978-3-16-148410-0
 
-# ---- B16 (Bringhurst 5.2.6): a number may end in a precomposed fraction before the x ----
+# ---- BR16 (Bringhurst 5.2.6): a number may end in a precomposed fraction before the x ----
 
 @ m-fraction-before-x-spaced only=multiplication
 < 8½ x 11
@@ -462,7 +462,7 @@
 < Paper is 8 1/2 x 11 in
 > Paper is 8½ × 11 in
 
-# ---- B15 (Bringhurst 5.2.5): a whole number and its fraction join ----
+# ---- BR15 (Bringhurst 5.2.5): a whole number and its fraction join ----
 
 @ f-join-simple only=fractions
 < 8 1/2

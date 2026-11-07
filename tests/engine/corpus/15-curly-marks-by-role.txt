@@ -1229,7 +1229,7 @@
 < <p>'Dijo 'ven acá" y se fue.</p>
 > <p>«Dijo “ven acá’ y se fue.</p>
 
-# The first ' opens its block, so it opens a quotation (D876) and B38 does not apply. The same shape with a
+# The first ' opens its block, so it opens a quotation (D876) and BR38 does not apply. The same shape with a
 # closing ' as well.
 
 @ r2-6-es-guillemets-outer-depth-closer-with-nothing-of-its-kind-open-closed only=quotes,apostrophes,primes locale=es config={"variants":{"es":"guillemets-outer"},"quoteNesting":"depth"}
