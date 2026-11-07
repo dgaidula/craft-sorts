@@ -243,6 +243,11 @@
 < <p>'Áshįįh is a <b>name</b> and I like it.'</p>
 > <p>‘Áshįįh is a <b>name</b> and I like it.’</p>
 
+# The same in running text, where B38 reads it (D876 leaves a mark that opens its block an opening one).
+@ a-word-initial-mark-closed-in-a-later-run-in-running-text-is-a-quotation only=quotes,apostrophes,primes
+< <p>Say 'Áshįįh is a <b>name</b> and I like it.'</p>
+> <p>Say ‘Áshįįh is a <b>name</b> and I like it.’</p>
+
 @ a-word-initial-mark-closed-by-a-curly-mark-is-a-quotation only=quotes,apostrophes,primes
 < 'Áshįįh is a name.’
 > ‘Áshįįh is a name.’
