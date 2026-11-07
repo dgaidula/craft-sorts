@@ -54,7 +54,7 @@ sortsTry('coercion', function () use ($make) {
 sortsTry('rule states', function () use ($make) {
     $S = \iceboxind\sorts\models\Settings::class;
     sortsEq('every rule that was ever switchable, and the three preset-only rules, has a switch', true, count(array_intersect(['typed-dashes', 'dialogue-dash', 'ellipsis-spacing'], array_keys($S::RULE_DEFAULTS))) === 3);
-    $s = $make(['rules' => ['fractions' => 'on', 'dashes' => 'off', 'ranges' => 'follow', 'typed-dashes' => 'off', 'dialogue-dash' => ' ON ', 'ellipsis-spacing' => 'follow']]);
+    $s = $make(['rules' => ['fractions' => 'on', 'dashes' => 'off', 'ranges' => 'follow', 'typed-dashes' => ' Off ', 'dialogue-dash' => ' ON ', 'ellipsis-spacing' => 'follow']]);
     sortsEq('the three states are read, in any case and with spaces', ['on', 'off', 'follow', 'off', 'on', 'follow'], array_map($s->ruleState(...), ['fractions', 'dashes', 'ranges', 'typed-dashes', 'dialogue-dash', 'ellipsis-spacing']));
     $kept = $s->rules;
     ksort($kept);
