@@ -1,11 +1,6 @@
 // Glyph helper for build-icon.mjs: reads Jost (variable, OFL) with fontkit and emits SVG paths.
-// fontkit is borrowed from the recastcinch checkout (~/sw/github-public/recastcinch/node_modules);
-// craft-sorts has no node_modules of its own. Run `npm install` in recastcinch first, or point the
-// createRequire path below at any package.json whose node_modules holds fontkit.
-import { createRequire } from 'node:module';
+import * as fontkit from 'fontkit';
 import { fileURLToPath } from 'node:url';
-const require = createRequire(new URL('../../../recastcinch/package.json', import.meta.url));
-const fontkit = require('fontkit');
 const base = fontkit.openSync(fileURLToPath(new URL('./jost.ttf', import.meta.url)));
 export function glyph(ch, wght = 600) {
   const f = base.getVariation({ wght });

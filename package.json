@@ -1,0 +1,9 @@
+{
+  "name": "craft-sorts-dev",
+  "private": true,
+  "type": "module",
+  "description": "Dev tooling only (docs/icon build); not shipped with the plugin.",
+  "devDependencies": {
+    "fontkit": "^2.0.4"
+  }
+}
