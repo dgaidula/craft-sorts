@@ -107,10 +107,10 @@ One Pro setting, *Fine typography (Bringhurst)* (`fineTypography`, off by defaul
 
 **How it combines with your other settings.** The preset sits above the individual rule switches, as a quotation variant does for quotation marks, and a choice of yours wins over it:
 
-- A rule switch you have moved off its default is your word, and wins: switch *Em and en dashes* off and the preset leaves the dashes off. A switch still at its default follows the preset. Because the ranges, multiplication and fractions switches are off by default, turning one of those *off* does not veto it under the preset; leave *Fine typography* off, or wrap the text in `data-sorts="off"`, to keep one off.
+- A rule switch you have moved off its default is your word, and wins: switch *Em and en dashes* off and the preset leaves the dashes off, a typed em dash included (rule `typed-dashes` follows that switch; a line of dialogue still opens with its dash, since rule `dialogue-dash` has no switch of its own). A switch still at its default follows the preset. Because the ranges, multiplication and fractions switches are off by default, turning one of those *off* does not veto it under the preset; leave *Fine typography* off, or wrap the text in `data-sorts="off"`, to keep one off.
 - A quotation or dash variant you choose for a language wins over the preset’s (the preset’s only choice is `spaced-en-dash` for `en-US`).
 - The Pro rules cannot be reached from Lite, so Lite ignores the setting. `data-sorts="off"` and `data-sorts-lang` work as always.
-- It applies to the page pass, the filter, `@sorts`, fix on save and the audit. Stored content only gets the choices that swap one character for another (dashes, a typed em dash, ranges, fractions, multiplication); the spaces (dialogue, ellipsis, guillemets) belong to the page, and are never written to the database.
+- It applies to the page pass, the filter, `@sorts`, fix on save and the audit. Stored content only gets the choices that swap one character for another (dashes, a typed em dash, ranges, fractions, multiplication); the spaces (dialogue, ellipsis, guillemets) belong to the page, and are never written to the database. A `-- ` that opens a block is stored as typed, for the page to set as dialogue.
 
 With the setting off, output is byte for byte what it was before.
 

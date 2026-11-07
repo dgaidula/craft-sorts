@@ -248,6 +248,19 @@
 < “No” - she said - “Go.”
 > “No” – she said – “Go.”
 
+# F1 (gate 2026-11-06): a straight mark before a spaced hyphen is curled later in the pass, so it counts as one.
+@ dv-straight-quotes-either-side only=dashes,quotes,apostrophes,primes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< The word "foo" - which means bar, and the dogs' - bowls
+> The word “foo” – which means bar, and the dogs’ – bowls
+
+@ dv-heading-ending-in-a-spaced-hyphen only=dashes,widows locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< <h2>Paris - London</h2>
+> <h2>Paris –\u{A0}London</h2>
+
+@ d-keep-dialogue-leaves-a-block-opening-double-hyphen only=dashes config={"ruleOptions":{"dashes":{"keepDialogue":true}}}
+< <p>-- So this is it.</p><p>a -- b</p><p>Text <em>-- So</em></p><p>--- So</p>
+> <p>-- So this is it.</p><p>a — b</p><p>Text <em>— So</em></p><p>— So</p>
+
 @ dv-across-inline-tags only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
 < <b>word</b> - <i>word</i>
 > <b>word</b> – <i>word</i>

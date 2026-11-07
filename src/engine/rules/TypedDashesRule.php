@@ -56,7 +56,8 @@ final class TypedDashesRule extends AbstractRule
                 return ' ' . $dash['mark'] . ' ';
             }
             return $dash['mark'] === '—' ? null : $dash['mark'];
-        });
+            // Unsettled: the spaces it adds stay open to later rules (widows), as a second pass would find them.
+        }, false);
     }
 
     /** The two characters before $offset: the one that matters and the space after it. */

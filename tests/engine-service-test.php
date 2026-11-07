@@ -106,7 +106,8 @@ sortsTry('fine typography, the Bringhurst preset (D817)', function () {
     sortsEq('fine: thin spaces inside guillemets, but not in German', ["«\u{202F}Sì\u{202F}»", '»Ja«'], [sorts()->engine->apply('«Sì»', [], 'it'), sorts()->engine->apply('»Ja«', [], 'de')]);
     sortsEq('fine: an ellipsis between words in English, not in French', ['wait … then', 'attends…puis'], [sorts()->engine->apply('wait...then'), sorts()->engine->apply('attends...puis', [], 'fr')]);
     sortsConfigure('pro', ['fineTypography' => true, 'rules' => ['dashes' => false, 'multiplication' => false]]);
-    sortsEq('fine: a switch moved off its default wins (dashes off); one switched off that is off by default is not moved, so the preset decides it', '8½ × 11 -- a – b and pages 10–12', sorts()->engine->apply($page));
+    sortsEq('fine: a switch moved off its default wins (dashes off, and the typed em dash with it, F7); one switched off that is off by default is not moved, so the preset decides it', '8½ × 11 -- a—b and pages 10–12', sorts()->engine->apply($page));
+    sortsEq('fine, stored: dashes off leaves a typed em dash as typed (F7)', 'a—b and c — d', sorts()->engine->applyStored('a—b and c — d', sorts()->engine->storedOptions('en-US', 'text')));
     sortsConfigure('pro', ['fineTypography' => true]);
     sortsEq('fine: a variant chosen for the language wins (an unknown name, which settings refuse, is CLDR’s default)', '8½ × 11 — a—b and pages 10–12', sorts()->engine->applyWith($page, sorts()->engine->options()->with(variants: ['en-US' => 'nonsense'])));
     sortsConfigure('lite', ['fineTypography' => true]);
@@ -116,7 +117,10 @@ sortsTry('fine typography, the Bringhurst preset (D817)', function () {
     $svc = sorts()->engine;
     $o = $svc->storedOptions('en-US', 'text');
     sortsEq('fine, stored: characters only (a typed em dash, fractions, ranges), no spacing', 'a – b and 8½ and 4:30–5:00 wait…then', $svc->applyStored('a—b and 8 1/2 and 4:30-5:00 wait...then', $o));
-    sortsEq('fine, stored: no dialogue dash (the dash is still the spaced en dash) and no guillemet spaces', ['– So.', '«Sì»'], [$svc->applyStored('-- So.', $svc->storedOptions('en-US', 'text')), $svc->applyStored('«Sì»', $svc->storedOptions('it', 'text'))]);
+    sortsEq('fine, stored: a dialogue line keeps its typed -- for the page (F6), and no guillemet spaces', ['-- So.', '«Sì»'], [$svc->applyStored('-- So.', $svc->storedOptions('en-US', 'text')), $svc->applyStored('«Sì»', $svc->storedOptions('it', 'text'))]);
+    sortsEq('fine, stored then the page: the dialogue dash, as for text never stored (F6)', ["<p>—\u{202F}So this is it.</p>", "<p>—\u{202F}So this is it.</p>"], [$svc->apply($svc->applyStored('<p>-- So this is it.</p>', $svc->storedOptions('en-US', 'html'))), $svc->apply('<p>-- So this is it.</p>')]);
+    $stored = $svc->applyStored('"Yes" - she said', $o);
+    sortsEq('fine, stored: one pass gives what two would (F1)', ['“Yes” – she said', '“Yes” – she said'], [$stored, $svc->applyStored($stored, $o)]);
     sortsEq('fine, stored: the options a queued job carries keep the preset', 'bringhurst', (new \iceboxind\sorts\engine\Options(...get_object_vars($svc->storedOptions('en-US', 'html'))))->preset);
 });
 

@@ -130,6 +130,10 @@ class EngineService extends Component
             // The settings hold every switch, so a switch counts as the site’s own word only when it is off its
             // default; the rest are left to the preset (see Presets).
             $rules = array_filter($rules, static fn (bool $on, string $handle): bool => $on !== (Settings::RULE_DEFAULTS[$handle] ?? $on), ARRAY_FILTER_USE_BOTH);
+            // typed-dashes has no switch of its own: with *Em and en dashes* off, it is off too (README).
+            if (($rules['dashes'] ?? true) === false) {
+                $rules['typed-dashes'] = false;
+            }
         }
         return new Options(
             locale: $language,
@@ -153,12 +157,19 @@ class EngineService extends Component
     {
         $options = $this->options($language, $mode);
         $rules = [];
+        $onPage = [];
         foreach ($this->engine()->rules() as $rule) {
             $handle = $rule->handle();
-            $rules[$handle] = in_array($handle, self::STORED_RULES, true) && ($options->rules[$handle] ?? Presets::rules($options->preset)[$handle] ?? $rule->defaultEnabled());
+            $onPage[$handle] = $options->rules[$handle] ?? Presets::rules($options->preset)[$handle] ?? $rule->defaultEnabled();
+            $rules[$handle] = in_array($handle, self::STORED_RULES, true) && $onPage[$handle];
         }
         $allowed = array_values(array_intersect(self::STORED_RULES, $options->allowed ?? self::STORED_RULES));
-        return $options->with(rules: $rules, allowed: $allowed);
+        // A `-- ` that opens a block is the page’s dialogue dash where that rule runs: storage leaves it as typed.
+        $ruleOptions = $options->ruleOptions;
+        if ($onPage['dialogue-dash'] ?? false) {
+            $ruleOptions['dashes']['keepDialogue'] = true;
+        }
+        return $options->with(rules: $rules, allowed: $allowed, ruleOptions: $ruleOptions);
     }
 
     /**

@@ -35,6 +35,8 @@ final class FuzzPages
     private const CONVERTIBLE = [
         '"quoted"', "don't", '5\'10" tall', 'wait...', 'a--b', '(c) 2024', '10 kg', 'Dr. Smith', '&quot;x&quot;', '&#039;y&#039;', "rock 'n' roll",
         "'90s", 'she said "it\'s fine"', 'He said--"yes"', '&#x22;z&#x22;', "The dogs' bowls", '45°30\'', '"nested \'quote\' here"', 'Tom & Jerry "ok"',
+        // F1 (gate 2026-11-06): a straight-quoted word before a spaced hyphen, and `---` (the preset, in any language).
+        'the word "foo" - which', 'he came---and went',
     ];
 
     private const INLINE = ['a', 'b', 'i', 'em', 'strong', 'span', 'sup', 'sub', 'small', 'mark', 'abbr', 'cite', 'q', 'u', 's', 'code', 'kbd'];
@@ -108,7 +110,9 @@ final class FuzzPages
             return "<$t" . $this->attrs() . '>' . $this->children($depth + 1) . (mt_rand(0, 6) === 0 ? '' : "</$t>") . $this->pick(["\n", '', "\r\n"]);
         }
         if ($r < 74) {
-            return '<h' . ($h = mt_rand(1, 2)) . '>' . $this->words(mt_rand(1, 2)) . "</h$h>";
+            // F1: a heading that ends in a spaced hyphen or a spaced em dash (widows beside a dash the preset restyles).
+            // A closed one (a—b) adds words on the first pass, which widows counts only on the second (FU8).
+            return '<h' . ($h = mt_rand(1, 2)) . '>' . $this->words(mt_rand(1, 2)) . ($this->inert ? '' : $this->pick(['', '', ' a - b', ' a — b'])) . "</h$h>";
         }
         if ($r < 77) {
             return $this->pick(['<br>', '<br/>', '<BR />', '<hr>', '<img src="a.png" alt="x">', '<input value="">', '<wbr>']);

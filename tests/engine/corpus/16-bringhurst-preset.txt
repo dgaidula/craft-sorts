@@ -76,6 +76,39 @@
 < a—b
 > a – b
 
+# F1 (gate 2026-11-06): one pass gives what two would. The em dash --- gives is restyled as a typed one is, and
+# widows can join the word after a dash a rule wrote.
+@ bp-f1-triple-hyphen-restyled-in-en-GB preset=bringhurst only=dashes,typed-dashes locale=en-GB
+< He came---and went. "Hi"---she said, a --- b.
+> He came – and went. "Hi"—she said, a – b.
+
+@ bp-f1-triple-hyphen-restyled-in-de preset=bringhurst only=dashes,typed-dashes locale=de
+< Er kam---und ging.
+> Er kam – und ging.
+
+@ bp-f1-triple-hyphen-option-stays preset=bringhurst only=dashes,typed-dashes locale=en-GB
+< run it ---force now
+
+@ bp-f1-straight-quote-before-a-spaced-hyphen-text-mode preset=bringhurst mode=text
+< The word "foo" - which means bar
+> The word “foo” – which means bar
+
+@ bp-f1-heading-ending-in-a-spaced-hyphen preset=bringhurst only=dashes,widows
+< <h2>Paris - London</h2>
+> <h2>Paris –\u{A0}London</h2>
+
+@ bp-f1-heading-ending-in-a-typed-em-dash preset=bringhurst only=typed-dashes,widows
+< <h2>The road from Paris—London</h2>
+> <h2>The road from Paris –\u{A0}London</h2>
+
+@ bp-f1-heading-ending-in-a-closed-double-hyphen preset=bringhurst only=dashes,widows
+< <h2>The road from Paris--London</h2>
+> <h2>The road from Paris –\u{A0}London</h2>
+
+@ bp-f1-heading-ending-in-a-triple-hyphen-in-en-GB preset=bringhurst only=dashes,typed-dashes,widows locale=en-GB
+< <h2>The road from Paris---London</h2>
+> <h2>The road from Paris –\u{A0}London</h2>
+
 @ bp-dialogue-double-hyphen preset=bringhurst only=dialogue-dash
 < -- So this is how it ends.
 > —\u{202F}So this is how it ends.
