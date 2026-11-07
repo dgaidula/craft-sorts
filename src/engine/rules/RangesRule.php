@@ -43,7 +43,7 @@ final class RangesRule extends AbstractRule
     {
         $urls = self::urlSpans($run->text());
         if (strpos($run->text(), ':') !== false) {
-            // Clock ranges change the run's length, so the URL spans are found again after them.
+            // Clock ranges change the run’s length, so the URL spans are found again after them.
             if ($this->clockTimes($run, $urls) > 0) {
                 $urls = self::urlSpans($run->text());
             }
