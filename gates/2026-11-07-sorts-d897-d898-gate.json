@@ -1,0 +1,156 @@
+{
+ "tool": "craft-sorts",
+ "run": "2026-11-07 release gate (xhigh, mutants and a differential) of W8: ea87970 (D898 part: fontkit devDependency), b7f7a82 (D898 y: widows count the words as they stand, U+202F stays, × unsettled), 90a232f (D897 y: a dialogue line stored as `— `), on base 7ee012f. Morning run 2026-11-07.",
+ "mode": "release (brief: release gate, xhigh, with mutants and a differential)",
+ "suite": "tests/engine/run.php: RESULT: 5234 passed, 0 failed (Homebrew PHP 8.5.12, twice; also 5234/0 under PHP 8.4.27 in the craft5-testbed web container; base 7ee012f had 5225); composer check exit 0 (composer.json valid, lint 68 files ok, cs 0 of 68, PHPStan no errors); node tests/run-all.mjs twice, exit 0: audit 66, ckeditor 40, engine-service 84, extension-api 16, fix-on-save 76, graphql 23, page-pass 85, settings 118, smoke 2, twig 77 (587 ok), testbed isolation ok, queue 0 → 0.",
+ "verdict": "FIX FIRST",
+ "verdictLine": "FIX FIRST (F1): D898 holds up (the rig’s 8,758 widows rows at 7ee012f are 157 at 90a232f, all the documented mixed-number limit; nothing newly unstable in 7,715,773 rows; every changed row is one of the three intended classes; the Context::before() rewrite is byte-identical to base), and D897 stores `— ` as intended in 85,709 of 85,808 rows, but in the other 99 (a Unicode space typed after `-- `) storage writes an em dash the page would not have set, so fix on save changes what the page shows in body text. One regex; six low follow-ups.",
+ "findings": [
+  {
+   "id": "F1",
+   "summary": "D897 stores `— ` where the page does not read a dialogue line. keepDialogue’s test is a byte pattern, `preg_match('/^--\\x20\\S/', $text)`, so its `\\S` takes the lead byte of a Unicode space typed after `-- ` (U+00A0, U+2009, U+202F, U+3000); the page’s dialogue dash, `/^(?:--|—)\\x20(?=\\S)/u`, refuses the same line. With Fine typography and fix on save, `<p>-- ⍽So it was.</p>` (⍽ = a raw U+00A0) is stored `<p>— ⍽So it was.</p>` and the page shows it so, where the same text never stored shows `<p>– ⍽So it was.</p>` (en-US, en-GB and fr alike). At 7ee012f storage kept the typed `-- ` there and page(stored) equalled page(typed). It breaks the invariant the engine-service F6 check names (“the dialogue dash, as for text never stored”) and README:120 (“the page sets it as dialogue, as it does a typed `-- `”). 99 of the 85,808 stored rows D897 changes in the differential; body text (`<p>`) included.",
+   "location": "src/engine/rules/DashesRule.php:74 (the keepDialogue condition) against src/engine/rules/DialogueDashRule.php:40",
+   "repro": "cd /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate && NB=$'\\xc2\\xa0' && for T in t-7ee012f t-90a232f; do /opt/homebrew/bin/php pagestored.php $T en-US bringhurst \"<p>-- ${NB}So it was.</p>\"; done → t-7ee012f: \"stored: <p>-- ⍽So it was.</p>  page(stored): <p>– ⍽So it was.</p>  page(typed): <p>– ⍽So it was.</p>  same\"; t-90a232f: \"stored: <p>— ⍽So it was.</p>  page(stored): <p>— ⍽So it was.</p>  page(typed): <p>– ⍽So it was.</p>  DIFFERENT\" (en-GB, fr and U+2009, U+202F, U+3000 the same). Through Craft: cd /Users/dgaidula/sw/github-private/craft5-plugin-testbed && ddev craft shell < /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/f1-probe.txt → \"F1PROBE en-US {…\"stored\":\"<p>—  So it was.</p>\",\"page(stored)\":\"<p>—  So it was.</p>\",\"page(typed)\":\"<p>–  So it was.</p>\"}\" (en-GB, fr the same; isolation ok). The pattern difference: /opt/homebrew/bin/php -r with preg_match on \"-- \" + U+00A0 + \"So\": byte=1, /u=0, page dialogue=0.",
+   "acceptance": "keepDialogue fires exactly where DialogueDashRule does (one shared pattern, or `/^--\\x20\\S/u`); corpus cases under keepDialogue with a no-break space and with a thin space after `-- ` store what the page would set (the locale dash, not `—`); /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/ptrans.php over the differential’s D897 rows reports page-differs=0.",
+   "blocking": true,
+   "severity": "medium",
+   "likelihood": "unlikely",
+   "confidence": "high",
+   "cause": "a byte-mode \\S in a test that predates D897 (F6, e61e45f): harmless while keepDialogue left the line as typed for the page, visible once 90a232f writes `—` there",
+   "needsDesign": false
+  }
+ ],
+ "notBlocking": [
+  {
+   "id": "FU1",
+   "summary": "keepDialogue’s block-start test is unpinned in a spaced-en-dash language: mutant M16 (drop `$before === ''`, so it also fires at the start of a run after an inline tag) survives the whole engine suite. Under D897 that bug would store `—` mid-sentence where en-GB takes `–` (`<p>Text <em>-- So</em></p>` → `Text <em>— So</em>`), and the page would leave it. The en-US case in the corpus cannot tell, since en-US gives `—` either way.",
+   "location": "src/engine/rules/DashesRule.php:74; tests/engine/corpus/04-dashes-ellipsis-symbols.txt (d-keep-dialogue-em-dash-in-a-spaced-en-dash-language)",
+   "repro": "cd /Users/dgaidula/sw/github-public/craft-sorts && TMPDIR=/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/gktmp gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/mut/engine-mutants-cf2.json --only M16 --brief → \"warn survived … M16\"; unit-mutants3.json → \"M16 warn survived … RESULT: 2004 passed, 0 failed\"",
+   "acceptance": "the en-GB keepDialogue case also holds `<p>Text <em>-- So</em></p>` → `<p>Text <em>– So</em></p>`, and M16 is killed",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "unlikely",
+   "confidence": "high",
+   "cause": "test gap; the guard itself is right",
+   "needsDesign": false
+  },
+  {
+   "id": "FU2",
+   "summary": "The Context::before() rewrite is unpinned for multibyte text across inline tags: mutant M10 (count bytes, not characters, so the walk stops early) survives corpus, fuzz and unit. Near-equivalent for today’s callers (most read the last one or two characters), but nothing would notice a later edit that broke the character count.",
+   "location": "src/engine/Context.php:85-95",
+   "repro": "gate-kit mutants /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/mut/engine-mutants-cf2.json --only M10 --brief → \"warn survived\"; /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/mut/unit-mutants3.json → \"M10 warn survived, exit 0 … RESULT: 2004 passed, 0 failed\"",
+   "acceptance": "a unit check of before(n) across inline tags whose pieces are multibyte (for example three runs of `éé`, before(3) from the last) that M10 turns red",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "unlikely",
+   "confidence": "high",
+   "cause": "test gap",
+   "needsDesign": false
+  },
+  {
+   "id": "FU3",
+   "summary": "A French heading that ends in a mark set with U+202F (`?`, `!`, `:`, `;`, `»`) gets no widow control: the last space widows find is the narrow one, which the new guard leaves, so the two words before it are never joined (`<h2>Il a dit quoi ?</h2>` → `Il a dit quoi⁔?`; the last line can be `quoi ?`). README:62 promises “a no-break space between the last two words of a heading”. Not a regression: 7ee012f gave the same on pass 1 and on pass 2 swapped the U+202F for U+00A0, which is worse; the guard makes the gap stable rather than flapping.",
+   "location": "src/engine/rules/WidowsRule.php:54-73",
+   "repro": "cd /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate && /opt/homebrew/bin/php v.php t-90a232f '{\"locale\":\"fr\"}' '<h2>Il a dit quoi ?</h2>' '<h2>Il a dit « oui »</h2>' '<h2>Vraiment ce soir !</h2>' → \"<h2>Il a dit quoi⁔?</h2>\", \"<h2>Il a dit «⁔oui⁔»</h2>\", \"<h2>Vraiment ce soir⁔!</h2>\", all stable, none joined",
+   "acceptance": "widows treat U+202F as part of the word it binds (look for the last space among whitespace other than U+202F), so `Il a dit⍽quoi⁔?`, `Il a dit⍽«⁔oui⁔»`; or README’s Known limits names French headings that end in such a mark",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "likely",
+   "confidence": "high",
+   "cause": "pre-existing; a small behaviour choice for Dan",
+   "needsDesign": false
+  },
+  {
+   "id": "FU4",
+   "summary": "The icon build needs `npm ci` first and nothing says so: a fresh clone running the acceptance command fails with ERR_MODULE_NOT_FOUND for fontkit (lib.mjs’s old header said where fontkit came from; the new one does not say to install it). package.json’s description says “not shipped with the plugin”, but the repo has no .gitattributes export-ignore, so package.json, package-lock.json and docs/ go into the dist zip (harmless; nothing reads them at run time).",
+   "location": "docs/icon/lib.mjs:1; package.json:5",
+   "repro": "git archive 90a232f | tar -x -C /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/icon-fresh; cd there; node -e \"import('./docs/icon/build-icon.mjs')…\" → ERR_MODULE_NOT_FOUND; npm ci --ignore-scripts → \"added 12 packages\"; then the cmp → identical",
+   "acceptance": "a line in lib.mjs (or docs/DEVELOPMENT.md) to run `npm ci` at the repo root first; the description reworded, or an export-ignore for the dev files",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "possible",
+   "confidence": "high",
+   "cause": "docs",
+   "needsDesign": false
+  },
+  {
+   "id": "FU5",
+   "summary": "In a plain-text field, a later paragraph that opens with `-- ` (after a blank line, where text mode starts a new flow) is now stored `— `. A template that prints the field in one block (`|nl2br` gives `<br />` and a newline before it) does not read that line as dialogue, so the page shows `— Two.` where 7ee012f showed `– Two.` (en-US under the preset). Neither is the dialogue dash; the em dash is closer to what the writer meant, so this reads as within D897’s intent, but it is a page change the README sentence (“the page sets it as dialogue”) does not cover.",
+   "location": "src/engine/rules/DashesRule.php:74 (text mode); README.md:120",
+   "repro": "/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate: /opt/homebrew/bin/php v.php t-90a232f '{\"locale\":\"en-US\",\"preset\":\"bringhurst\",\"stored\":true,\"mode\":\"text\"}' \"-- One.(blank line)-- Two.\" → \"— One.⏎⏎— Two.\"; v.php t-90a232f '{\"locale\":\"en-US\",\"preset\":\"bringhurst\"}' '<p>— One.<br />⏎<br />⏎— Two.</p>' → \"<p>—⁔One.<br />⏎<br />⏎— Two.</p>\" (7ee012f: stored \"-- Two.\", page \"– Two.\")",
+   "acceptance": "Dan accepts it as D897’s intent (README says the page sets it as dialogue where the line opens a block on the page), or storage writes `— ` only at the start of the field in text mode",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "unlikely",
+   "confidence": "medium",
+   "cause": "text-mode flows split at blank lines; HTML flows do not split at a newline",
+   "needsDesign": true
+  },
+  {
+   "id": "FU6",
+   "summary": "Two small precision points. README:120 says a block-opening `-- ` “is stored as an em dash and its word space … in every language”, but with *Em and en dashes* off and the dialogue dash switched on it is stored as typed (fix-on-save pins that: “dashes off, dialogue-dash on: a dialogue line is still stored as typed”). tests/fix-on-save-test.php:142 lost the space in `],[$f->title`.",
+   "location": "README.md:120; tests/fix-on-save-test.php:142",
+   "repro": "read the lines",
+   "acceptance": "README qualifies the sentence (where dashes run); the space restored",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "unlikely",
+   "confidence": "high",
+   "cause": "wording",
+   "needsDesign": false
+  }
+ ],
+ "knownLimits": [
+  "Pre-existing, unchanged: `<h1>a<i> </i>…<i> </i>end</h1>` is quadratic (spaceAfter() and textAfter() per blank run), as the fixer noted; not worse.",
+  "Pre-existing (release gate FU4): a block-opening `--- ` is stored `— ` and the page then sets `—`U+202F, where typed it stays `— `; the same at 7ee012f.",
+  "Pre-existing: 29 stored rows unstable (chained multiplication with mixed spacing).",
+  "Documented (README:384): a mixed number inside a later inline tag needs a second pass for widows; 157 rig rows."
+ ],
+ "acceptance": {
+  "ea87970 icon": "node -e \"import('./docs/icon/build-icon.mjs').then(m=>process.stdout.write(m.svg()))\" | cmp - src/icon.svg → identical in the repo, and in a fresh git archive of 90a232f after `npm ci --ignore-scripts` (12 packages); before npm ci the archive fails with ERR_MODULE_NOT_FOUND (FU4). No .js file is affected by the new `\"type\": \"module\"` (the repo’s scripts are all .mjs).",
+  "b7f7a82 widows": "met: the words of the text as it stands (corpus cases pinned and load-bearing), U+202F kept, × open to widows (every multiplication change in the differential is `× ` → `×⍽`); the new Known limit’s example and both workarounds verified (`<h2>add the <em>8 1/2</em></h2>` → pass 1 `add the <em>8½</em>`, pass 2 `the⍽<em>8½</em>`; typing ½, or the number outside the tag, is stable).",
+  "90a232f dialogue": "met except F1: storage writes `— ` in every language (en-US, en-GB, the preset’s stored rules), the page sets `—`U+202F from it, two saves change nothing (fix-on-save “a second save changes nothing (D897)” passes and is load-bearing), the audit stays empty, F6 still holds for typed `-- ` + a word. The page agrees with text never stored in 85,709 of 85,808 changed rows; the 99 others are F1."
+ },
+ "mutants": {
+  "engineSpec": "/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/mut/engine-mutants-cf2.json (command: run.php corpus && run.php fuzz, so no timing guard can kill a mutant)",
+  "engineResult": "gate-kit --jobs 4 --brief: “summary: ok=22 warn=3 skip=0 refuse=0 fail=0”; killed M1–M9, M11–M15, M18–M20 and the fixer’s W1–W3, re-run; “warn survived … M10 (before() counts bytes, not characters …)”, “warn survived … M16 (keepDialogue fires after an inline tag too …)”, “warn survived … M17 (keepDialogue fires for --- too …)”; M17 is equivalent (the `^--\\x20` test already refuses `---`). Real tree: “ok 995 files + git unchanged  real tree”.",
+  "unitResult": "/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/mut/unit-mutants3.json (run.php unit, at load 62): baseline “RESULT: 2004 passed, 0 failed”; M10 survived; M16 survived (an earlier kill at load 237 was a perf-guard flake: that baseline was refused, “perf guard: open quotations … 14.5×”); the fixer’s W4 (the old prepend-and-measure before()) killed by the new guard: “FAIL perf guard: widows over a heading of 4× as many inline tags take under 8× as long (11.5×: 14.0 → 161.0 ms)”. Real tree unchanged.",
+  "whatEachNewTestCatches": "06 w-words-as-they-stand-after-a-dash: M3, W1; -in-an-earlier-run: M1, M4, W1; -after-a-typed-em-dash: M3, W1; -fewer-once-a-fraction-joins: M3, W1; w-after-a-spaced-multiplication-sign: M7, W3; w-french-narrow-space-stays: M5, W2 (on its idempotence check: pass 1 cannot touch the settled U+202F). 04 d-keep-dialogue-writes-…-as-an-em-dash: M12, M14, M15; d-keep-dialogue-em-dash-in-a-spaced-en-dash-language: M12–M15; d-keep-dialogue-stored-rules-under-the-preset: M12–M15, M19, M20. unit widows perf guard: W4.",
+  "craftSpec": "/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/mut/craft-mutants.json with craft-mut.mjs: the mutated class is copied into the web container’s /tmp and required ahead of the suite in `ddev craft shell` (a guard prints PRELOADED and voids the run if the shell already loaded the class); the repo is never edited, and only what the shell process runs is mutated.",
+  "craftResult": "C1 (D897 reverted) killed in engine-service (82/2), fix-on-save (74/2), page-pass (84/1); C2 (one language only) killed in engine-service (81/3: “fine, stored twice … in a spaced-en-dash language too (D897)” red) and fix-on-save (73/3); C3 (em dash without its space) killed in all three (page-pass 83/2, including the HTTP check “fine: the page reads the stored line as dialogue, as it does a typed one”); C4 (a second stored pass changes the line) killed in engine-service (82/2: “stored twice” red) and fix-on-save (73/3: “fine: a second save changes nothing (D897)” red). Every new or changed Craft assertion goes red under at least one of them. C5 (keepDialogue on everywhere, EngineService) survived engine-service (no check there needs it) and could not run against fix-on-save (the shell loads EngineService while it reads the suite: PRELOADED, void). Testbed git status clean after each run."
+ },
+ "differential": {
+  "inputs": "21,608: the corpus’s 1,717 cases (base and head, each also run under its own options), the 2026-11-07 release gate’s all.jsonl (9,391), the fixer’s 3,000 headings, 6,000 generated pages of headings, paragraphs, lists, cells, quotes and figcaptions (gen.mjs seed 20261107: dashes and dialogue openers, ×, fractions, French marks, typed U+00A0/U+202F/U+2009, nested inline tags, <br>), 1,500 generated plain texts (seed 777)",
+  "configs": "358: the release gate’s cfg0–cfg2 (190: every locale and variant, default, preset, Pro, depth, stored) and 168 of this gate’s (each of 16 locales: stored default, stored preset, stored with only the dialogue dash, stored preset in text mode, widows on p/li/td/th/blockquote/dd/dt/figcaption/div, minWords 2 and 4, text mode, dialogue dash alone; en-US spaced-en-dash stored and page; dashes off; typed-dashes off; depth; xx)",
+  "rows": "7,715,773 per tree, both passes, on git archives of 7ee012f and 90a232f (drig.php, 10 shards)",
+  "result": "242,896 rows differ on pass 1; newly unstable 0; newly stable 151,094; unstable 242,717 → 91,623.",
+  "attribution": "Hybrid trees (head with one change reverted) say which change each row comes from: D897 85,812 (every change `--` → `—` where 7ee012f’s keepDialogue already kept it for the page: at a block start, after <br>, after leading whitespace and inline tags, at a text-mode paragraph start); multiplication 80,911 (every change `× ` → `×⍽`; 77,095 equal base’s second pass); the word count 49,516 (space → no-break space 42,259, no-break space → space 7,241 where a joined fraction leaves fewer words, both 16; 40,362 equal base’s second pass, the rest a joined fraction); the U+202F guard 24,928; more than one 1,729. No change of any other kind, and none in a block widows do not cover: no body text (<p>) changes except D897’s storage and the configs that put widows on <p>.",
+  "contextRefactor": "Head with all three behaviour changes reverted (Context::before() rewrite kept) is byte-identical to 7ee012f over all 7,715,773 rows, both passes: the two rig output files have the same sha256, 2ab2a9e170b71009aa57e8c49e492607805c5d3f99073baa4d865939b7f16bdd.",
+  "pageTransparency": "ptrans.php: for the 85,808 stored rows D897 changes, the page pass (head) over stored-with-D897 and stored-without: 85,709 identical, 99 differ, all a Unicode space after `-- ` (F1).",
+  "headSha256": "a44aea7ee0c948ec2ce4852e475d283a4fb1234a4898daa76f4cf3add438990e (90a232f rig output; the outputs were deleted after use)"
+ },
+ "rig": {
+  "fixer": "fixer’s rig.php over its inputs.jsonl (3,000 × 50): 7ee012f “rows=150000 unstable=9694 widows-class=8758”, 90a232f “rows=150000 unstable=1093 widows-class=157”; 0 rows unstable at head that were stable at base; all 157 a mixed number inside an inline tag (the new Known limit). Matches b7f7a82’s message (8,758 → 157).",
+  "releaseGateRig": "The 2026-11-07 release gate’s rig subset (cfg0–cfg2 over all.jsonl, 1,784,290 rows, the count recheck-2 had): unstable 18,782 → 8,676 (default 1,733 → 512, preset 9,750 → 5,059, Pro 7,299 → 3,105), 0 newly unstable."
+ },
+ "idempotence": "Across the 7,715,773 rows nothing is unstable at 90a232f that was stable at 7ee012f. Stored HTML: 29 unstable rows in both trees, the same rows (a chained multiplication, `3×4 X 10½` → `3×4 × 10½` on pass 2; not this change). Stored text 3,746 and page text 8,235 in both. Every D897 row is stable at head; fix-on-save’s second save is unchanged.",
+ "performance": "perf.php, best of 5 at n = 2,000 and 8,000 (load 188): every shape 3.6–4.1× in both trees except the known one, `<h1>a` + `<i> </i>`×n + `end</h1>`, quadratic before and after and not worse (16.9×, 1,752 ms at 8,000 → 16.1×, 1,648 ms); `<i> </i>`×n with nothing before it is linear (3.8× → 4.1×). The new unit guard’s shape 4.0× → 3.9×; a paragraph of `<b>w</b>` with widows on <p> 3.9× → 4.0×; many headings 3.6× → 4.0×. Stored dialogue text costs about 1.5× more at head (12.6 vs 8.5 ms for 2,000 paragraphs; typed-dashes now reads the em dash) and stays linear.",
+ "scope": "The diff 7ee012f..90a232f touches .gitignore, CHANGELOG.md, README.md, docs/DEVELOPMENT.md, docs/icon/lib.mjs, package.json, package-lock.json, src/engine/Context.php, src/engine/rules/{DashesRule,MultiplicationRule,WidowsRule}.php, src/services/EngineService.php (a comment only), tests/engine-service-test.php, tests/engine/corpus/04 and 06, tests/engine/unit.php, tests/fix-on-save-test.php, tests/page-pass-test.php: all inside the three changes the brief names. Nothing outside.",
+ "linesReliedOn": [
+  "CLAUDE.md: “Check: `composer check` (validate, lint, cs, PHPStan), run under the PHP the plugin targets (… on the author’s MacBook use `/opt/homebrew/bin/php`).”",
+  "CLAUDE.md: “Tests: `node tests/run-all.mjs` against your own testbed — never a client site. `composer test-engine` runs the engine alone.”",
+  "tests/README.md: “The speed guards in `unit.php` compare two pages timed in the same process (4× the input in under 8× the time, which a linear pass meets and a quadratic one does not)”",
+  "README.md:120 (head): “A `-- ` that opens a block is stored as an em dash and its word space (`— So`), in every language, so feeds, APIs and a site without the page pass show a dash, not two hyphens; the page sets it as dialogue, as it does a typed `-- `.”",
+  "README.md:384 (head, new Known limit): the mixed number inside a later inline tag, `<h2>add the <em>8 1/2</em></h2>`.",
+  "RUN-RULES.md §3–§6: commit by explicit path, no push, own scratch subfolder."
+ ],
+ "sources": "Read directly: the diff 7ee012f..90a232f (all three commits and their messages); WidowsRule, Context, MultiplicationRule, DashesRule, DialogueDashRule, TypedDashesRule, EllipsisRule, NonBreakingSpacesRule, LocaleSpacingRule, OrdinalsRule, HookCapsRule, Run::replaceAll/edit, Engine::processFlow, Presets, EngineService::options/storedOptions/applyStored, ContentFixer::changes, tests/support.php, tests/README.md, CLAUDE.md, RUN-RULES.md, docs/icon/build-icon.mjs and lib.mjs, package.json and package-lock.json (all 12 resolved URLs are registry.npmjs.org), and every tool output quoted here. Earlier reports, read at the start because the brief named them: gates/2026-11-06-sorts-d844-d859-gate.json FU8, gates/2026-11-07-sorts-release-gate.json FU3/FU4 (and its F1 receipt shape), gates/2026-11-07-sorts-release-recheck-2.json (rig description); their claims were re-measured, not taken. The fixer’s gen.php, rig.php, classify.mjs and mutant specs (scratchpad/w8/) were copied and re-run; the commit messages’ numbers were re-derived.",
+ "notDone": [
+  "A page-side mutant on the HTTP path (PHP-FPM runs the real tree, which this gate does not edit): the corpus kills the same mutant (M18, bp-dialogue-em-dash), and C3 shows the HTTP check goes red when storage is wrong.",
+  "C5 against fix-on-save (EngineService loads before the prelude); the 2026-11-07 release gate’s K2 covered that guard by editing the tree.",
+  "CKEditor as-you-type and GraphQL were not probed for D897 (their code did not change)."
+ ],
+ "refused": "none",
+ "sideEffects": "Created only: /private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/ (git archives t-7ee012f, t-ea87970, t-b7f7a82, t-90a232f, hybrid trees h-*, scripts, configs, inputs, logs, findings.json; the rig outputs, about 2.2 GB, and a fresh-archive copy with node_modules were deleted after use), and /tmp/gate-w8/ inside the craft5-testbed web container (deleted). craft-sorts: every tracked file’s sha256, git status --ignored, node_modules and vendor equal start; .php-cs-fixer.cache was rewritten by composer check (7d4e1945… → 345b9bd5…) and left, as the brief says. Testbed: git status --ignored equals start; both run-all runs ended “testbed isolation (clean tree, no pending project config, queue 0 → 0)”; the F1 probe ended “isolation … ok” and project-config/diff reports nothing pending. gate-kit ran in its own copies and reported the real tree unchanged each run. The only repo change is this receipt.",
+ "findingsJson": "/private/tmp/claude-502/-Users-dgaidula-sw-github-private-claude-ops/f1173ff3-590a-49d6-a74b-de89968b087a/scratchpad/w8gate/findings.json"
+}
