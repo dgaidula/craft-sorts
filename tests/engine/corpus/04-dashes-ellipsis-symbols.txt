@@ -396,3 +396,123 @@
 @ d-e-all-default-rules-leave-a-url-alone locale=en-US
 < <p>Wait... see https://example.com/a--b...c---d now--go</p>
 > <p>Wait… see https://example.com/a--b...c---d now—go</p>
+
+# A path after a quote, a no-break space or a guillemet is spared on the first pass and on the second:
+# the quote, apostrophe, prime and French spacing rules rewrite what stands before it.
+
+@ u-path-after-straight-double-quote-html-default
+< <p>Edit the file "/etc/my--app.conf" and restart.</p>
+> <p>Edit the file “/etc/my--app.conf” and restart.</p>
+
+@ u-path-after-straight-single-quote-html-default
+< <p>Call open('/var/log/app...') first.</p>
+> <p>Call open(‘/var/log/app...’) first.</p>
+
+@ u-path-after-straight-quote-text-default mode=text
+< Open "/var/a--b" now
+> Open “/var/a--b” now
+
+@ u-path-after-typed-curly-quote-default
+< <p>Open “/var/a--b” now</p>
+
+@ u-path-after-typed-single-curly-quote-default
+< <p>Open ‘/var/a...b’ now</p>
+
+@ u-path-after-quote-only-dashes only=dashes
+< <p>Open "/var/a--b" now</p>
+
+@ u-path-after-quote-only-ellipsis only=ellipsis
+< <p>Open '/var/a...b' now</p>
+
+@ u-path-after-guillemets-fr locale=fr
+< <p>Ouvrez « /var/a--b » ici.</p>
+> <p>Ouvrez «\u{202F}/var/a--b\u{202F}» ici.</p>
+
+@ u-path-after-guillemets-with-nbsp-fr locale=fr
+< <p>Ouvrez «\u{A0}/var/a...b\u{A0}» ici.</p>
+> <p>Ouvrez «\u{202F}/var/a...b\u{202F}» ici.</p>
+
+@ u-path-after-quotes-de locale=de
+< <p>Öffne "/pfad/a--b" jetzt.</p>
+> <p>Öffne »/pfad/a--b« jetzt.</p>
+
+@ u-path-after-german-low-quote-de locale=de
+< <p>Öffne „/pfad/a...b“ jetzt.</p>
+
+@ u-path-after-nbsp-entity
+< <p>Open&nbsp;/var/a--b now</p>
+
+@ u-path-after-nbsp-character
+< <p>Open\u{A0}/var/a--b and\u{202F}/var/c...d and\u{2009}/var/e--f</p>
+
+@ u-path-after-prime-marks
+< <p>It is 5′/var/a--b and 6″/var/c...d</p>
+
+@ u-path-after-quote-preset-bringhurst preset=bringhurst
+< <p>Edit the file "/etc/my--app.conf" and restart.</p>
+> <p>Edit the file “/etc/my--app.conf” and restart.</p>
+
+@ u-typed-em-dash-in-a-path-left-alone preset=bringhurst only=typed-dashes
+< <p>Open /var/a—b and /x—y now</p>
+
+@ u-typed-em-dash-in-a-url-left-alone only=typed-dashes config={"variants":{"en-US":"spaced-en-dash"}}
+< <p>Open https://example.com/a—b now, a—b</p>
+> <p>Open https://example.com/a—b now, a – b</p>
+
+# What the URL guard must get right at the edges (offsets in bytes, spans through the last character).
+
+@ u-url-after-a-long-multibyte-prefix-dashes only=dashes
+< <p>😀😀😀😀😀😀😀😀😀😀 日本語日本語日本語日本語 e\u{301}e\u{301}e\u{301}e\u{301} https://example.com/a--b and c--d</p>
+> <p>😀😀😀😀😀😀😀😀😀😀 日本語日本語日本語日本語 e\u{301}e\u{301}e\u{301}e\u{301} https://example.com/a--b and c—d</p>
+
+@ u-url-after-a-long-multibyte-prefix-ellipsis only=ellipsis
+< <p>😀😀😀😀😀😀😀😀😀😀 日本語日本語日本語日本語 e\u{301}e\u{301}e\u{301}e\u{301} /var/log/a...b and c...</p>
+> <p>😀😀😀😀😀😀😀😀😀😀 日本語日本語日本語日本語 e\u{301}e\u{301}e\u{301}e\u{301} /var/log/a...b and c…</p>
+
+@ u-url-after-entities-dashes only=dashes
+< <p>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp; &lt;&lt;&lt; www.example.com/a--b then c--d</p>
+> <p>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp; &lt;&lt;&lt; www.example.com/a--b then c—d</p>
+
+@ u-url-after-entities-ellipsis only=ellipsis
+< <p>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp; &quot;&quot;&quot; https://example.com/a...b then c...</p>
+> <p>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp; &quot;&quot;&quot; https://example.com/a...b then c…</p>
+
+@ u-url-scheme-in-capitals-dashes only=dashes
+< <p>HTTPS://EXAMPLE.COM/A--B and WWW.EXAMPLE.COM/C---D</p>
+
+@ u-url-scheme-in-capitals-ellipsis only=ellipsis
+< <p>HTTPS://EXAMPLE.COM/A...B and Http://example.com/c...d</p>
+
+@ u-www-without-a-slash-dashes only=dashes
+< <p>Go to www.my--site.com today</p>
+
+@ u-www-without-a-slash-ellipsis only=ellipsis
+< <p>Go to www.my...site.com today</p>
+
+@ u-url-ends-in-the-mark-ellipsis only=ellipsis
+< <p>See www.example.com... and https://example.com/a... and /var/log/a... now</p>
+
+@ u-url-ends-in-the-mark-dashes only=dashes
+< <p>See https://example.com/a-- and www.example.com--- and /var/a-- now</p>
+
+@ u-url-ends-in-the-mark-default
+< <p>See www.example.com... and https://example.com/a-- end</p>
+
+@ u-url-after-ellipses-in-the-run-dashes only=dashes
+< <p>one… two… three… four… five… six… seven… eight… https://example.com/a--b and c--d</p>
+> <p>one… two… three… four… five… six… seven… eight… https://example.com/a--b and c—d</p>
+
+@ u-url-after-ellipses-typed-as-dots-default
+< <p>one... two... three... four... five... six... seven... eight... https://example.com/a--b and c--d</p>
+> <p>one… two… three… four… five… six… seven… eight… https://example.com/a--b and c—d</p>
+
+# Every mark the quote, apostrophe and prime rules write may stand right before a path, so each one opens it.
+
+@ u-path-right-after-each-quotation-mark-dashes only=dashes
+< <p>“/a--b ”/c--d ‘/e--f ’/g--h „/i--j ‚/k--l ‹/m--n ›/o--p «/q--r »/s--t ′/u--v ″/w--x</p>
+
+@ u-path-right-after-each-quotation-mark-ellipsis only=ellipsis
+< <p>“/a...b ”/c...d ‘/e...f ’/g...h „/i...j ‚/k...l ‹/m...n ›/o...p «/q...r »/s...t ′/u...v ″/w...x</p>
+
+@ u-path-right-after-a-no-break-space-and-entities only=dashes,ellipsis
+< <p>x&nbsp;/a--b x\u{A0}/c--d x\u{202F}/e--f x\u{2009}/g...h</p>

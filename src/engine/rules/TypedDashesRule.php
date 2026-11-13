@@ -43,7 +43,11 @@ final class TypedDashesRule extends AbstractRule
             return;
         }
         $text = $run->text();
-        $run->replaceAll('/(?<!—)—(?!—)/u', function (array $m, int $offset) use ($dash, $context, $text): ?string {
+        $urls = self::urlSpans($text);
+        $run->replaceAll('/(?<!—)—(?!—)/u', function (array $m, int $offset) use ($dash, $context, $text, $urls): ?string {
+            if (self::inSpans($urls, $offset)) {
+                return null;
+            }
             $before = self::charBefore($text, $offset, $context);
             $after = self::charAfter($text, $offset + strlen($m[0]), $context);
             $spacedBefore = $before === ' ' && preg_match('/[\p{L}\p{N}\p{M}.,;:!?)\]}%…]\x20$/u', self::tail($text, $offset, $context));

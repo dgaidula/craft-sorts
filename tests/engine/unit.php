@@ -480,6 +480,14 @@ $page = static fn (int $n): string => '<p>' . str_repeat('a -- b. ', $n) . '</p>
 [$ratio, $a, $b] = $slower($page(16_384), $page(65_536), new Options(rules: array_merge($allOff->rules, ['dashes' => true])));
 check(sprintf('perf guard: a paragraph of dashes 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
 
+// A match asks whether it lies inside a URL or a path by binary search over the spans, not by walking them from the first (W13 F2).
+$page = static fn (int $n): string => '<p>' . str_repeat('/a/b ', $n) . str_repeat('a--b ', $n) . '</p>';
+[$ratio, $a, $b] = $slower($page(1_024), $page(4_096), new Options(rules: array_merge($allOff->rules, ['dashes' => true])));
+check(sprintf('perf guard: dashes after 4× as many paths take under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+$page = static fn (int $n): string => '<p>' . str_repeat('/a/b ', $n) . str_repeat('a... ', $n) . '</p>';
+[$ratio, $a, $b] = $slower($page(1_024), $page(4_096), new Options(rules: array_merge($allOff->rules, ['ellipsis' => true])));
+check(sprintf('perf guard: ellipsis after 4× as many paths take under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 8);
+
 // Widows count the words of the whole heading as it stands (D898): one walk over the runs before, not one per run.
 $page = static fn (int $n): string => '<h1>' . str_repeat('<b>' . str_repeat('w', 32) . '</b> ', $n) . 'end</h1>';
 [$ratio, $a, $b] = $slower($page(2_000), $page(8_000), new Options(rules: array_merge($allOff->rules, ['widows' => true])));
