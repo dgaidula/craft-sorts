@@ -8,7 +8,7 @@ use iceboxind\sorts\engine\Run;
 /**
  * `--` to the locale’s dash, spaced or closed up as the locale prefers; `---`
  * to an em dash. Left alone: a command-line option (` --force`), an arrow
- * (`-->`, `<--`) and runs of four or more hyphens.
+ * (`-->`, `<--`), runs of four or more hyphens and anything inside a URL or a path.
  *
  * A locale whose dash sets `allBreaks` (the en-US variant `spaced-en-dash`) gives
  * `---` and a hyphen with a space each side, between two words or numbers, the same
@@ -55,10 +55,14 @@ final class DashesRule extends AbstractRule
         $dash = $context->locale->dash();
         $allBreaks = !empty($dash['allBreaks']);
         $text = $run->text();
+        $urls = self::urlSpans($text);
         $keepDialogue = (bool) $context->option('dashes', 'keepDialogue', false);
         $run->replaceAll(
             '/(?<!-)-{2,3}(?!-)/',
-            function (array $m, int $offset) use ($dash, $allBreaks, $context, $text, $keepDialogue): ?string {
+            function (array $m, int $offset) use ($dash, $allBreaks, $context, $text, $keepDialogue, $urls): ?string {
+                if (self::inSpans($urls, $offset)) {
+                    return null;
+                }
                 $length = strlen($m[0]);
                 $before = self::charBefore($text, $offset, $context);
                 $after = self::charAfter($text, $offset + $length, $context);

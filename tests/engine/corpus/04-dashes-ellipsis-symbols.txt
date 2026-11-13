@@ -343,3 +343,56 @@
 
 @ dv-the-variant-is-for-en-US-only only=dashes locale=en-GB config={"variants":{"en-US":"spaced-en-dash"}}
 < a - b
+
+# A URL or a path printed as text keeps its dashes and its dots (urlSpans, the guard the number rules use).
+
+@ d-url-double-and-triple-hyphen-left-alone only=dashes
+< <p>See https://example.com/a--b/c---d?x=1--2 now</p>
+
+@ d-url-www-left-alone only=dashes
+< <p>Go to www.my--site.com/x---y today</p>
+
+@ d-path-left-alone only=dashes
+< <p>The file is /var/my--file---copy.txt here</p>
+
+@ d-url-text-mode-left-alone only=dashes mode=text
+< See http://example.com/a--b---c and /tmp/x--y.
+
+@ d-url-spaced-en-dash-variant-left-alone only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
+< <p>https://example.com/a---b/c--d and /x---y</p>
+
+@ d-prose-next-to-a-url-still-fixed only=dashes
+< <p>Wait--see https://example.com/a--b---c now--go</p>
+> <p>Wait—see https://example.com/a--b---c now—go</p>
+
+@ d-prose-around-a-path-still-fixed only=dashes locale=en-GB
+< <p>Copy /var/a--b then--stop</p>
+> <p>Copy /var/a--b then – stop</p>
+
+@ d-slash-between-words-is-not-a-path only=dashes
+< <p>and/or--yes</p>
+> <p>and/or—yes</p>
+
+@ e-url-dots-left-alone only=ellipsis
+< <p>See https://example.com/a...b/c....d?x=1...2 now</p>
+
+@ e-url-www-left-alone only=ellipsis
+< <p>Go to www.example.com/x...y today</p>
+
+@ e-path-left-alone only=ellipsis
+< <p>The file is /var/log/a...b.txt here</p>
+
+@ e-url-text-mode-left-alone only=ellipsis mode=text
+< See http://example.com/a...b and /tmp/x...y.
+
+@ e-prose-next-to-a-url-still-fixed only=ellipsis
+< <p>Well... see https://example.com/a...b ... then...</p>
+> <p>Well… see https://example.com/a...b … then…</p>
+
+@ e-url-in-a-run-after-markup-still-fixed only=ellipsis
+< <p>Wait...<a href="https://example.com/a...b">https://example.com/a...b</a> and more...</p>
+> <p>Wait…<a href="https://example.com/a...b">https://example.com/a...b</a> and more…</p>
+
+@ d-e-all-default-rules-leave-a-url-alone locale=en-US
+< <p>Wait... see https://example.com/a--b...c---d now--go</p>
+> <p>Wait… see https://example.com/a--b...c---d now—go</p>
