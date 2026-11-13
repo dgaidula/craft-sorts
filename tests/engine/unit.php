@@ -433,20 +433,33 @@ check('pattern failure: the next call clears it', null, $engine->lastError());
 // Each guard times two pages in this process and compares them, so a slow or busy
 // machine (PHP 8.2 in Docker, CI) slows both alike and only the shape of the cost is
 // tested: 4× the input in under 8× the time passes a linear pass (about 4×) and fails a
-// quadratic one (about 16×). Best of 3 for each page.
+// quadratic one (about 16×). Best of 3 for each page. A ratio at or over its limit is
+// measured once more and the lower one kept (D1135): a burst of load during one
+// measurement flaked them on 2026-11-12, while a quadratic pass fails both.
 
-$slower = static function (string $small, string $large, ?Options $options = null) use ($engine): array {
-    $times = [];
-    foreach ([$small, $large] as $html) {
-        $best = INF;
-        for ($try = 0; $try < 3; $try++) {
-            $t = hrtime(true);
-            $engine->apply($html, [], $options);
-            $best = min($best, (hrtime(true) - $t) / 1e6);
-        }
-        $times[] = $best;
+$retried = static function (callable $measure, float $limit): array {
+    $first = $measure();
+    if ($first[0] < $limit) {
+        return $first;
     }
-    return [$times[1] / max($times[0], 0.001), $times[0], $times[1]];
+    $second = $measure();
+    return $second[0] < $first[0] ? $second : $first;
+};
+
+$slower = static function (string $small, string $large, ?Options $options = null, float $limit = 8) use ($engine, $retried): array {
+    return $retried(static function () use ($engine, $small, $large, $options): array {
+        $times = [];
+        foreach ([$small, $large] as $html) {
+            $best = INF;
+            for ($try = 0; $try < 3; $try++) {
+                $t = hrtime(true);
+                $engine->apply($html, [], $options);
+                $best = min($best, (hrtime(true) - $t) / 1e6);
+            }
+            $times[] = $best;
+        }
+        return [$times[1] / max($times[0], 0.001), $times[0], $times[1]];
+    }, $limit);
 };
 
 // The quote scan is linear on a long text node.
@@ -496,7 +509,7 @@ check(sprintf('perf guard: widows over a heading of 4× as many inline tags take
 // An end tag that matches no open element costs the same at any depth (R2-5): the same
 // stray </font> tags under 1,000 open divs and under 250.
 $page = static fn (int $depth): string => str_repeat('<div>', $depth) . str_repeat('</font>y ', 25_000) . str_repeat('</div>', $depth);
-[$ratio, $a, $b] = $slower($page(250), $page(1_000), $allOff);
+[$ratio, $a, $b] = $slower($page(250), $page(1_000), $allOff, 2);
 check(sprintf('perf guard: stray end tags under 4× the nesting take under 2× as long (%.1f×: %.1f → %.1f ms)', $ratio, $a, $b), true, $ratio < 2);
 
 // ---- Settled marks move with an earlier, shrinking edit in the same call -------
@@ -592,6 +605,9 @@ $findingsTime = static function (string $html) use ($finder): float {
     }
     return $best;
 };
-$small = $findingsTime('<p>' . str_repeat("1930's ", 4_096) . '</p>');
-$large = $findingsTime('<p>' . str_repeat("1930's ", 16_384) . '</p>');
-check(sprintf('perf guard: findings() on a paragraph 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $large / max($small, 0.001), $small, $large), true, $large / max($small, 0.001) < 8);
+[$ratio, $small, $large] = $retried(static function () use ($findingsTime): array {
+    $small = $findingsTime('<p>' . str_repeat("1930's ", 4_096) . '</p>');
+    $large = $findingsTime('<p>' . str_repeat("1930's ", 16_384) . '</p>');
+    return [$large / max($small, 0.001), $small, $large];
+}, 8);
+check(sprintf('perf guard: findings() on a paragraph 4× as long takes under 8× as long (%.1f×: %.1f → %.1f ms)', $ratio, $small, $large), true, $ratio < 8);
