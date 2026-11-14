@@ -4,6 +4,14 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The Plugin Store reads
 only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
 
+## Unreleased
+
+### Fixed
+- Symbols: a letter or digit before `(c)` or `(r)` now means the same in every script, so `é(c)` and `ü(c)` are both left as typed, like `f(c)`. `é(c)` used to become `é©` while `ü(c)` stayed.
+
+### Changed
+- The package no longer ships the gate and handoff receipts, `docs/`, `tests/`, `bin/` or the project records (`.gitattributes` `export-ignore`); `src/`, `composer.json`, the README, this changelog, the licence, `NOTICE` and `config.example.php` stay.
+
 ## 1.0.0 - 2026-11-13
 
 ### Added
