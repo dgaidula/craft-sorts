@@ -4,7 +4,9 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The Plugin Store reads
 only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
 
-## Unreleased
+## 1.0.1 - 2026-11-14
+
+The first published release. The 1.0.0 tag was withdrawn before the package was listed anywhere; its changes are below and ship in 1.0.1.
 
 ### Fixed
 - Symbols: a letter, a combining mark or a digit before `(c)` or `(r)` now means the same in every script and in precomposed or decomposed form, so `é(c)`, `ü(c)`, `ж(c)` and a letter with a combining accent or a Devanagari vowel sign before `(c)` are all left as typed, like `f(c)`. `é(c)` used to become `é©` while `ü(c)` stayed. The same goes for the character after: `(c)(é)` is now left alone as a citation, like `(c)(3)`, where it used to become `©(é)`.
