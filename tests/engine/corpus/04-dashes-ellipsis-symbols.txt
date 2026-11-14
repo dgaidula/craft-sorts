@@ -256,6 +256,70 @@
 < (c) (2026) Name
 > © (2026) Name
 
+# ---- adjacent symbols are symbols, not a citation: one pass converts each pair (the lookahead skips (c), (r) and (tm)) ----
+
+@ s-pair-c-r-converts-in-one-pass only=symbols
+< (c)(r)
+> ©®
+
+@ s-pair-c-tm-converts-in-one-pass only=symbols
+< (c)(tm)
+> ©™
+
+@ s-pair-r-c-converts-in-one-pass only=symbols
+< (r)(c)
+> ®©
+
+@ s-pair-c-c-converts-in-one-pass only=symbols
+< (c)(c)
+> ©©
+
+@ s-triple-c-r-tm-converts-in-one-pass only=symbols
+< (c)(r)(tm)
+> ©®™
+
+@ s-pair-upper-c-r-converts-in-one-pass only=symbols
+< (C)(R)
+> ©®
+
+@ s-pair-upper-c-tm-converts-in-one-pass only=symbols
+< (C)(TM)
+> ©™
+
+@ s-pair-upper-r-c-converts-in-one-pass only=symbols
+< (R)(C)
+> ®©
+
+@ s-pair-upper-c-c-converts-in-one-pass only=symbols
+< (C)(C)
+> ©©
+
+@ s-triple-upper-c-r-tm-converts-in-one-pass only=symbols
+< (C)(R)(TM)
+> ©®™
+
+# ---- the citation guard reads a whole parenthesised run of letters or digits ----
+
+@ s-citation-year-run-left-alone only=symbols
+< <p>(c)(2026) Name</p>
+
+@ s-citation-r-word-run-left-alone only=symbols
+< <p>Brand (r)(US) shoes</p>
+
+@ s-citation-roman-run-left-alone only=symbols
+< <p>See (c)(iii) below</p>
+
+@ s-citation-two-digit-run-left-alone only=symbols
+< <p>A 501 (c)(12) co-op</p>
+
+@ s-citation-words-with-space-converts only=symbols
+< (c)(see notes)
+> ©(see notes)
+
+@ s-citation-empty-parens-converts only=symbols
+< (c)()
+> ©()
+
 # ---- D855: the en-US variant spaced-en-dash (Bringhurst 5.2.1): -- and --- and a spaced hyphen are breaks ----
 
 @ dv-closed-double-hyphen only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
