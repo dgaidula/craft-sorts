@@ -1,0 +1,226 @@
+{
+ "tool": "craft-sorts",
+ "run": "2026-11-13 release gate (release mode) of 3edd0b1..979b87b before the 1.0.0 tag: 8cf7af5 (dashes and ellipsis leave a URL or path as typed, reusing urlSpans), c483cc3 (round-1 fix: a path after a quote mark or no-break space, inSpans by binary search, Known limits), 979b87b (perf-guard retry, D1135), 01bd1ac (bin/cldr-locales.mjs runtime block re-sync), and the docs, comment and receipt commits 49a181a, 80dba53, 562e2d5, 53510d1, 662ca9c, b2a886d, 59e287a. HEAD 979b87b; engine only: the Craft testbed (craft5-testbed) was stopped and, per the brief, not started. Gate scratch: <scratch>/gate-r7m3.",
+ "verdict": "FIX FIRST",
+ "verdictLine": "FIX FIRST (blocking F1): a path after `&quot;` or `&#039;`, the form in which Twig and the filter hand a plain string’s quotes to the engine, has its dashes and dots converted, against CHANGELOG.md:60; FU1–FU8 are not blocking (FU1 and FU2 are second-pass instabilities this range introduced under Fine typography and the styling hooks; FU7 is the release-day changelog heading and Hardened line).",
+ "findings": [
+  {
+   "id": "F1",
+   "summary": "A path after a quotation mark written as an entity is not recognised, so its dashes and dots are converted. Twig prints every `\"` and `'` of a plain string as `&quot;` and `&#039;` (README.md:9), and the filter escapes a plain string the same way before the engine runs, so on the page pass and through `{{ value|sorts }}` the changelog’s “also after a quotation mark” does not hold: `Edit the file \"/etc/my--app.conf\" and restart.` printed from a plain-text field or a title gives `Edit the file “/etc/my—app.conf” and restart.`, while the same text from a rich-text field (raw `\"`) gives `“/etc/my--app.conf”`. It reaches Lite (the filter) and Pro (the page pass) with the default rules. A URL is unaffected (`\\b` before `https://` and `www.` matches after the `;`); only a path that starts with `/` is.",
+   "location": "src/engine/rules/AbstractRule.php:54 (the look-behind lists `\"`, `'`, the curly marks, the no-break spaces and `&nbsp;`, no entity form of a quotation mark); src/web/twig/SortsExtension.php:81 (`htmlspecialchars($string, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')`); vendor/twig/twig/src/Runtime/EscaperRuntime.php:138 (Twig v3.30.0, the same flags); the promise at CHANGELOG.md:60 and README.md:374",
+   "repro": "From the repo root: /opt/homebrew/bin/php <scratch>/gate-r7m3/probe/filter.php . → “escaped:  Edit the file &quot;/etc/my--app.conf&quot; and restart.” / “filter:   Edit the file “/etc/my—app.conf” and restart.” / “unescaped engine: Edit the file “/etc/my--app.conf” and restart.”; and “It&#039;s in &#039;/srv/www/site--old/...&#039;” → “It’s in ‘/srv/www/site—old/…’”. Page-pass shape: /opt/homebrew/bin/php <scratch>/gate-r7m3/probe/probe.php . <scratch>/gate-r7m3/probe/c1.txt → `<p>Edit the file &quot;/etc/my--app.conf&quot; and restart.</p>` p1 `<p>Edit the file “/etc/my—app.conf” and restart.</p>`, and `&#39;`, `&#x27;`, `&apos;`, `&#34;` the same (`Open ‘/var/a—b’ and ‘/var/c—d’ and ‘/var/e—f’ and “/var/g—h”`). No corpus case has an entity before a path (04:403–413 use a literal `\"` and `'`).",
+   "acceptance": "In html mode a path after `&quot;` or `&#039;` (and `&#39;`, `&#34;`, `&apos;`, `&#x27;`, which other escapers write) keeps its `--`, `---`, `...` and typed `—` on pass 1 and on the idempotence pass, pinned by corpus cases for dashes, ellipsis and typed-dashes, with a mutant that drops each new alternative killed; or, if it stays as it is, CHANGELOG.md:60 and the Known limit at README.md:374 say that a path after an entity-encoded quotation mark (so every plain-text value on the page pass and through the filter) is converted.",
+   "blocking": true,
+   "severity": "medium",
+   "likelihood": "possible",
+   "confidence": "high",
+   "cause": "c483cc3 added the literal and curly marks that a later rule writes, so pass 2 holds, but not the entity form in which the page pass and the filter receive a straight mark on pass 1",
+   "needsDesign": false
+  }
+ ],
+ "suite": {
+  "pass": 3,
+  "fail": 0,
+  "firstRunGreen": true,
+  "detail": "composer check under Homebrew PHP 8.5.12 (/opt/homebrew/bin/php /usr/local/bin/composer check): exit 0, “No syntax error found” (68 files), cs “Found 0 of 68 files that can be fixed”, PHPStan “[OK] No errors”. Engine: /opt/homebrew/bin/php tests/engine/run.php → “corpus: 1767 cases” … “RESULT: 5288 passed, 0 failed” (2.7 s, load about 5, first run, no timing flake), matching 979b87b’s message. PHP 8.2: docker run --rm --network none -v <repo>:/app:ro -w /app php:8.2-cli php tests/engine/run.php → “PHP 8.2.35”, “RESULT: 4888 passed, 0 failed” (the 400 fewer are the script-fuzz comparisons with Dom\\HTMLDocument, which needs PHP 8.4: “compared-with-Dom\\HTMLDocument=0”). node tests/run-all.mjs: not run, the testbed was stopped (ddev describe: “stopped”), and the brief said not to start it.",
+  "mutants": "30 hand-written mutants in gate-kit’s isolated copies. Guard spec (29, generated from the live source so each find is exact): against the corpus alone (--jobs 4 -- /opt/homebrew/bin/php tests/engine/run.php corpus) “summary: ok=27 warn=4 skip=0 refuse=0 fail=0”, 25 killed; the non-ok lines: “warn survived, exit 0, 141ms  M22  (nothing noticed: brackets no longer open a path (pre-existing))”, “warn survived, exit 0, 154ms  M25  (nothing noticed: inSpans: span end inclusive (likely equivalent))”, “warn survived, exit 0, 171ms  M26  (nothing noticed: inSpans: span start exclusive (likely equivalent))”, “warn survived, exit 0, 145ms  M29  (nothing noticed: path needs a following non-slash char removed (pre-existing (?=[^\\s/])))”. The four again against the full suite (corpus, unit, fuzz): “summary: ok=2 warn=4 skip=0 refuse=0 fail=0”, all four survive. Against the gate’s sweep as a differential oracle (6,000 inputs × 12 option sets, compared with a reference hash from the real tree): “summary: ok=4 warn=2 skip=0 refuse=0 fail=0”, M22 and M29 killed, M25 and M26 survive (equivalent). Perf: M30 (inSpans back to the linear walk) against `run.php unit`: “ok killed, exit 1, 6.2s  M30”, “summary: ok=3 warn=0 skip=0 refuse=0 fail=0”, and its tail names exactly the two new guards: “FAIL perf guard: dashes after 4× as many paths take under 8× as long (15.3×: 19.5 → 297.8 ms)”, “FAIL perf guard: ellipsis after 4× as many paths take under 8× as long (14.4×: 21.2 → 305.7 ms)”. A first perf spec written as YAML was refused (“refuse invalid  M30  (find matches 0 times in src/engine/rules/AbstractRule.php (must be exactly once))”, my block-scalar indentation) and re-run from a generated JSON spec.",
+  "mutantIds": {
+   "killed": [
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7",
+    "M8",
+    "M9",
+    "M10",
+    "M11",
+    "M12",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
+    "M17",
+    "M18",
+    "M19",
+    "M20",
+    "M21",
+    "M23",
+    "M24",
+    "M27",
+    "M28",
+    "M30"
+   ],
+   "survived": [
+    "M22",
+    "M25",
+    "M26",
+    "M29"
+   ],
+   "equivalent": [
+    "M25",
+    "M26"
+   ],
+   "specs": [
+    "<scratch>/gate-r7m3/mutants-guard.json (from mkspec.mjs)",
+    "<scratch>/gate-r7m3/mutants-perf.json (from mkperf.mjs)"
+   ],
+   "key": "M1 dashes guard off; M2 ellipsis guard off; M3 typed-dashes guard off; M4 c483cc3 look-behind reverted; M5–M20 each of the 16 c483cc3 marks dropped (U+201C, U+201D, U+2018, U+2019, U+201E, U+201A, U+2039, U+203A, U+00AB, U+00BB, U+2032, U+2033, U+00A0, U+202F, U+2009, &nbsp;); M21 straight quotes dropped; M22 brackets dropped; M23 /i dropped; M24 inSpans true before a span; M25, M26 inSpans boundaries; M27 last span never searched; M28 search skips a span; M29 the path’s (?=[^\\s/]) dropped; M30 linear inSpans"
+  },
+  "realTree": "Every gate-kit run ends “ok 997 files + git unchanged  real tree” (the refused YAML run: “ok 0 files unchanged  real tree”). At the end: `git status --porcelain=v1 --ignored` identical to the start, the sha256 of all 148 tracked files identical, .php-cs-fixer.cache, composer.lock and package-lock.json identical (composer check found nothing to rewrite), HEAD 979b87b, no stash, .git/FETCH_HEAD untouched (mtime before the session).",
+  "cleanTree": "craft-sorts: clean from start to end apart from this receipt (untracked, not committed, per the brief). No other repo or testbed was touched; mjs-tool-skeleton was only read (`git show v0.5.0:skeleton/tool.mjs`)."
+ },
+ "rigCommands": [
+  "/opt/homebrew/bin/php /usr/local/bin/composer check",
+  "/opt/homebrew/bin/php tests/engine/run.php",
+  "docker run --rm --network none -v <repo>:/app:ro -w /app php:8.2-cli php tests/engine/run.php",
+  "node <scratch>/gate-r7m3/mkspec.mjs . <scratch>/gate-r7m3/mutants-guard.json; gate-kit mutants <scratch>/gate-r7m3/mutants-guard.json --brief --jobs 4 -- /opt/homebrew/bin/php tests/engine/run.php corpus",
+  "gate-kit mutants <scratch>/gate-r7m3/mutants-guard.json --brief --jobs 1 --only M22 --only M25 --only M26 --only M29 -- /opt/homebrew/bin/php tests/engine/run.php",
+  "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/sweep.php . 6000 777 --hooks (hash into <scratch>/gate-r7m3/sweep-ref.txt); gate-kit mutants <scratch>/gate-r7m3/mutants-guard.json --brief --jobs 4 --only M22 --only M25 --only M26 --only M29 -- /opt/homebrew/bin/php <scratch>/gate-r7m3/probe/sweep.php . 6000 777 <scratch>/gate-r7m3/sweep-ref.txt --hooks",
+  "node <scratch>/gate-r7m3/mkperf.mjs . <scratch>/gate-r7m3/mutants-perf.json; gate-kit mutants <scratch>/gate-r7m3/mutants-perf.json --json --jobs 1 -- /opt/homebrew/bin/php tests/engine/run.php unit",
+  "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/probe.php <tree> <scratch>/gate-r7m3/probe/c1.txt (also c2–c5.txt): each input through the engine twice, printing pass 2 only when it differs",
+  "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/filter.php . (the filter’s escape step, SortsExtension.php:81, then the engine)",
+  "git archive 3edd0b1 src tests/engine | tar -x -C <scratch>/gate-r7m3/trees/base (and 979b87b into trees/head); for T in base head; do /opt/homebrew/bin/php <scratch>/gate-r7m3/probe/sweep.php <scratch>/gate-r7m3/trees/$T 3000 1113 --hooks; done",
+  "/opt/homebrew/bin/php -d memory_limit=1G <scratch>/gate-r7m3/probe/big.php . (900 KB inputs, default and Bringhurst)",
+  "npm pack cldr-misc-full@49.0.0 into <scratch>/gate-r7m3/dl-cldr, untar; node bin/cldr-locales.mjs generate <scratch>/gate-r7m3/dl-cldr/cldr/package --brief (dry run); node bin/cldr-locales.mjs --help under a pipe, `script -q /dev/null`, NO_COLOR, TERM=dumb, FORCE_COLOR=1 and =0",
+  "awk over the `mjs-tool runtime v3` fence of bin/cldr-locales.mjs and of `git show v0.5.0:skeleton/tool.mjs` in mjs-tool-skeleton, then shasum -a 256",
+  "curl -s -o /dev/null -w '%{http_code}' -L for each of support.issues, support.source, support.docs, extra.documentationUrl, extra.changelogUrl, extra.developerUrl in composer.json",
+  "git grep -nIP over the tracked tree and git diff/log 3edd0b1..979b87b for home and temp paths, client and job names, email addresses and claude.ai links"
+ ],
+ "sources": "Read directly: the diff 3edd0b1..979b87b and its commit messages; src/engine/rules/AbstractRule.php, DashesRule.php, EllipsisRule.php, TypedDashesRule.php, EllipsisSpacingRule.php, HookAmpRule.php, HookCapsRule.php, src/engine/Run.php, src/services/PagePass.php (handle and apply), src/web/twig/SortsExtension.php:81, src/Plugin.php:227; vendor/twig/twig/src/Runtime/EscaperRuntime.php (Twig v3.30.0); tests/engine/run.php, corpus.php, bootstrap.php and unit.php’s perf section; the new corpus block in 04; CLAUDE.md, README.md (Known limits, the page pass, the filter, Fine typography), SPEC.md §8, CHANGELOG.md; composer.json, package.json, LICENSE.md; bin/cldr-locales.mjs and mjs-tool-skeleton v0.5.0’s skeleton/tool.mjs; every tool output quoted here. Not from a summary: no WebFetch was used (the URLs were checked with curl). Earlier reports: gates/2026-11-07-sorts-release-gate.json was opened only for its shape, after these findings were written; gates/2026-11-07-sorts-d897-d898-recheck.json was read as part of the diff. The 662ca9c..c483cc3 gate’s receipt was never saved, so nothing here leans on it.",
+ "confirmedSound": [
+  "The three guards bite: M1 (dashes), M2 (ellipsis) and M3 (typed-dashes) killed by the corpus; c483cc3’s fix bites as a whole (M4) and mark by mark (M5–M20, each of its 16 alternatives, killed by its own corpus case), and so do the straight quotes (M21), the /i flag (M23) and the inSpans search (M24, M27, M28).",
+  "The binary search is load-bearing for speed: the old linear walk (M30) fails exactly the two new guards at 15.3× and 14.4× after the retry, so the retry does not hide a quadratic pass. Every timing check in unit.php goes through `$retried`, and each call’s limit equals its check’s threshold (8, and 2 for the stray end tags); the retry measures both pages again and keeps the lower ratio, as 979b87b says (“at or over its limit”).",
+  "Every quotation mark any of the 16 locales writes (cs, da, de, de-CH, en-GB, en-US, es, fi, fr, fr-CH, it, nb, nl, pl, pt, sv, and the es guillemets-outer and de book variants) is in the guard’s list: a path in each locale’s curled quotes keeps its `--` and `...` on pass 1 and 2 (probe c3.txt). The marks written by the rules after priority 31 (primes, apostrophes, quotes, nbsp, locale spacing, widows) are all in the list.",
+  "With the default rules the guard is stable: in the gate’s sweep (3,000 generated inputs, 11 option sets: en-US, en-GB, fr, de, it, sv, text mode, the spaced-en-dash variant with typed-dashes, fr Bringhurst) every set but the English Bringhurst ones and the hooks has 0 unstable rows at HEAD, in line with the README’s sweep claim (README.md:369).",
+  "Attributes are never touched (`href`, `src`, `alt` keep `--` and `...`); `<code>`, `<pre>`, comments and `data-sorts=\"off\"` are honoured; every example in README.md:374 and CHANGELOG.md:60 behaves as written; byte offsets hold after long multibyte and entity prefixes (corpus and probes).",
+  "At 900 KB (one URL word, one path word, 100,000 paths, 900 KB of slashes, 450,000 `\"/` pairs, 60,000 curly-quoted paths) no PCRE error (`lastError()` null) and no pass over 0.42 s, default or Bringhurst.",
+  "bin/cldr-locales.mjs: its runtime block is byte-identical to mjs-tool-skeleton v0.5.0 (sha256 37931f3a… for both, 653 lines); a dry run against cldr-misc-full 49.0.0 reports all 16 locale files unchanged (“next: done  (dry run: nothing would change)”); help carries no escape byte when piped or under NO_COLOR or TERM=dumb, is bold on a terminal and under FORCE_COLOR=1, plain under FORCE_COLOR=0, and an empty NO_COLOR counts as unset, as its comment says; a missing or unknown command and an unknown option exit 2 with a usage hint, an unreadable package exits 3.",
+  "Store readiness: no `version` in composer.json; src/icon.svg present; the six `support` and `extra` URLs answer 200 (the issues, source and docs pages, documentationUrl, the raw changelog, the developer site); the repo is public; LICENSE.md is the Craft License, matching `\"license\": \"proprietary\"`; the changelog heading is a valid form (`## Unreleased`; see FU7 for the tag).",
+  "Scope: the range touches the files the brief names plus CHANGELOG.md, README.md, EFFORT.md (rows 28–30), gates/2026-11-07-sorts-d897-d898-recheck.json (49a181a) and comment-only ID-code renames in corpus 02, 05 and 15 (53510d1); none of those changes behaviour."
+ ],
+ "knownLimits": [
+  "Marks glued to the end of a URL or path stay, as README.md:374 says: `(https://example.com/a--b)--then stop.`, `Visit https://example.com--it is great.`, `See https://example.com/a--b...` keep their `--` and `...`.",
+  "Not recognised, as README.md:374 lists: `example.com/a--b`, `ftp://example.com/a--b`, `mailto:a--b@example.com`, `a--b@example.com`, `//cdn.example.com/a--b.js`, `https://example.com/very<wbr>-long--path`, `/<em>a--b</em>` are all converted.",
+  "A word of prose that starts with `/` is a path: `Use /s/ and /z/--the phonemes.` and `He said /no--wait/` keep `--` (README.md:374: a path is a word that starts with `/`).",
+  "CKEditor’s own autoformat turns `...` into `…` while typing, inside a URL too (README.md:256).",
+  "bin/cldr-locales.mjs (dev tooling, not read by the plugin): given the folder above the package, it says `cannot read <dir>/package.json` without saying the folder holding `main/` is wanted; Node’s own parseArgs message for an unknown option ends with an unbalanced quote (`as in '-- \"--nope\"`). Both predate the range."
+ ],
+ "notBlocking": [
+  {
+   "id": "FU1",
+   "summary": "Where ellipsis-spacing runs (the Bringhurst preset in English, or the rule switched on), it spaces a typed `…` inside a URL or a path. It runs at priority 21, after the ellipsis rule (20) has read the URL whole and before the dashes rule (30) reads it again, so (a) in one pass the URL’s `--` after the `…` is converted, against the new promise: `https://example.com/a…b/c--d` → `https://example.com/a … b/c – d`; and (b) the output is not stable: `<p>See https://example.com/a…b/c...d now</p>` → pass 1 `https://example.com/a … b/c...d`, pass 2 `https://example.com/a … b/c … d`. New in this range: the gate’s sweep has 0 unstable rows on 3edd0b1 and 258 + 258 of 6,000 in the en-US and en-GB Bringhurst sets at HEAD (on 3edd0b1 the URL’s dots were converted on pass 1). CKEditor turns a `...` typed in a URL into `…` (README.md:256), and a Pro page that prints `{{ field|sorts }}` is passed twice, since the page pass applies the engine to the whole page with only the skip tags (src/services/PagePass.php:76–77).",
+   "location": "src/engine/rules/EllipsisSpacingRule.php:44–81 (no urlSpans); priorities EllipsisRule 20, EllipsisSpacingRule 21, DashesRule 30",
+   "repro": "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/probe.php . <scratch>/gate-r7m3/probe/c4.txt → lines 1–5 (`preset=bringhurst`, en-GB, and `on=ellipsis-spacing`) marked “<-- UNSTABLE” except the `--` one, which is wrong in one pass; the same file on `git archive 3edd0b1` gives one stable pass each. Sweep: for T in base head; do /opt/homebrew/bin/php <scratch>/gate-r7m3/probe/sweep.php <scratch>/gate-r7m3/trees/$T 3000 1113 --hooks; done (trees from `git archive 3edd0b1|979b87b src tests/engine`) → base “by set: []” “rows=36000 unstable=0”, head “by set: {\"4\":258,\"5\":258,\"11\":1010}” “rows=36000 unstable=1526”.",
+   "acceptance": "EllipsisSpacingRule leaves an ellipsis inside a urlSpans span alone, and corpus cases under `preset=bringhurst` (en-US and en-GB) pin `<p>See https://example.com/a…b/c...d now</p>` and `<p>See https://example.com/a…b/c--d now</p>` unchanged and stable; or a Known limit says Fine typography spaces a typed … inside a URL and reads what follows it as prose.",
+   "blocking": false,
+   "severity": "medium",
+   "likelihood": "unlikely",
+   "confidence": "high",
+   "cause": "the URL guard went into ellipsis, dashes and typed-dashes but not into ellipsis-spacing, which edits the same URLs between two of them",
+   "needsDesign": false
+  },
+  {
+   "id": "FU2",
+   "summary": "With a styling hook on, a `&` or a run of capitals inside a URL gets its `<span>` (pre-existing: the hooks have no URL guard), and since this range a second pass reads the URL as two runs and converts the dashes and dots after the span that the first pass spared: `<p>See https://example.com/?a=1&amp;b=2--3 now</p>` → pass 2 `b=2—3`; `/search?q=a&amp;b...c` → `b…c`; `https://example.com/API--v2` → `—v2`. 1,010 of 3,000 hook rows unstable at HEAD, 0 on 3edd0b1. A second pass happens when Pro’s filter output is also on the page (see FU1).",
+   "location": "src/engine/rules/HookAmpRule.php:39–49 and HookCapsRule.php:35–45 (no urlSpans)",
+   "repro": "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/probe.php . <scratch>/gate-r7m3/probe/c4.txt → lines 6–8 (`on=hook-amp`, `on=hook-caps`) marked “<-- UNSTABLE”; sweep set 11 as in FU1.",
+   "acceptance": "HookAmpRule and HookCapsRule leave a URL or path span alone (or a Known limit says they do not), and a corpus case with `on=hook-amp,hook-caps` pins `<p>See https://example.com/?a=1&amp;b=2--3 and https://example.com/API--v2 now</p>` stable.",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "unlikely",
+   "confidence": "high",
+   "cause": "hooks emit markup inside a span the guard protects; the guard is per run",
+   "needsDesign": false
+  },
+  {
+   "id": "FU3",
+   "summary": "Text that starts with `/` right after an inline tag is read as a path, because urlSpans sees only the run and the look-behind passes at offset 0: `<p>See <a href=\"/a\">the docs</a>/--more and <b>NASA</b>/JPL--the lab</p>` and `<p><em>either</em>/or--neither</p>` keep their `--`. The converse of the documented limit (a URL split by a tag, README.md:374), and not documented. Pre-existing for the number rules, new for dashes and ellipsis.",
+   "location": "src/engine/rules/AbstractRule.php:54 (`(?<![^\\s(\\[{\"\\'])` at offset 0), read by DashesRule.php:58 and EllipsisRule.php:33",
+   "repro": "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/probe.php . <scratch>/gate-r7m3/probe/c5.txt → last case p1 `…</a>/--more and <b>NASA</b>/JPL--the lab`; c1.txt `<p><em>either</em>/or--neither</p>` p1 unchanged (while `<p>and<b>/</b>or--yes</p>` gives `or—yes`).",
+   "acceptance": "A span that opens at offset 0 counts as a path only when the flow’s character before the run is empty, whitespace, a bracket or one of the listed marks (Context::before(1)); corpus cases pin `<b>NASA</b>/JPL--the lab` → `/JPL—the lab` and keep `<p>/var/a--b first</p>`; or a Known limit says it.",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "possible",
+   "confidence": "high",
+   "cause": "urlSpans reads one run, the rules’ other look-arounds read the flow",
+   "needsDesign": false
+  },
+  {
+   "id": "FU4",
+   "summary": "A URL or path is read to the next ASCII whitespace, not to the next space: a no-break space (U+00A0, U+202F, U+2009, `&nbsp;`) does not end it, so prose joined to a path by one keeps its marks: `<p>Open /var/log/a.log&nbsp;-- then stop... </p>` keeps `--`, as does `/var/log\\u{A0}--\\u{A0}then`. README.md:374 says “read to the next space”, and since c483cc3 the same marks open a path, so they count as a space before a path but not after it.",
+   "location": "src/engine/rules/AbstractRule.php:54 (`\\S*` in byte mode); README.md:374",
+   "repro": "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/probe.php . <scratch>/gate-r7m3/probe/c1.txt → `<p>Open /var/log/a.log&nbsp;-- then stop… </p>`, `<p>Open https://example.com/&nbsp;-- then stop</p>`, `<p>Open /var/log⍽--⍽then stop</p>` (⍽ = U+00A0), each `--` left.",
+   "acceptance": "The span stops at the no-break spaces the look-behind lists (`\\xC2\\xA0`, `\\xE2\\x80\\xAF`, `\\xE2\\x80\\x89`, `&nbsp;`), with corpus cases; or README.md:374 says a no-break space does not end a URL or path.",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "possible",
+   "confidence": "high",
+   "cause": "the span’s end class was not revisited when the no-break spaces were added as openers",
+   "needsDesign": false
+  },
+  {
+   "id": "FU5",
+   "summary": "The Known limit’s list of what is not recognised (README.md:374) leaves out shapes the gate saw converted: Windows paths (`C:\\Users\\a--b\\file...txt` → `a—b` and `file…txt`; `\\\\server\\share--x`; `C:/Users/a--b/x...y`), a path after `:`, `=` or `&gt;` (`Path:/var/a--b`, `key=/var/c--d`), the other spellings of a no-break space (`&#160;`, `&#xA0;`, `&NonBreakingSpace;`, `&#8239;`) and other Unicode spaces (U+3000, U+2007, U+200A, U+2002) before a path, and named entities for curly marks (`&ldquo;/var/a--b&rdquo;`). The prose word `WWW...` keeps its dots (it starts with `www.`). Neither CHANGELOG.md:60 nor the README’s Fine typography section says typed-dashes now leaves an em dash inside a URL or path as typed (corpus 04 `u-typed-em-dash-in-a-url-left-alone`).",
+   "location": "README.md:374; CHANGELOG.md:60; README.md:92–123 (Fine typography)",
+   "repro": "/opt/homebrew/bin/php <scratch>/gate-r7m3/probe/probe.php . <scratch>/gate-r7m3/probe/c1.txt and c3.txt: `Run C:\\Users\\a—b\\file…txt and \\\\server\\share—x`, `The path C:/Users/a—b/x…y`, `Path:/var/a—b and key=/var/c—d`, `Open&#160;/var/a—b and&#xA0;/var/c—d and&NonBreakingSpace;/var/e…f and&#8239;/var/g—h`, `x　/var/a—b and x /c—d and x‹hair›/e…f`, `Open &ldquo;/var/a—b&rdquo;`, `WWW... ok.` unchanged.",
+   "acceptance": "README.md:374 names these shapes (or the code recognises them), and CHANGELOG.md:60 names typed-dashes beside dashes and ellipsis.",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "possible",
+   "confidence": "high",
+   "cause": "docs written from the shapes the build tested",
+   "needsDesign": false
+  },
+  {
+   "id": "FU6",
+   "summary": "Two guard mutants survive the engine suite and change real output: M22 (`(`, `[` and `{` dropped from what may stand before a path, which AbstractRule’s docblock promises: “an opening bracket”) and M29 (the `(?=[^\\s/])` look-ahead dropped, which makes the documented not-recognised `//cdn.example.com/a--b.js` a path). The gate’s sweep oracle kills both, so the corpus simply has no case for a path after a bracket or for the documented `//` limit. M25 and M26 (the inSpans boundaries) survive the sweep as well and are equivalent: no guarded match can start on the whitespace that ends a span or on the `h`, `w` or `/` that opens one.",
+   "location": "src/engine/rules/AbstractRule.php:54; tests/engine/corpus/04-dashes-ellipsis-symbols.txt (the URL-guard block, 347–518)",
+   "repro": "gate-kit mutants <scratch>/gate-r7m3/mutants-guard.json --brief --jobs 1 --only M22 --only M25 --only M26 --only M29 -- /opt/homebrew/bin/php tests/engine/run.php → “warn survived, exit 0, 2.7s  M22  (nothing noticed: brackets no longer open a path (pre-existing))”, “warn survived, exit 0, 2.7s  M29  (nothing noticed: path needs a following non-slash char removed (pre-existing (?=[^\\s/])))”; with the sweep as the command (`-- /opt/homebrew/bin/php <scratch>/gate-r7m3/probe/sweep.php . 6000 777 <scratch>/gate-r7m3/sweep-ref.txt --hooks`) → “ok killed, exit 1, 5.5s  M22”, “ok killed, exit 1, 5.5s  M29”, M25 and M26 “warn survived”.",
+   "acceptance": "Corpus cases kill M22 (`<p>(/a--b) [/c...d] {/e--f}</p>` with `only=dashes,ellipsis`, unchanged) and M29 (`<p>//cdn.example.com/a--b.js</p>` → `a—b`, pinning the Known limit); gate-kit reports both killed.",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "possible",
+   "confidence": "high",
+   "cause": "test gap: the corpus pins the c483cc3 marks one by one, not the older openers or the documented exclusions",
+   "needsDesign": false
+  },
+  {
+   "id": "FU7",
+   "summary": "At 979b87b the changelog’s only heading is `## Unreleased`, and the README’s `**Hardened:**` line names 3edd0b1. The Plugin Store reads only `## X.Y.Z - YYYY-MM-DD` headings (CHANGELOG.md:3–5, CLAUDE.md:8–11), so a 1.0.0 tag on this commit publishes with no release notes, and the Hardened line must name the commit this gate, or its re-check, closes on. A release-day step, not a defect in the range.",
+   "location": "CHANGELOG.md:7; README.md:7",
+   "repro": "grep -n '^## ' CHANGELOG.md → “7:## Unreleased”; README.md:7 “**Hardened:** 2026-11-07 · 3edd0b1 · re-check CLOSED WITH FOLLOW-UPS …”",
+   "acceptance": "The commit tagged 1.0.0 has `## 1.0.0 - <tag date>` in place of `## Unreleased`, and a Hardened line naming the gated commit and its receipt.",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "likely",
+   "confidence": "high",
+   "cause": "the rename is left for release day by design",
+   "needsDesign": false
+  },
+  {
+   "id": "FU8",
+   "summary": "Nothing is export-ignored (no .gitattributes, no composer `archive` key), so the public repo and every Composer install of the tag carry `gates/` (13 receipts from 2026-11-05 to 2026-11-07 with absolute home-folder and session-scratch paths, e.g. gates/2026-11-05-sorts-d818-d824-gate.json:9) and `handoffs/` (HANDOFF-2026-11-06-sorts-next.md:4–27: home-relative paths, the name of a private repo, skill paths in a dotfiles repo, and a link to a private claude.ai artifact), plus EFFORT.md and docs/craft6-trial-2026-11-06.md. No client or job name, no secret and no email but the support address is anywhere in the tracked tree, and the receipt added in this range (gates/2026-11-07-sorts-d897-d898-recheck.json) uses only repo-relative and `scratchpad/…` paths. Pre-existing, outside the range.",
+   "location": "repo root (no .gitattributes); composer.json (no `archive`); gates/*.json from 2026-11-05 to 2026-11-07; handoffs/HANDOFF-2026-11-06-sorts-next.md:4–27",
+   "repro": "git grep -cIP '/Users/|/private/t[m]p|/var/f[o]lders|claude-50[0-9]' → 13 files under gates/ and handoffs/HANDOFF-2026-11-06-sorts-next.md; git grep -nIP 'claude\\.ai/(artifact|code)' → handoffs/HANDOFF-2026-11-06-sorts-next.md:14; ls .gitattributes → “No such file or directory”; jq '.archive' composer.json → null.",
+   "acceptance": "Dan decides: export-ignore `gates/`, `handoffs/`, `HANDOFFS.md`, `EFFORT.md` and the trial note (and optionally `tests/`, `docs/icon/`), and/or run `gate-kit scrub` on the older receipts, after which `gate-kit leaks` exits 0 on them.",
+   "blocking": false,
+   "severity": "low",
+   "likelihood": "likely",
+   "confidence": "high",
+   "cause": "receipts and handoffs were committed before the scrub step existed; no export rules were written",
+   "needsDesign": false
+  }
+ ],
+ "notDone": [
+  "node tests/run-all.mjs: the testbed was stopped and the brief said not to start it. So the Craft layer (filter, page pass over HTTP, fix on save, audit, CKEditor) was not run; F1’s filter and page-pass paths were reproduced with the filter’s own escape call and the engine, and the double pass behind FU1 and FU2 was read from PagePass.php, not observed over HTTP.",
+  "80dba53’s README line on a block-opening `-- ` stored under a dialogue-dash veto is pinned by tests/fix-on-save-test.php, a Craft suite not run here.",
+  "No re-run of the README’s 60,000-input sweep or of the earlier gates’ rigs; this gate’s own sweep is 3,000 to 6,000 generated inputs per run.",
+  "M25 and M26 are called equivalent from the argument in FU6 and 72,000 identical sweep rows, not from a proof over all inputs.",
+  "No Craft run under PHP 8.2 (the engine suite only, in Docker)."
+ ],
+ "sideEffects": "Created only in <scratch>/gate-r7m3/: probe scripts and inputs (probe/), mutant specs and their generators, run outputs, the sweep reference hash, git archives of 3edd0b1 and 979b87b (trees/, deleted at the end), the cldr-misc-full 49.0.0 tarball and its extraction (dl-cldr/, deleted at the end), mkreceipt.mjs and findings.json (kept for the briefer). Outside it: npm’s own cache got the cldr-misc-full tarball (left, harmless); the php:8.2-cli container ran with --rm, --network none and a read-only mount (nothing left); gate-kit’s copies live under its own TMPDIR and are removed on exit. In the repo: only this receipt, untracked and not committed; .php-cs-fixer.cache unchanged (same sha256).",
+ "decisions": "No Dan decision was quoted in the brief beyond the mode (release) and D1135 (the perf-guard retry, as 979b87b cites it). Grading used here: F1 is blocking because it contradicts this release’s own changelog line for the default path of both editions (the filter on a plain string, the page pass on Twig output), and either fix is small. FU1 and FU2 are not blocking: each needs an off-by-default setting, a second pass and a rare URL shape, and their output is no worse than before the range, which converted the same marks on pass 1; they do break SPEC §8’s “running twice equals running once”, which this range introduced (0 → 1,526 unstable rows in the gate’s sweep), so whether that should hold the tag is Dan’s call. Open for Dan: FU8 (what the package ships). Process: the README Hardened line is renewed only after this gate or its re-check closes (FU7)."
+}

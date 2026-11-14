@@ -601,6 +601,9 @@
 @ u-hook-caps-leaves-capitals-in-a-url only=hook-caps
 < <p>See https://example.com/API--v2 and /var/NASA/a...b now</p>
 
+@ u-hook-caps-leaves-a-capitalised-url-from-its-first-letter on=hook-caps
+< <p>See HTTPS://EXAMPLE.COM/a--b and WWW.NASA.GOV now</p>
+
 @ u-hook-caps-still-wraps-prose-next-to-a-url only=hook-caps
 < <p>NASA at https://example.com/NASA now</p>
 > <p><span class="caps">NASA</span> at https://example.com/NASA now</p>

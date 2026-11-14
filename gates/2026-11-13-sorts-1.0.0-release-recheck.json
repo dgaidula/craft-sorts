@@ -1,0 +1,105 @@
+{
+  "tool": "craft-sorts",
+  "run": "2026-11-13 closure re-check (release mode) of the fix round 979b87b..f4877a6 (4008233 fix, f4877a6 EFFORT row) against gates/2026-11-13-sorts-1.0.0-release-gate.json: F1, FU1, FU2, FU3, FU4, FU5, FU6 (FU7 and FU8 out of scope). HEAD f4877a6, engine only: the Craft testbed was not started, per the brief. Probes run on `git archive` trees of 979b87b and f4877a6 (src, tests/engine) in <scratch>/gate-recheck-q4v8; the gate's own probes (probe.php, filter.php, c1–c5.txt), sweep.php and mkspec.mjs from <scratch>/gate-r7m3 were reused unchanged.",
+  "suite": {
+    "pass": 2,
+    "fail": 0,
+    "firstRunGreen": true,
+    "detail": "/opt/homebrew/bin/php /usr/local/bin/composer check: exit 0, cs “Found 0 of 68 files that can be fixed”, PHPStan “[OK] No errors”. /opt/homebrew/bin/php /usr/local/bin/composer test-engine: “corpus: 1791 cases” … “RESULT: 5312 passed, 0 failed”, as the brief expected. The new corpus file on the 979b87b source (`run.php corpus`): “RESULT: 1770 passed, 21 failed”, the 21 failures exactly the new F1, FU1 and FU2 cases (04:523–608); the 3 green are the FU6 cases that pin existing behaviour (bracket, two `//` cases). node tests/run-all.mjs: not run (testbed stopped).",
+    "sweep": "Gate sweep (sweep.php, unchanged) on both trees: 3000 inputs seed 1113 --hooks: 979b87b “by set: {\"4\":258,\"5\":258,\"11\":1010}” “rows=36000 unstable=1526”; f4877a6 “by set: []” “rows=36000 unstable=0”. 6000 inputs seed 777 --hooks: 979b87b “rows=72000 unstable=3157”; f4877a6 “rows=72000 unstable=0”. Own row-level differential (dump.php, 4000 inputs seed 4242, two generators: the gate's with all six quote entities added to the openers, and a ‘near’ generator of prose with &, capitals, … and dashes next to but outside URLs and paths and entity quotes before non-paths; 9 option sets: en-US, en-GB, Bringhurst en-US/en-GB, hooks en-US, Bringhurst + hooks en-US/en-GB, text, text + Bringhurst): 72,000 rows, 15,841 changed p1 (9,458 gate generator, 6,383 near), 0 unstable at f4877a6 in every set (979b87b: 5,233 unstable in the gate generator). Every changed row was checked (compare.mjs, before2.mjs) to differ only at or after a URL or path start within its whitespace-delimited word: 0 exceptions. Classified: all intended (F1 entity-quote paths; FU1 ellipsis spacing inside a URL/path; FU2 hook spans inside a URL/path, including a capitalised scheme word `HTTPS`/`WWW`), apart from the shapes listed as FU2–FU5 of this re-check, each the documented guard reaching the newly guarded rules.",
+    "mutants": "Spec regenerated from the f4877a6 source with the gate's mkspec.mjs (now 22 look-behind alternatives, so M21–M26 drop each new entity) plus 8 for this round (M36–M43): <scratch>/gate-recheck-q4v8/mut-all.json. gate-kit mutants --brief --jobs 4 -- /opt/homebrew/bin/php tests/engine/run.php: “ok green in 3.0s  baseline”, “summary: ok=43 warn=2 skip=0 refuse=0 fail=0”, non-ok lines “warn survived, exit 0, 3.0s  M31  (nothing noticed: inSpans: span end inclusive (likely equivalent))” and “warn survived, exit 0, 3.1s  M32  (nothing noticed: inSpans: span start exclusive (likely equivalent))”. M32 is no longer equivalent (FU1 below): with the sweep as oracle (--only M31 --only M32 -- sweep.php . 3000 1113 <ref> --hooks) “ok killed, exit 1, 3.8s  M32”, “warn survived, exit 0, 3.9s  M31”, “summary: ok=3 warn=1 skip=0 refuse=0 fail=0”.",
+    "mutantIds": {
+      "killed": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12", "M13", "M14", "M15", "M16", "M17", "M18", "M19", "M20", "M21", "M22", "M23", "M24", "M25", "M26", "M27", "M28", "M29", "M30", "M33", "M34", "M35", "M36", "M37", "M38", "M39", "M40", "M41", "M42", "M43"],
+      "survived": ["M31", "M32"],
+      "equivalent": ["M31"],
+      "key": "M1–M35 as the gate's M1–M29 renumbered by mkspec (M5–M26 drop each of the 22 look-behind alternatives; M21 &quot;, M22 &#34;, M23 &#039;, M24 &#39;, M25 &apos;, M26 &#x27;; M27 straight quotes; M28 brackets (gate M22); M29 /i; M30 inSpans true before a span; M31, M32 inSpans boundaries; M33, M34 search; M35 the (?=[^\\s/]) look-ahead (gate M29)). M36 ellipsis-spacing skip off; M37 ellipsis-spacing spans empty; M38 hook-amp skip off; M39 hook-caps skip off; M40–M42 hook-amp, hook-caps, ellipsis-spacing skip everything; M43 all six entity alternatives dropped."
+    },
+    "realTree": "Every gate-kit run ends “ok 998 files + git unchanged  real tree”. At the end: `git status --porcelain=v1 --ignored` identical to the start apart from this receipt (untracked, per the brief), the sha256 of all 148 tracked files identical, composer.lock, package-lock.json and the gate receipt identical, HEAD f4877a6, no stash. One exception: the git-ignored .php-cs-fixer.cache was rewritten by the brief's `composer check` (php-cs-fixer 3.95.28 refreshes its per-file hashes; the four source files changed since the cache was last written), sha256 5b92dbe2… → 13406073…; not restorable byte for byte (no copy was taken first), and it is a cache the next check rewrites anyway.",
+    "cleanTree": "craft-sorts: unchanged apart from this receipt (untracked, not committed) and the regenerated .php-cs-fixer.cache (git-ignored). No other repo or the testbed was touched."
+  },
+  "closure": {
+    "1.0.0-release-gate/F1": {
+      "status": "closed",
+      "evidence": "The gate's filter probe (htmlspecialchars ENT_QUOTES | ENT_SUBSTITUTE, then the engine with default rules, the path SortsExtension.php:81 takes): 979b87b “filter:   Edit the file “/etc/my—app.conf” and restart.” and “It’s in ‘/srv/www/site—old/…’”; f4877a6 “filter:   Edit the file “/etc/my--app.conf” and restart.”, “Call open(‘/var/log/app...’) first.”, “It’s in ‘/srv/www/site--old/...’”, equal to the unescaped engine. c1.txt page-pass shapes: `&#39;`, `&#x27;`, `&apos;`, `&#34;` give “Open ‘/var/a--b’ and ‘/var/c--d’ and ‘/var/e--f’ and “/var/g--h””. `---` (not in the corpus) kept after all six entities: “/a---b” “/c---d” ‘/e---f’ ‘/g...h’ ‘/i---j’ ‘/k...l’. fr and de: `&quot;/a--b&quot;` → «⍿/a--b⍿» and »/a--b« (979b87b converted both). Corpus 04:523–560 pin default rules, dashes, ellipsis, typed-dashes (Bringhurst), capitals (&QUOT;, &#X27;) and prose beside an entity-quoted path still fixed; every case passes the corpus idempotence pass. Mutants M21–M26 (each alternative) and M43 (all six) killed."
+    },
+    "1.0.0-release-gate/FU1": {
+      "status": "closed",
+      "evidence": "c4.txt lines 1–5 on f4877a6: `See https://example.com/a…b/c...d now`, `a…b/c--d`, `/docs/a…b/c...d--e`, en-GB `www.example.com/a…b...c` and on=ellipsis-spacing each unchanged and stable (979b87b: spaced and UNSTABLE, or `c – d` in one pass). Prose ellipses beside a URL still spaced: `wait…then https://x.com` → `wait … then`, `wait…https://example.com/a` → `wait … https://…`. Corpus 04:578–592 (en-US, en-GB, rule on, prose beside a URL). Sweep sets 4 and 5: 258 + 258 unstable → 0. M36, M37 killed (and M42, over-reach)."
+    },
+    "1.0.0-release-gate/FU2": {
+      "status": "closed",
+      "evidence": "c4.txt lines 6–9 and c2.txt on f4877a6: `https://example.com/?a=1&amp;b=2--3`, `/search?q=a&amp;b...c`, `https://example.com/API--v2`, `/var/NASA/a...b`, `https://EXAMPLE.COM/ABC--DEF` unchanged and stable (979b87b: span inside the URL, pass 2 `—`). Prose beside a URL still wrapped: `NASA &amp; JPL at https://example.com/a … (https://example.com/) &amp; NASA`, `R&amp;D/QA`, `NASA/JPL`, `AT&amp;T/Verizon`, `&quot;R&amp;D&quot;` all get their spans as at 979b87b. Corpus 04:594–609 incl. the acceptance input with on=hook-amp,hook-caps. Sweep set 11: 1010 → 0. M38, M39 killed (M40, M41 over-reach killed)."
+    },
+    "1.0.0-release-gate/FU3": {
+      "status": "closed",
+      "evidence": "README.md Known limits (“The opposite also happens: … `<em>either</em>/or--neither` and `<b>NASA</b>/JPL--the lab` keep their `--`”); probe confirms both keep `--`. Docs-only acceptance branch."
+    },
+    "1.0.0-release-gate/FU4": {
+      "status": "closed",
+      "evidence": "README.md: “A no-break space (U+00A0, U+202F, U+2009 or `&nbsp;`) opens a path but does not end a URL or a path: `Open /var/log/a.log&nbsp;-- then stop` keeps its `--`”; probe confirms. Docs-only acceptance branch."
+    },
+    "1.0.0-release-gate/FU5": {
+      "status": "closed",
+      "evidence": "README.md Known limits names Windows paths, `:`/`=`/`&gt;`, `&#160;`, `&#xA0;`, `&NonBreakingSpace;`, `&#8239;`, `&ldquo;`, `&lsquo;`, `&#x22;`, U+3000/U+2007/U+200A/U+2002 and `WWW...`; each shape spot-checked on f4877a6 and converted (or, for WWW..., kept) as written. CHANGELOG.md:61 names typed-dashes (`https://example.com/a—b` kept under Bringhurst typed-dashes, while `prose—here` → `prose – here`), ellipsis-spacing and the hooks."
+    },
+    "1.0.0-release-gate/FU6": {
+      "status": "closed",
+      "evidence": "Corpus 04:564–574: `(/a--b) [/c...d] {/e--f}` and the two `//cdn.example.com` cases. Gate M22 (now M28, brackets) and gate M29 (now M35, look-ahead) killed by the engine suite alone."
+    }
+  },
+  "findings": [],
+  "notBlocking": [
+    {
+      "id": "FU1",
+      "summary": "The inSpans start-boundary mutant is no longer equivalent and survives the suite. HookCapsRule now asks inSpans about a match that can begin on a span's first byte (the `H` of `HTTPS://` or the `W` of `WWW.`), so `$spans[$lo][0] <= $offset` is load-bearing, and no corpus case has a capitalised scheme with hook-caps. The fix commit and EFFORT row 31 call the two survivors equivalent; one is not.",
+      "location": "src/engine/rules/AbstractRule.php:78 (inSpans), read by src/engine/rules/HookCapsRule.php:42–45; tests/engine/corpus/04-dashes-ellipsis-symbols.txt:600–609",
+      "repro": "Copy of f4877a6 with `$spans[$lo][0] <= $offset;` → `$spans[$lo][0] < $offset;`, probe `on=hook-caps | <p>See HTTPS://EXAMPLE.COM/a--b and WWW.NASA.GOV now</p>` → p1 `<span class=\"caps\">HTTPS</span>://EXAMPLE.COM/a--b … <span class=\"caps\">WWW</span>.NASA.GOV`, p2 `…<span class=\"caps\">EXAMPLE</span>.<span class=\"caps\">COM</span>/a—b …` UNSTABLE; on f4877a6 unchanged and stable. gate-kit against run.php: “warn survived, exit 0, 3.1s  M32”; against the sweep: “ok killed, exit 1, 3.8s  M32”.",
+      "acceptance": "A corpus case with on=hook-caps pins `<p>See HTTPS://EXAMPLE.COM/a--b and WWW.NASA.GOV now</p>` unchanged, and gate-kit reports M32 killed by `run.php`.",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "a test gap: a mutant judged equivalent before the round became observable through a new caller",
+      "needsDesign": false
+    },
+    {
+      "id": "FU2",
+      "summary": "With the styling hooks on, prose joined to a URL or path by a no-break space no longer gets its spans: `https://example.com/a.&nbsp;NASA &amp; JPL` keeps `NASA` bare (979b87b wrapped it). It is the documented no-break-space reach of the guard (README: a no-break space “does not end a URL or a path”), now applied to the hooks, but the README's example names only a `--`.",
+      "location": "src/engine/rules/HookCapsRule.php:42, HookAmpRule.php:46 (urlSpans `\\S*`); README.md:374",
+      "repro": "probe on=hook-amp,hook-caps `<p>https://example.com/a.&nbsp;NASA &amp; JPL</p>`: 979b87b `…&nbsp;<span class=\"caps\">NASA</span> <span class=\"amp\">&amp;</span> …`; f4877a6 `…&nbsp;NASA <span class=\"amp\">&amp;</span> <span class=\"caps\">JPL</span>`.",
+      "acceptance": "Either the README's no-break-space sentence says the styling hooks and ellipsis spacing skip what it joins too, or (with the earlier FU4 code branch) the span stops at a no-break space.",
+      "blocking": false,
+      "severity": "low",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "documented guard behaviour reaching newly guarded rules",
+      "needsDesign": false
+    },
+    {
+      "id": "FU3",
+      "summary": "Under Fine typography a typed `…` glued to the end of a URL or path is no longer spaced: `https://example.com/a… then` stays (979b87b gave `a … then`). This is the documented “a `...` or `--` glued to its end stays”; noted because it is prose 979b87b converted.",
+      "location": "src/engine/rules/EllipsisSpacingRule.php:57–59; README.md:374",
+      "repro": "probe preset=bringhurst `<p>See https://example.com/a… then</p>`: 979b87b `a … then`, f4877a6 `a… then`.",
+      "acceptance": "None needed (documented); optionally the README sentence mentions a typed `…`.",
+      "blocking": false,
+      "severity": "info",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "documented guard reach",
+      "needsDesign": false
+    },
+    {
+      "id": "FU4",
+      "summary": "The entity look-behind also applies in text mode, where an entity is literal text, and to a quoted slash: text-mode `Edit &quot;/etc/a--b&quot;` keeps `--` (979b87b `a—b`), and `He said &quot;/&quot;--then left.` gives `“/”--then` (979b87b `“/”—then`). The second matches what a raw `\"/\"--then` already did at 979b87b; both are unlikely in real copy.",
+      "location": "src/engine/rules/AbstractRule.php:55",
+      "repro": "probe mode=text `Edit &quot;/etc/a--b&quot; and &#039;/c...d&#039;` → unchanged on f4877a6, `a—b` and `c…d` on 979b87b; html `<p>He said &quot;/&quot;--then left.</p>` → `“/”--then` on f4877a6, `“/”—then` on 979b87b.",
+      "acceptance": "None needed; optionally the Known limit's entity sentence says it holds in text mode too.",
+      "blocking": false,
+      "severity": "info",
+      "confidence": "high",
+      "likelihood": "unlikely",
+      "cause": "look-behind is mode-blind",
+      "needsDesign": false
+    }
+  ]
+}

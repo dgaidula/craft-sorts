@@ -4,7 +4,7 @@
 
 A Craft 5 plugin by Danniel T. Gaidula.
 
-**Hardened:** 2026-11-07 · 3edd0b1 · re-check CLOSED WITH FOLLOW-UPS (`gates/2026-11-07-sorts-d897-d898-recheck.json`; D898 widows and fontkit, D897 dialogue storage under one release gate, FIX FIRST at `gates/2026-11-07-sorts-d897-d898-gate.json`, one fix round; hardened before at fbbd2af on 2026-11-07, 0bb7844 on 2026-11-06, first at 98db482 on 2026-11-05)
+**Hardened:** 2026-11-13 · f4877a6 · re-check CLOSED WITH FOLLOW-UPS (`gates/2026-11-13-sorts-1.0.0-release-recheck.json`; the 1.0.0 release gate over 3edd0b1..979b87b, the URL and path guard for dashes, ellipsis and the styling hooks, FIX FIRST at `gates/2026-11-13-sorts-1.0.0-release-gate.json`, one fix round; the re-check’s test-gap follow-up closed by one corpus case at release; hardened before at 3edd0b1 on 2026-11-07, fbbd2af on 2026-11-07, 0bb7844 on 2026-11-06, first at 98db482 on 2026-11-05)
 
 Editors type and paste straight quotes. Craft 5 leaves them alone, and Twig prints them as `&quot;` and `&#039;`. Install Sorts and every page is typeset correctly (titles, every field type, text hard-coded in your templates) with no template edits. In the control panel, editors get the right characters as they type.
 
