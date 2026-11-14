@@ -197,6 +197,16 @@
 @ s-function-notation-left-alone only=symbols
 < f(c) and g(r)
 
+@ s-function-notation-accented-letter-left-alone only=symbols
+< é(c) 2026
+
+@ s-function-notation-accented-letter-umlaut-left-alone only=symbols
+< ü(c) 2026
+
+@ s-accented-word-then-space-converts only=symbols
+< é (c) 2026 and ü (r)
+> é © 2026 and ü ®
+
 @ s-list-marker-r-left-alone only=symbols
 < (q) one (r) two
 
