@@ -306,6 +306,9 @@
 @ s-citation-r-word-run-left-alone only=symbols
 < <p>Brand (r)(US) shoes</p>
 
+@ s-citation-run-starting-with-c-left-alone only=symbols
+< <p>Brand (r)(CA) shoes</p>
+
 @ s-citation-roman-run-left-alone only=symbols
 < <p>See (c)(iii) below</p>
 

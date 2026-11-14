@@ -1,0 +1,150 @@
+{
+  "tool": "craft-sorts",
+  "run": "2026-11-13 delta gate (working mode: none named; a follow-up inside the 1.0.0 release cycle) of 2d09df2..caf694b, the symbols rule’s citation guard (`501 (c)(3)`). HEAD caf694b; engine only, the Craft testbed was not started. Gate scratch: <scratch>/gate-s7c3.",
+  "suite": {
+    "pass": 2,
+    "fail": 0,
+    "firstRunGreen": true,
+    "detail": "Engine: /opt/homebrew/bin/php /usr/local/bin/composer test-engine → “corpus: 1804 cases” … “RESULT: 5325 passed, 0 failed” (3.3 s), as briefed. composer check: “Found 0 of 68 files that can be fixed”, PHPStan “[OK] No errors”. node tests/run-all.mjs not run (needs the testbed).",
+    "mutants": "10 hand-written mutants of the new lookahead, generated as JSON (mk-spec.mjs), run with gate-kit mutants --brief --jobs 4 against /opt/homebrew/bin/php tests/engine/run.php: “ok green in 3.2s  baseline”, “summary: ok=9 warn=3 skip=0 refuse=0 fail=0”, “ok 999 files + git unchanged  real tree”; non-ok lines: “warn survived, exit 0, 2.9s  M4  (nothing noticed: one character only (no +))”, “warn survived, exit 0, 3.0s  M5  (nothing noticed: closing paren not required)”, “warn survived, exit 0, 3.0s  M7  (nothing noticed: + to * (empty parens count))”.",
+    "mutantIds": {
+      "killed": [
+        "M1",
+        "M2",
+        "M3",
+        "M6",
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "survived": [
+        "M4",
+        "M5",
+        "M7"
+      ],
+      "equivalent": [],
+      "specs": [
+        "<scratch>/gate-s7c3/spec.json (from mk-spec.mjs)"
+      ],
+      "key": "M1 lookahead removed; M2 digits only; M3 letters only; M4 one character (no +); M5 closing paren dropped; M6 opening paren dropped; M7 + to *; M8 guard for (c) only; M9 guard for (r) only; M10 guard skips leading whitespace"
+    },
+    "realTree": "gate-kit: “ok 999 files + git unchanged  real tree”. At the end, git status --porcelain --ignored identical to the start (only the four ignored entries) apart from this receipt, and the sha256 of SymbolsRule.php, corpus 04, README.md and CHANGELOG.md identical to the start; HEAD caf694b. Ignored .php-cs-fixer.cache: its mtime moved to the composer check run (22:57); its content was not hashed before that run, so whether php-cs-fixer rewrote it with the same bytes is unverified (it reported nothing to fix). composer.lock untouched (mtime 2026-11-05).",
+    "cleanTree": "craft-sorts: clean apart from this receipt (untracked, not committed, per the brief). Old and alternative trees were git archive extracts in the gate scratch, never in the repo."
+  },
+  "verdict": "FIX FIRST",
+  "verdictLine": "FIX FIRST (blocking F1, F2): F1, the guard half-converts a symbol pair and is not stable (`(c)(r)` → `(c)®`, then `©®`; before the delta `©®` in one pass), against SPEC.md:172; F2, the new Known limit and changelog promise `501 (c)(3)` keeps its `(c)`, but CKEditor’s as-you-type `copyright` transformation, which Sorts turns on by default, converts it as it is typed. FU1–FU4 are not blocking.",
+  "findings": [
+    {
+      "id": "F1",
+      "summary": "The new lookahead reads a following symbol as a citation, so a symbol pair is half converted on pass 1 and finished only on later passes: `(c)(r)` → `(c)®` (pass 2 `©®`), `(C)(R)` → `(C)®`, `(c)(tm)` → `(c)™`, `Acme (r)(tm) Widget` → `Acme (r)™ Widget`, `(r)(c)` → `(r)©`, `(c)(c)` → `(c)©`, and `(c)(r)(tm)` needs three passes (`(c)(r)™` → `(c)®™` → `©®™`). Before the delta each gave the full symbols in one stable pass (`©®`, `©™`, `®™`, `®©`, `©®™`). This breaks SPEC.md:172 (“running twice equals running once”); fix on save stores the half-converted text while the page pass shows the finished one, and the audit flags the stored value again. README.md:376 says “so `(c)(r)` is left too”, which is not what happens.",
+      "location": "src/engine/rules/SymbolsRule.php:38 (`(?!\\([\\p{L}\\p{N}]+\\))` also matches `(r)`, `(c)`, `(tm)`); README.md:376 (“so `(c)(r)` is left too”)",
+      "repro": "/opt/homebrew/bin/php <scratch>/gate-s7c3/probe.php src <scratch>/gate-s7c3/inputs.txt en-US → “(c)(r)\t=> (c)®\t[UNSTABLE 2nd: ©®]”, “(C)(R)\t=> (C)®\t[UNSTABLE 2nd: ©®]”, “(c)(TM)\t=> (c)™\t[UNSTABLE 2nd: ©™]”, “Acme (r)(tm) Widget\t=> Acme (r)™ Widget\t[UNSTABLE 2nd: Acme ®™ Widget]”; inputs2.txt → “(c)(r)(tm)\t=> (c)(r)™\t[UNSTABLE 2nd: (c)®™]”, “(r)(c)\t=> (r)©\t[UNSTABLE 2nd: ®©]”. The same in fr, de, en-GB and text mode. On git archive 2d09df2: “(c)(r)\t=> ©®”, “(c)(r)(tm)\t=> ©®™”, no instability.",
+      "acceptance": "A `(c)` or `(r)` followed by `(c)`, `(r)` or `(tm)` (any case) converts in one stable pass: `(c)(r)` → `©®`, `(C)(R)` → `©®`, `(c)(tm)` → `©™`, `(r)(tm)` → `®™`, `(r)(c)` → `®©`, `(c)(r)(tm)` → `©®™`, pinned by corpus cases (the corpus runner checks the second pass), while every current citation case still passes; README.md:376 drops “so `(c)(r)` is left too”. A lookahead of `(?!\\((?!(?:c|r|tm)\\))[\\p{L}\\p{N}]+\\))` does this: in a scratch copy it gives exactly those outputs and the engine suite stays at 5325 passed, 0 failed.",
+      "blocking": true,
+      "severity": "medium",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "the lookahead treats any parenthesised letters as a citation subsection, including the three symbol spellings the same rule converts, and Run::replaceAll matches every occurrence against the unedited text, so the left (c) sees the (r) that is about to become ®",
+      "needsDesign": false
+    },
+    {
+      "id": "F2",
+      "summary": "In a CKEditor field, typing `501 (c)(3)` still gives `501 ©(3)`: Sorts turns on CKEditor’s `copyright` and `registeredTrademark` transformations whenever the symbols rule is on, and CKEditor converts `(c)` the moment the `)` is typed, before `(3)` exists and with no look-behind, so `501(c)(3)` typed attached is converted too (the page pass leaves the attached form alone). The page pass and fix on save cannot restore it. The new Known limit (README.md:376, “A citation such as `501 (c)(3)` keeps its `(c)`”) and CHANGELOG.md:65 promise it without qualification; README.md:256 (“Dashes, ellipsis and symbols follow the rules that are on”) says nothing of it. As-you-type is on by default on Lite and Pro (README.md:172), and the sites most likely to cite 501(c)(3) are non-profits that type into CKEditor.",
+      "location": "src/ckeditor/CkeditorSupport.php:116–117; craftcms/ckeditor 5.9.0 bundled ckeditor5 TextTransformation (`copyright:{from:`(c)`,to:`©`}`; `normalizeFrom` builds `new RegExp(`(${escapeRegExp(from)})$`)`); README.md:256, :376; CHANGELOG.md:65",
+      "repro": "Static, from the shipped bundle: grep in vendor/craftcms/ckeditor/src/web/assets/ckeditor/dist/lib/ckeditor5.umd.js.map → “copyright: { from: '(c)', to: '©' }” and “function normalizeFrom( from: string | RegExp ): RegExp { if ( typeof from == 'string' ) { return new RegExp( `(${ escapeRegExp( from ) })$` ); }”; CkeditorSupport::transformations() pushes 'copyright', 'registeredTrademark', 'trademark' when symbols is on. Not observed in a browser (the testbed was not started).",
+      "acceptance": "Either (a) CkeditorSupport no longer includes `copyright` and `registeredTrademark` (leaving `(c)` and `(r)` to the page pass and fix on save, where the citation guard applies), with its unit test updated and README.md:256 saying so; or (b) the Known limit at README.md:376 and CHANGELOG.md:65 say that text typed in a CKEditor field with as-you-type on is converted as it is typed (`501 (c)(3)` and `501(c)(3)` become `501 ©(3)`), with the way out (switch off as-you-type, or the field’s own `typing` config). Dan’s call which.",
+      "blocking": true,
+      "severity": "medium",
+      "likelihood": "likely",
+      "confidence": "high",
+      "cause": "the citation guard lives only in the engine; the CKEditor path Sorts configures does the same conversion as you type with CKEditor’s own unguarded pattern, and the new README and CHANGELOG lines do not say so",
+      "needsDesign": false
+    }
+  ],
+  "notBlocking": [
+    {
+      "id": "FU1",
+      "summary": "The docs say “a parenthesised letter or digit”, but the guard takes any run of them, so more than citations is left: `(c)(2026)` and `Copyright (c)(2026) Name` stay as typed (before: `©(2026)`), and so do `Brand (r)(US) only` and `Brand (r)(EU)` (before: `®(US)`, `®(EU)`). Citations with several characters (`(c)(iii)`, `(c)(12)`) are left too, which is right. A year in parentheses right after `(c)` is unusual but is a copyright notice, not a citation.",
+      "location": "src/engine/rules/SymbolsRule.php:38 (`+`); README.md:376; CHANGELOG.md:65",
+      "repro": "/opt/homebrew/bin/php <scratch>/gate-s7c3/probe.php src <scratch>/gate-s7c3/inputs.txt en-US → “(c)(2026)\t=> (c)(2026)”, “Copyright (c)(2026) Name\t=> Copyright (c)(2026) Name”, “Brand (r)(US) only\t=> Brand (r)(US) only”; old tree “Copyright (c)(2026) Name\t=> Copyright ©(2026) Name”.",
+      "acceptance": "README.md:376 and CHANGELOG.md:65 say “a parenthesised run of letters or digits, such as `(3)`, `(iii)` or `(2026)`” and name `(c)(2026)` as left; or the guard excludes a four-digit year (Dan’s call).",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "the class is `[\\p{L}\\p{N}]+`, wider than the docs describe",
+      "needsDesign": false
+    },
+    {
+      "id": "FU2",
+      "summary": "Three of the guard’s parts are not pinned by any test: dropping the `+` (only one character in the parentheses), dropping the closing `\\)`, and `+` to `*` all survive the full engine suite. No corpus case has a multi-character citation (`(c)(iii)`, `(c)(12)`), a `(c)` before an unclosed or spaced parenthetical that must convert (`(c)(see notes)` → `©(see notes)`), or `(c)()`. Two of the 12 new cases (`s-citation-501-attached-left-alone`, `s-citation-501-number-left-alone`) were already green before the fix (the look-behind leaves them); they are useful pins but do not test the new guard.",
+      "location": "tests/engine/corpus/04-dashes-ellipsis-symbols.txt:217–257",
+      "repro": "gate-kit mutants <scratch>/gate-s7c3/spec.json --brief --jobs 4 → “warn survived, exit 0, 2.9s  M4  (nothing noticed: one character only (no +))”, “warn survived, exit 0, 3.0s  M5  (nothing noticed: closing paren not required)”, “warn survived, exit 0, 3.0s  M7  (nothing noticed: + to * (empty parens count))”, “summary: ok=9 warn=3 skip=0 refuse=0 fail=0”.",
+      "acceptance": "Corpus cases `(c)(iii)` and `501 (c)(12)` left as typed, `(c)(see notes)` → `©(see notes)` and `(c)()` → `©()`, so M4, M5 and M7 are killed.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "the new cases are all single-character citations and none pins the guard’s closing parenthesis",
+      "needsDesign": false
+    },
+    {
+      "id": "FU3",
+      "summary": "Citation shapes the guard does not see are still converted, unchanged from before and not named in the new Known limit: a space between the parts `501 (c) (3)` → `501 © (3)`; split by an inline tag `501 (c)<em>(3)</em>` → `501 ©<em>(3)</em>` and `501 <em>(c)</em>(3)` → `501 <em>©</em>(3)`; a comment between; entity parentheses `501 (c)&#40;3&#41;`; `(c)[3]`; `(c)( 3 )`. The spaced form is the plausible one. The README’s rule table (README.md:57) has no pointer to the Known limit, unlike the Dashes and Ellipsis rows.",
+      "location": "README.md:57, :376",
+      "repro": "/opt/homebrew/bin/php <scratch>/gate-s7c3/probe.php src <scratch>/gate-s7c3/inputs.txt en-US → “<p>A 501 (c) (3) non-profit</p>\t=> <p>A 501 © (3) non-profit</p>”, “<p>501 (c)<em>(3)</em> org</p>\t=> <p>501 ©<em>(3)</em> org</p>”, “<p>501 <em>(c)</em>(3) org</p>\t=> <p>501 <em>©</em>(3) org</p>”.",
+      "acceptance": "README.md:376 adds that `501 (c) (3)` with a space, and a citation split by a tag, still convert, with the way out (`data-sorts=\"off\"`, or type it without the space); README.md:57 links to the Known limit.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "cause": "the guard is a lookahead on the same run of text and requires the `(` straight after the `)`; pre-existing shapes, not a regression",
+      "needsDesign": false
+    },
+    {
+      "id": "FU4",
+      "summary": "The pattern has no `u` flag, so `\\p{L}` and `\\p{N}` match single bytes: a citation with a non-ASCII letter or digit in the parentheses is converted although the docs say “a letter or digit”: `501 (c)(é)` → `501 ©(é)`, `501 (c)(١)` → `501 ©(١)`, `501 (c)(३)` → `501 ©(३)`. The look-behind before it has the same byte reading (pre-existing).",
+      "location": "src/engine/rules/SymbolsRule.php:38 (`/i`, no `u`)",
+      "repro": "/opt/homebrew/bin/php <scratch>/gate-s7c3/probe.php src <scratch>/gate-s7c3/inputs.txt en-US → “<p>501 (c)(é)</p>\t=> <p>501 ©(é)</p>”, “<p>501 (c)(١) org</p>\t=> <p>501 ©(١) org</p>”.",
+      "acceptance": "Either `/iu` (with a corpus case `(c)(é)` left as typed and the suite green), or README.md:376 says “an ASCII letter or digit”.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "PCRE without UTF mode reads \\p classes byte by byte",
+      "needsDesign": false
+    }
+  ],
+  "knownLimits": [
+    "A `(c)` before a parenthetical that is not a bare run of letters or digits converts, which is right: `Sorts (c)(see notes)` → `Sorts ©(see notes)`, `(c) (2026) Name` → `© (2026) Name` (pinned), `(c)(3` → `©(3`, `(c)()` → `©()`.",
+    "A `(c)` and a parenthetical in the next element or paragraph are read apart and convert: `<p>Sorts (c)<br>(2026)</p>` → `©<br>(2026)`, `<p>Sorts (c)</p><p>(1) next</p>` → `©`.",
+    "The (b)/(q) paragraph rule still applies alongside the guard: `A 501 (c)(3) non-profit (b) list` stays as typed."
+  ],
+  "confirmedSound": [
+    "The fix does what its commit says for the shapes it names: `501 (c)(3)`, `501 (C)(3)`, `501 (c)(4)`, `12 (c)(i)`, `(c)(3)` at the start, `Rule 5 (r)(2)`, `§ 501 (c)(3)`, `501&nbsp;(c)(3)`, `501 (c)(3)(A)`, `26 U.S.C. § 501 (c)(3).` are left; `(c) 2026`, `text (c) more`, `(c) (2026)` still convert. Each new corpus case passes its idempotence pass (suite green).",
+    "“12 corpus cases (7 red before)” holds: the new tests/engine at caf694b run against src at 2d09df2 gives “RESULT: 5318 passed, 7 failed”, the seven being the spaced, four-spaced, letter-spaced, upper-spaced, start-of-text, r and then-copyright cases; 5313 + 12 = 5325.",
+    "The guard bites: removing the lookahead (M1), digits only (M2), letters only (M3), no opening paren (M6), the guard for (c) only (M8) or for (r) only (M9), and a guard that skips a space (M10) are all killed by the engine suite.",
+    "No locale has its own symbol handling (src/engine/locales has no ©, ® or copyright; the rule is locale-free); fr, de and en-GB give the same results as en-US, and text mode the same.",
+    "The filter’s escape (src/web/twig/SortsExtension.php:81, ENT_QUOTES) does not touch parentheses, so `&quot;A 501 (c)(3) non-profit&quot;` → `“A 501 (c)(3) non-profit”` and `&#039;501 (c)(3)&#039;` → `‘501 (c)(3)’`.",
+    "src/templates/settings.twig:144 (“Symbols: (c) (r) (tm)”) is a label, still accurate; there is no symbols description to update.",
+    "Scope: `git diff --stat 2d09df2 caf694b` touches only CHANGELOG.md, EFFORT.md, README.md, src/engine/rules/SymbolsRule.php and corpus 04, as the brief says. The added lines carry no home or scratch path, client, project or personal name; the commit trailer and EFFORT row name only the model."
+  ],
+  "decisions": "Mode: none named in the brief, so graded as working (the brief calls it a delta gate inside the release cycle). F1 is blocking as a silently wrong, unstable answer this delta introduced; F2 as a silently wrong answer in the default typing path that the delta’s own README and CHANGELOG lines promise away. For Dan: F2 (a) drop CKEditor’s (c)/(r) transformations, or (b) document them; FU1 whether `(c)(2026)` should convert.",
+  "notDone": [
+    "node tests/run-all.mjs and any CKEditor run in a browser: the testbed was not started, so F2 is from the bundled CKEditor 5.9.0 source and CkeditorSupport, not observed as typed.",
+    "No PHP 8.2 run of the engine suite (Homebrew PHP only).",
+    "No sweep over generated inputs; the probes are hand-written lists (inputs.txt, inputs2.txt, inputs3.txt)."
+  ],
+  "rigCommands": [
+    "/opt/homebrew/bin/php /usr/local/bin/composer test-engine",
+    "/opt/homebrew/bin/php /usr/local/bin/composer check",
+    "git archive 2d09df2 src | tar -x -C <scratch>/gate-s7c3/old; git archive caf694b tests/engine | tar -x -C <scratch>/gate-s7c3/old; /opt/homebrew/bin/php <scratch>/gate-s7c3/old/tests/engine/run.php",
+    "/opt/homebrew/bin/php <scratch>/gate-s7c3/probe.php <src> <scratch>/gate-s7c3/inputs.txt [locale] [only] [mode] (each input twice, printing pass 2 when it differs), on src at caf694b and at 2d09df2, locales en-US, fr, de, en-GB, and text mode",
+    "node <scratch>/gate-s7c3/mk-spec.mjs <scratch>/gate-s7c3/spec.json; gate-kit mutants <scratch>/gate-s7c3/spec.json --brief --jobs 4",
+    "git archive caf694b src tests/engine | tar -x -C <scratch>/gate-s7c3/alt; node <scratch>/gate-s7c3/alt-edit.mjs <scratch>/gate-s7c3/alt/src/engine/rules/SymbolsRule.php; /opt/homebrew/bin/php <scratch>/gate-s7c3/alt/tests/engine/run.php (feasibility of F1’s acceptance only)",
+    "grep over vendor/craftcms/ckeditor/src/web/assets/ckeditor/dist/lib/ckeditor5.umd.js.map for the copyright transformation and normalizeFrom",
+    "git diff 2d09df2 caf694b | grep -iE for home and temp paths, client and personal names"
+  ],
+  "sideEffects": "Created only in <scratch>/gate-s7c3/: probe.php, inputs*.txt, mk-spec.mjs, spec.json, mut.err, alt-edit.mjs, mkreceipt.mjs, findings.json, start.sha, and the git archive trees old/ and alt/ (deleted at the end). gate-kit’s copies live under its own TMPDIR and are removed on exit. In the repo: only this receipt, untracked. Ignored .php-cs-fixer.cache: its mtime moved to the composer check run (22:57); its content was not hashed before that run, so whether php-cs-fixer rewrote it with the same bytes is unverified (it reported nothing to fix). composer.lock untouched (mtime 2026-11-05).",
+  "sources": "Read directly: the diff 2d09df2..caf694b and its commit message; src/engine/rules/SymbolsRule.php, src/engine/Run.php (replaceAll), src/web/twig/SortsExtension.php:60–100, src/ckeditor/CkeditorSupport.php:90–140, src/templates/settings.twig, src/engine/locales (grep); tests/engine/corpus.php and bootstrap.php; CLAUDE.md, README.md (rule table, CKEditor, Known limits), SPEC.md:172, CHANGELOG.md; the bundled CKEditor 5.9.0 source map; every tool output quoted here. No WebFetch. gates/2026-11-13-sorts-1.0.0-release-gate.json was read for its shape only."
+}

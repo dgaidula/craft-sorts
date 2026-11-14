@@ -1,0 +1,116 @@
+{
+  "tool": "craft-sorts",
+  "run": "2026-11-13 closure re-check (working mode) of fix round caf694b..ba3b387 against the symbols-citation delta gate (gates/2026-11-13-sorts-1.0.0-symbols-citation-gate.json: F1, F2, FU1–FU4, plus the two README.md:374 URL-guard wording items). HEAD ba3b387; engine only, the Craft testbed was not started. Re-check scratch: <scratch>/recheck-q4m8.",
+  "suite": {
+    "pass": 2,
+    "fail": 0,
+    "firstRunGreen": true,
+    "detail": "Engine: /opt/homebrew/bin/php /usr/local/bin/composer test-engine → “corpus: 1820 cases” … “RESULT: 5341 passed, 0 failed”, as briefed. composer check: “Found 0 of 68 files that can be fixed”, PHPStan “[OK] No errors”. The new corpus against the caf694b engine (git archive extract): “RESULT: 5331 passed, 10 failed”, the ten s-pair-*/s-triple-* cases, matching the fixer’s “10 red before”. node tests/run-all.mjs not run (needs the testbed).",
+    "mutants": "Two specs (bin/mkspec.mjs, bin/mkspec2.mjs → spec.json, spec2.json) against /opt/homebrew/bin/php tests/engine/run.php. Spec 1, the new inner exclusion, gate-kit mutants --brief --jobs 4: “ok green in 4.1s  baseline”, “summary: ok=11 warn=2 skip=0 refuse=0 fail=0”, “ok 1000 files + git unchanged  real tree”; non-ok lines: “warn survived, exit 0, 3.8s  M5  (nothing noticed: exclusion without its closing paren: a run starting c, r or tm is no citation)”, “warn survived, exit 0, 3.7s  M11  (nothing noticed: u flag added (FU4 probe))”. Spec 2, the gate’s three survivors re-run on HEAD: “ok green in 3.1s  baseline”, “summary: ok=5 warn=0 skip=0 refuse=0 fail=0”, “ok 1000 files + git unchanged  real tree”.",
+    "mutantIds": {
+      "killed": [
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M6",
+        "M7",
+        "M8",
+        "M9",
+        "M10",
+        "M12",
+        "M13",
+        "M14"
+      ],
+      "survived": [
+        "M5",
+        "M11"
+      ],
+      "equivalent": [],
+      "specs": [
+        "<scratch>/recheck-q4m8/spec.json (from bin/mkspec.mjs)",
+        "<scratch>/recheck-q4m8/spec2.json (from bin/mkspec2.mjs)"
+      ],
+      "key": "M1 inner exclusion removed (caf694b); M2 c dropped; M3 r dropped; M4 tm dropped; M5 the exclusion’s \\) dropped; M6 exclusion case-sensitive; M7 tm → t; M8 any single letter excluded; M9 i added; M10 run needs two or more; M11 /iu (FU4 probe, M11 survives because nothing pins non-ASCII either way); M12 no + (gate M4); M13 run’s closing paren dropped (gate M5); M14 + → * (gate M7)"
+    },
+    "realTree": "gate-kit reported “ok 1000 files + git unchanged  real tree” on both runs. At the end, git status --porcelain --ignored is identical to the start (the gate receipt untracked, four ignored entries) apart from this receipt, and the sha256 of every tracked file plus the gate receipt (167 lines) is identical to the start; HEAD ba3b387, tag 1.0.0 still at 42ef725 (not moved by me). Ignored .php-cs-fixer.cache: mtime 23:10:09, written by the composer check run; its content was not hashed before that run.",
+    "cleanTree": "craft-sorts: clean apart from this receipt (untracked, not committed, per the brief). Compared trees (caf694b, ba3b387, 2d09df2, a +u copy and an M5 copy) were git archive extracts in the re-check scratch, deleted at the end."
+  },
+  "closure": {
+    "F1": "CLOSED. Own probe (bin/gen.mjs → 1,704 inputs × en-US, en-GB, fr, de × symbols-only and default rules, two passes each, 13,632 rows): every pair and triple of (c) (C) (r) (R) (tm) (TM) (Tm) converts fully on pass 1 and pass 2 equals pass 1 (unstable rows: caf694b 3,032, ba3b387 0). Text mode the same. Citations left as typed on both passes: 501 (c)(3), 501(c)(3), (c)(4), (r)(2), 501 (c)(4), § 501 (c)(3), 501&nbsp;(c)(3), 501 (C)(3), (c)(i), (c)(iii), (c)(12), (c)(2026), (r)(US). Notices still converted: (c) 2026 Acme → © 2026 Acme, Copyright (c) 2026, (c)&nbsp;2026, (r) Acme Inc., Acme (r)(tm) Widget → Acme ®™ Widget. The corpus runner does re-apply: tests/engine/corpus.php:118 runs the engine on its own output and fails on any difference unless idem=no (none of the 16 new cases sets it). README.md:376 now says (c)(r) gives ©®.",
+    "F2": "CLOSED (option b, document only), with two follow-ups (R1-1, R1-2). README.md:256 and :376 and CHANGELOG.md:65 state the as-you-type conversion. Checked against craftcms/ckeditor’s bundled ckeditor5.js: copyright:{from:`(c)`,to:`©`} as a string becomes RegExp(`(${escape})$`), so the transformation fires on the ) with no look-behind; the Delete plugin’s requestUndoOnBackspace sets _undoOnBackspace, a following backward single-codePoint delete runs undo, and any model document change clears the flag, so “press Backspace straight after; any other edit first, and it stays” is accurate. “Switch the symbols rule off, which also turns that transformation off” is accurate (CkeditorSupport.php:116–117). src/ckeditor/CkeditorSupport.php is unchanged in caf694b..ba3b387 (git diff --stat empty). Not observed in a browser.",
+    "FU1": "CLOSED. README.md:376 and CHANGELOG.md:65 say “a parenthesised run of letters or digits, such as (3), (iii) or (2026)”, and README names (c)(2026) and Brand (r)(US) as left; the engine agrees.",
+    "FU2": "CLOSED. Corpus cases s-citation-roman-run-left-alone, s-citation-two-digit-run-left-alone, s-citation-words-with-space-converts, s-citation-empty-parens-converts added; the gate’s M4, M5 and M7 re-run on HEAD as M12, M13, M14 are all killed. A new survivor in the new code is R1-3.",
+    "FU3": "CLOSED in substance. README.md:57 links to Known limits; README.md:376 names the spaced, tag-split, entity and square-bracket shapes as converted, and the engine agrees ((c) (3) → © (3), (c)<i>(3)</i> → ©<i>(3)</i>, (c)&#40;3&#41; → ©&#40;3&#41;, (c)[3] → ©[3]). The gate’s acceptance also asked for the way out (data-sorts=\"off\", or type it without the space); that sentence is not there, which is minor.",
+    "FU4": "OPEN, left as needs-design; leaving it is safe. The fixer’s reasoning holds: with /iu the look-behind blocks after any letter, so é(c) 2026, Café(r), Société(c) 2026 and 日本(c)2026 stop converting (probe of a +u copy). But the present byte reading is not a behaviour worth keeping for its own sake: ü(c) 2026 is already left (ü ends in byte 0xBC, which Latin-1 reads as ¼) while é(c) 2026 converts, and (c)(ü) is left while (c)(é) and (c)(ñ) convert. All of it is stable across passes, pre-dates the delta for the look-behind, and loses nothing. The contained doc option from the gate (“an ASCII letter or digit”) was not taken, so README.md:376 still says “letters or digits”. Dan’s call between /iu (one consistent rule, with é(c) 2026 then left as typed like Acme(r)) and the doc wording.",
+    "README:374": "CLOSED, both items. The path-opening class in src/engine/rules/AbstractRule.php:55 holds the bytes of “ ” ‘ ’ „ ‚ ‹ › « » ′ ″ U+00A0 U+202F U+2009 and &nbsp; plus the entities, and not ‟ (U+201F) or ‛ (U+201B); README.md:374 now says exactly that and calls U+2009 a thin space. Probe: ‟/tmp/a--b → ‟/tmp/a—b, ‛/tmp/a--b → ‛/tmp/a—b, “/tmp/a--b kept, x U+2009 /tmp/a--b kept, x U+2007 /tmp/a--b converted (listed as not recognised)."
+  },
+  "regressions": "None. Engine output of caf694b vs ba3b387 over the generated set: 3,440 of 13,632 rows differ, every one classified: 2,136 where caf694b needed a second pass and ba3b387 gives that pass-2 result in one (the F1 fix); 896 all-symbol triples where caf694b needed a third pass, now complete in one; 408 a symbol pair before a citation run ((c)(r)(3), (c)(c)(3), (R)(C)(i) … and their <p> forms), which caf694b left wholly as typed and ba3b387 gives ©(r)(3) — consistent with the documented rule (a symbol after (c) or (r) is a symbol; (r)(3) is a citation), see Known limits. No row changed for any citation, notice, entity, tag or locale context outside those shapes. The full corpus at ba3b387 is 5341 passed, 0 failed; the old corpus is a subset of the new.",
+  "findings": [],
+  "notBlocking": [
+    {
+      "id": "R1-1",
+      "summary": "README.md:376 says that in CKEditor “501(c)(3) and 501 (c)(3) are stored as 501 ©(3)”; the attached form is stored as 501©(3) (CKEditor replaces only the (c) and adds no space). Introduced by this round, copied from the gate’s acceptance text.",
+      "location": "README.md:376",
+      "repro": "Static: vendor/craftcms/ckeditor/src/web/assets/ckeditor/dist/lib/ckeditor5.js holds copyright:{from:`(c)`,to:`©`} and function OT(e){return typeof e==`string`?RegExp(`(${Gn(e)})$`):e}, so typing ) after 501(c gives 501©. Not observed in a browser.",
+      "acceptance": "README.md:376 says 501(c)(3) is stored as 501©(3) and 501 (c)(3) as 501 ©(3).",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "cause": "doc wording",
+      "needsDesign": false
+    },
+    {
+      "id": "R1-2",
+      "summary": "The only way out besides Backspace that the docs name, switching the symbols rule off, is a Pro setting and also takes © ® ™ off the page; on Lite, Backspace is the only one named. Switching ckeditorAsYouType off (a Lite setting) removes the transformation and keeps the symbols rule, and is not mentioned (the gate’s acceptance named it).",
+      "location": "README.md:256, :376; CHANGELOG.md:65",
+      "repro": "Static: README.md:172 lists ckeditorAsYouType as Lite and README.md:176 the rules map as Pro; src/models/Settings.php:15 “Everything but pluginName and ckeditorAsYouType is a Pro setting”; src/Plugin.php:118 registers CKEditor support only when ckeditorAsYouType is on.",
+      "acceptance": "README.md:256 and :376 and CHANGELOG.md:65 name “turn off Convert quotes as people type in CKEditor (ckeditorAsYouType)” as the way out that keeps the symbols rule, and say that switching the rule off is Pro.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "cause": "doc gap",
+      "needsDesign": false
+    },
+    {
+      "id": "R1-3",
+      "summary": "Mutant M5 (the inner exclusion’s \\) dropped, so a run that only begins with c, r or tm is no citation) survives the engine suite: no corpus case has a citation run that starts with one of them, such as Brand (r)(CA) or (c)(cr).",
+      "location": "src/engine/rules/SymbolsRule.php:39; tests/engine/corpus/04-dashes-ellipsis-symbols.txt:303–319",
+      "repro": "gate-kit mutants <scratch>/recheck-q4m8/spec.json --brief --jobs 4 -- (command in spec) → “warn survived, exit 0, 3.8s  M5  (nothing noticed: exclusion without its closing paren: a run starting c, r or tm is no citation)”; probe of the M5 copy: “Brand (r)(CA) shoes => Brand ®(CA) shoes”, HEAD leaves it.",
+      "acceptance": "A corpus case such as <p>Brand (r)(CA) shoes</p> left as typed; M5 killed.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "unlikely",
+      "confidence": "high",
+      "cause": "test gap",
+      "needsDesign": false
+    },
+    {
+      "id": "R1-4",
+      "summary": "Pre-existing, unchanged since before the citation guard: a (C) or (R) after a closing parenthesis is converted, so a subparagraph at the end of a citation becomes a symbol: § 501(c)(4)(C) → § 501(c)(4)©, (3)(C) → (3)©. Not among the still-converted shapes in README.md:376.",
+      "location": "src/engine/rules/SymbolsRule.php:39 (look-behind (?<![\\p{L}\\p{N}]) passes after “)”); README.md:376",
+      "repro": "/opt/homebrew/bin/php <scratch>/recheck-q4m8/bin/probe.php <tree> <scratch>/recheck-q4m8/inputs-y.jsonl → 2d09df2, caf694b and ba3b387 all “§ 501(c)(4)(C) => § 501(c)(4)©”, “(3)(C) => (3)©”.",
+      "acceptance": "README.md:376 names a closing subparagraph ((4)(C)) as still converted with data-sorts=\"off\" as the way out, or (Dan’s call) the guard leaves a (c) or (r) that follows a parenthesised run — which must keep (c)(r) → ©®.",
+      "blocking": false,
+      "severity": "low",
+      "likelihood": "possible",
+      "confidence": "high",
+      "cause": "pre-existing guard scope",
+      "needsDesign": true
+    }
+  ],
+  "knownLimits": [
+    "A symbol pair before a citation run converts only the first: (c)(r)(3) → ©(r)(3) (caf694b left it as typed; 2d09df2 gave ©®(3)). It follows the documented rule and is stable.",
+    "CKEditor’s copyright transformation matches lowercase (c) only, so (C)(3) typed in CKEditor is not converted as you type; README.md:376 says (c), which is accurate.",
+    "FU4’s byte reading (see closure.FU4): ü(c) 2026 left, é(c) 2026 converted; (c)(ü) left, (c)(é) converted. Stable, no loss."
+  ],
+  "scope": "caf694b..ba3b387 touches CHANGELOG.md, EFFORT.md (row 33), README.md, src/engine/rules/SymbolsRule.php and tests/engine/corpus/04-dashes-ellipsis-symbols.txt, all within the brief. EFFORT row 33 says “M1-M14 killed”: that is the fixer’s own set; this re-check’s M5 survives (R1-3).",
+  "privacy": "git diff caf694b..ba3b387 and the ba3b387 message hold no client, project or person name and no home or scratch path; the only path-like hit is the unchanged example C:\\Users\\a--b in README.md:375.",
+  "sideEffects": "Created <scratch>/recheck-q4m8 (scripts in bin/, input and output JSON lines, mutant specs and outputs, findings.json); the extracted trees in it were deleted at the end, the scripts, specs, inputs and outputs kept as the repro. In the repo: this receipt (untracked, kept per the brief). .php-cs-fixer.cache (ignored) rewritten by composer check. Nothing else.",
+  "sources": "Read directly: the delta (git diff caf694b..ba3b387), SymbolsRule.php, tests/engine/corpus.php, src/ckeditor/CkeditorSupport.php, src/Plugin.php:118, src/models/Settings.php, src/engine/rules/AbstractRule.php:55, README.md:57, :172–176, :256, :374–376, CHANGELOG.md:65, the bundled ckeditor5.js (TextTransformation and Delete). The prior gate receipt was read for the finding definitions and acceptances after F1 and F2 were probed.",
+  "notDone": "No browser check of CKEditor (the testbed was not started); node tests/run-all.mjs not run.",
+  "verdict": "CLOSED WITH FOLLOW-UPS",
+  "verdictLine": "CLOSED WITH FOLLOW-UPS — F1, F2, FU1, FU2, FU3 and both README.md:374 items closed; FU4 left as needs-design (safe to leave); no regression; follow-ups R1-1 to R1-4, none blocking."
+}
