@@ -214,6 +214,48 @@
 < (c) and (r) and (tm)
 > © and ® and ™
 
+# ---- a (c) or (r) before a parenthesised letter or digit is a citation (501 (c)(3)), not a symbol ----
+
+@ s-citation-501-spaced-left-alone only=symbols
+< <p>A 501 (c)(3) non-profit</p>
+
+@ s-citation-501-attached-left-alone only=symbols
+< <p>A 501(c)(3) non-profit</p>
+
+@ s-citation-501-number-left-alone only=symbols
+< <p>A 501(c)3 non-profit</p>
+
+@ s-citation-501-four-spaced-left-alone only=symbols
+< <p>A 501 (c)(4) organisation</p>
+
+@ s-citation-letter-spaced-left-alone only=symbols
+< <p>See section 12 (c)(i) of the code</p>
+
+@ s-citation-upper-spaced-left-alone only=symbols
+< <p>A 501 (C)(3) non-profit</p>
+
+@ s-citation-start-of-text-left-alone only=symbols
+< (c)(3) status
+
+@ s-citation-r-left-alone only=symbols
+< Rule 5 (r)(2) applies
+
+@ s-citation-then-copyright-converts only=symbols
+< <p>A 501 (c)(3) non-profit. (c) 2026 Name</p>
+> <p>A 501 (c)(3) non-profit. © 2026 Name</p>
+
+@ s-copyright-with-name only=symbols
+< Copyright (c) 2026 Name
+> Copyright © 2026 Name
+
+@ s-copyright-mid-sentence only=symbols
+< text (c) more
+> text © more
+
+@ s-copyright-before-spaced-parenthesis-converts only=symbols
+< (c) (2026) Name
+> © (2026) Name
+
 # ---- D855: the en-US variant spaced-en-dash (Bringhurst 5.2.1): -- and --- and a spaced hyphen are breaks ----
 
 @ dv-closed-double-hyphen only=dashes locale=en-US config={"variants":{"en-US":"spaced-en-dash"}}
