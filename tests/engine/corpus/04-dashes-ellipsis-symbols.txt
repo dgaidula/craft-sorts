@@ -516,3 +516,94 @@
 
 @ u-path-right-after-a-no-break-space-and-entities only=dashes,ellipsis
 < <p>x&nbsp;/a--b x\u{A0}/c--d x\u{202F}/e--f x\u{2009}/g...h</p>
+
+# A plain string reaches the engine with its quotation marks as entities (Twig prints, and the filter escapes,
+# `"` as &quot; and `'` as &#039;), so each spelling opens a path as the raw mark does.
+
+@ u-path-after-quot-entity-default
+< <p>Edit the file &quot;/etc/my--app.conf&quot; and restart.</p>
+> <p>Edit the file “/etc/my--app.conf” and restart.</p>
+
+@ u-path-after-34-entity-default
+< <p>Open &#34;/var/a--b&#34; now</p>
+> <p>Open “/var/a--b” now</p>
+
+@ u-path-after-039-entity-default
+< <p>Call open(&#039;/var/log/app...&#039;) first.</p>
+> <p>Call open(‘/var/log/app...’) first.</p>
+
+@ u-path-after-39-entity-default
+< <p>Open &#39;/var/a--b&#39; now</p>
+> <p>Open ‘/var/a--b’ now</p>
+
+@ u-path-after-apos-entity-default
+< <p>Open &apos;/var/a...b&apos; now</p>
+> <p>Open ‘/var/a...b’ now</p>
+
+@ u-path-after-hex-27-entity-default
+< <p>Open &#x27;/var/a--b&#x27; now</p>
+> <p>Open ‘/var/a--b’ now</p>
+
+@ u-path-after-quote-entities-dashes only=dashes
+< <p>&quot;/a--b &#34;/c--d &#039;/e--f &#39;/g--h &apos;/i--j &#x27;/k--l</p>
+
+@ u-path-after-quote-entities-ellipsis only=ellipsis
+< <p>&quot;/a...b &#34;/c...d &#039;/e...f &#39;/g...h &apos;/i...j &#x27;/k...l</p>
+
+@ u-path-after-quote-entities-typed-dashes preset=bringhurst only=typed-dashes
+< <p>&quot;/a—b &#34;/c—d &#039;/e—f &#39;/g—h &apos;/i—j &#x27;/k—l</p>
+
+@ u-path-after-quote-entities-in-capitals only=dashes
+< <p>&QUOT;/a--b &#X27;/c--d</p>
+
+@ u-path-after-quote-entity-prose-still-fixed only=dashes
+< <p>&quot;Wait--&quot;/a--b and &quot;/c--d&quot; then--stop</p>
+> <p>&quot;Wait—&quot;/a--b and &quot;/c--d&quot; then—stop</p>
+
+# A path after an opening bracket, and the `//` form the guard does not read as a path (README, Known limits).
+
+@ u-path-after-each-opening-bracket only=dashes,ellipsis
+< <p>(/a--b) [/c...d] {/e--f}</p>
+
+@ u-protocol-relative-url-is-not-a-path-dashes only=dashes
+< <p>//cdn.example.com/a--b.js</p>
+> <p>//cdn.example.com/a—b.js</p>
+
+@ u-protocol-relative-url-is-not-a-path-ellipsis only=ellipsis
+< <p>//cdn.example.com/a...b.js</p>
+> <p>//cdn.example.com/a…b.js</p>
+
+# Ellipsis spacing and the styling hooks edit between the other rules, so each leaves a URL or a path alone too.
+
+@ u-url-typed-ellipsis-not-spaced-bringhurst preset=bringhurst
+< <p>See https://example.com/a…b/c...d now and /var/a…b/c--d and www.example.com/a…b</p>
+
+@ u-url-typed-ellipsis-not-spaced-dashes-bringhurst preset=bringhurst
+< <p>See https://example.com/a…b/c--d now</p>
+
+@ u-url-typed-ellipsis-not-spaced-en-GB preset=bringhurst locale=en-GB
+< <p>See https://example.com/a…b/c--d and /var/log/a…b...c now</p>
+
+@ u-url-typed-ellipsis-not-spaced-rule-on on=ellipsis-spacing
+< <p>See https://example.com/a…b/c...d now</p>
+
+@ u-prose-ellipsis-next-to-a-url-still-spaced preset=bringhurst
+< <p>wait…then see https://example.com/a…b and…more</p>
+> <p>wait … then see https://example.com/a…b and … more</p>
+
+@ u-hook-amp-leaves-an-ampersand-in-a-url only=hook-amp
+< <p>See https://example.com/?a=1&amp;b=2--3 and /search?q=a&amp;b...c now</p>
+
+@ u-hook-amp-still-wraps-prose-next-to-a-url only=hook-amp
+< <p>Tom &amp; Jerry at https://example.com/?a=1&amp;b=2 now</p>
+> <p>Tom <span class="amp">&amp;</span> Jerry at https://example.com/?a=1&amp;b=2 now</p>
+
+@ u-hook-caps-leaves-capitals-in-a-url only=hook-caps
+< <p>See https://example.com/API--v2 and /var/NASA/a...b now</p>
+
+@ u-hook-caps-still-wraps-prose-next-to-a-url only=hook-caps
+< <p>NASA at https://example.com/NASA now</p>
+> <p><span class="caps">NASA</span> at https://example.com/NASA now</p>
+
+@ u-hooks-leave-a-url-stable-with-the-dashes on=hook-amp,hook-caps
+< <p>See https://example.com/?a=1&amp;b=2--3 and https://example.com/API--v2 now</p>

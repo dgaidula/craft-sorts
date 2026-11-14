@@ -7,7 +7,8 @@ use iceboxind\sorts\engine\Run;
 
 /**
  * Styling hook: wraps an ampersand in `<span class="amp">`. Off by default. Writes
- * markup, so it never runs in plain-text mode. The class is the rule option `class`.
+ * markup, so it never runs in plain-text mode. The class is the rule option `class`. An ampersand
+ * inside a URL or a path is left as typed.
  */
 final class HookAmpRule extends AbstractRule
 {
@@ -42,9 +43,10 @@ final class HookAmpRule extends AbstractRule
         if ($context->hasAncestorClass($class)) {
             return;
         }
+        $urls = self::urlSpans($run->text());
         $run->replaceAll(
             '/&amp;|&(?![#A-Za-z0-9]+;)/',
-            static fn (): string => '<span class="' . $class . '">&amp;</span>'
+            static fn (array $m, int $offset): ?string => self::inSpans($urls, $offset) ? null : '<span class="' . $class . '">&amp;</span>'
         );
     }
 }
