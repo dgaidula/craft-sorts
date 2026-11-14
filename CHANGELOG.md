@@ -7,7 +7,7 @@ only `## X.Y.Z - YYYY-MM-DD` headings; rename `Unreleased` on release day.
 ## Unreleased
 
 ### Fixed
-- Symbols: a letter or digit before `(c)` or `(r)` now means the same in every script, so `é(c)` and `ü(c)` are both left as typed, like `f(c)`. `é(c)` used to become `é©` while `ü(c)` stayed.
+- Symbols: a letter, a combining mark or a digit before `(c)` or `(r)` now means the same in every script and in precomposed or decomposed form, so `é(c)`, `ü(c)`, `ж(c)` and a letter with a combining accent or a Devanagari vowel sign before `(c)` are all left as typed, like `f(c)`. `é(c)` used to become `é©` while `ü(c)` stayed. The same goes for the character after: `(c)(é)` is now left alone as a citation, like `(c)(3)`, where it used to become `©(é)`.
 
 ### Changed
 - The package no longer ships the gate and handoff receipts, `docs/`, `tests/`, `bin/` or the project records (`.gitattributes` `export-ignore`); `src/`, `composer.json`, the README, this changelog, the licence, `NOTICE` and `config.example.php` stay.

@@ -37,7 +37,7 @@ final class SymbolsRule extends AbstractRule
     public function apply(Run $run, Context $context): void
     {
         $run->replaceAll(
-            '/(?<![\p{L}\p{N}])\((c|r)\)(?!\((?!(?:c|r|tm)\))[\p{L}\p{N}]+\))/iu',
+            '/(?<![\p{L}\p{N}\p{M}])\((c|r)\)(?!\((?!(?:c|r|tm)\))[\p{L}\p{N}\p{M}]+\))/iu',
             static function (array $m) use ($context): ?string {
                 $letter = strtolower($m[1]);
                 if (preg_match($letter === 'c' ? '/\(b\)/i' : '/\(q\)/i', $context->flowText())) {
