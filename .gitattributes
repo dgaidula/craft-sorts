@@ -1,0 +1,18 @@
+# Kept out of `git archive` (so out of `composer require` and the Plugin Store zip):
+# the package is src/, composer.json, README, CHANGELOG, LICENSE, NOTICE and config.example.php.
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/phpstan.neon export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+/bin export-ignore
+/docs export-ignore
+/gates export-ignore
+/handoffs export-ignore
+/tests export-ignore
+/CLAUDE.md export-ignore
+/EFFORT.md export-ignore
+/HANDOFFS.md export-ignore
+/SPEC.md export-ignore
